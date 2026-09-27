@@ -383,7 +383,7 @@
     <div class="sidefoot">
       <div id="adminSlot"></div>
       <button id="resetBtn" type="button">전체 초기화</button>
-      <button type="button" data-action="goto" data-target="roadmap" style="display:none" id="roadmapBtn">밭 넓히기</button>
+      <button type="button" data-action="goto" data-target="roadmap" id="roadmapBtn">밭 넓히기</button>
     </div>
   </nav>
 
@@ -924,8 +924,6 @@ function renderAdminSlot(){
   el.innerHTML = isAdmin
     ? '<button type="button" id="adminLogoutBtn">'+(isMaster?'마스터':'관리자')+' 로그아웃 ('+esc(empId)+')</button>'
     : '<button type="button" id="adminLoginBtn">관리자 로그인</button>';
-  const rb = document.getElementById('roadmapBtn');
-  if(rb) rb.style.display = isMaster ? '' : 'none';
 }
 // 서버의 로그인/권한 확인 결과(403/429)를 안내 문구로
 async function adminErrorText(res){
@@ -1770,7 +1768,7 @@ function updateRulerAndNav(){
   let navHtml = '';
   // 그룹 전체가 미사용(disabled)이면 항목마다 회색 줄을 늘어놓지 않고, 그룹당 한 줄로 접어서 보여줌
   let skipDisabledGroup = false;
-  navHtml += SECTIONS.filter(s=>s.special!=='dashboard' && s.special!=='roadmap' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy').map(s=>{
+  navHtml += SECTIONS.filter(s=>s.special!=='dashboard' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy').map(s=>{
     const active = s.id===state.cur;
     const filled = !s.special && sectionFilled(s);
     if(s.disabled && !isMaster){
@@ -2641,14 +2639,14 @@ const ROADMAP = [
 const ROADMAP_STATUS = {plan:'계획', review:'검토 중', decide:'결정 필요', done:'완료'};
 function renderRoadmapSection(){
   return '<div class="frame intro"><h2>🌱 밭 넓히기</h2>'+
-      '<p class="intro-lead">ddugi는 같이 키울 사람을 찾고 있습니다. 비슷한 고민을 하고 있거나, 함께 만들어보고 싶다면 연락해주세요.</p>'+
+      '<p class="intro-lead">ddugi는 같이 키울 사람을 찾고 있습니다. 비슷한 고민을 하고 있거나, 함께 만들어보고 싶다면 <a href="https://www.threads.com/@tinypotato.guardian" target="_blank" style="color:var(--blueprint);font-weight:700;">@tinypotato.guardian</a>으로 연락해주세요.</p>'+
       '<div class="rm-legend">'+Object.keys(ROADMAP_STATUS).map(k=>'<span class="rm-status rm-'+k+'">'+ROADMAP_STATUS[k]+'</span>').join('')+'</div>'+
     '</div>'+
     ROADMAP.map(g=>'<div class="frame"><h2>'+esc(g.group)+'</h2><div class="fhint" style="margin-bottom:12px">'+esc(g.desc)+'</div>'+
       '<div class="rm-grid">'+g.items.map(it=>
         '<div class="rm-card"><div class="rm-head"><b>'+esc(it[0])+'</b><span class="rm-status rm-'+it[2]+'">'+ROADMAP_STATUS[it[2]]+'</span></div>'+
         '<div class="rm-desc">'+esc(it[1])+'</div></div>').join('')+'</div></div>').join('')+
-    '<div class="hint">자세한 체크리스트와 결정 기록은 프로젝트의 BACKLOG.md에 있습니다.</div>';
+    '<div class="hint">관심 있으시면 Threads로 연락해주세요! 🥔</div>';
 }
 
 let INTRO_HTML = DEFAULT_INTRO_HTML();
