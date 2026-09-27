@@ -383,7 +383,7 @@
     <div class="sidefoot">
       <div id="adminSlot"></div>
       <button id="resetBtn" type="button">전체 초기화</button>
-      <button type="button" data-action="goto" data-target="roadmap">밭 넓히기</button>
+      <button type="button" data-action="goto" data-target="roadmap" style="display:none" id="roadmapBtn">밭 넓히기</button>
     </div>
   </nav>
 
@@ -924,6 +924,8 @@ function renderAdminSlot(){
   el.innerHTML = isAdmin
     ? '<button type="button" id="adminLogoutBtn">'+(isMaster?'마스터':'관리자')+' 로그아웃 ('+esc(empId)+')</button>'
     : '<button type="button" id="adminLoginBtn">관리자 로그인</button>';
+  const rb = document.getElementById('roadmapBtn');
+  if(rb) rb.style.display = isMaster ? '' : 'none';
 }
 // 서버의 로그인/권한 확인 결과(403/429)를 안내 문구로
 async function adminErrorText(res){
@@ -2618,46 +2620,28 @@ function renderExampleSection(){
 /* ============== 확장 계획 (BACKLOG.md 요약) ============== */
 // 상태: plan = 계획, review = 검토 중, decide = 결정 필요
 const ROADMAP = [
-  {group:'개인 성장', desc:'로그인이 생긴 뒤, 고민거리 하나가 아니라 한 사람의 1년 성장을 보여줍니다.', items:[
-    ['개인 Dashboard','올해 역량개발 진척도, 목표 고민거리 수 / 완료 / 진행, 나의 역량 프로필을 첫 화면에','plan'],
-    ['한 사람이 여러 고민거리','지금은 브라우저 하나에 고민거리 하나. 로그인 후 내 고민거리 목록으로 관리','plan'],
-    ['1년 커리큘럼과 권장 Roadmap','Q1 AI 기본기 → Q2 Agent 구축 → Q3 Application화 → Q4 실사용·고도화. 강제가 아닌 권장, 개인이 조정','plan'],
-    ['나의 역량 프로필과 성장 경로','여러 고민거리의 학습 포인트를 누적해 역량별 막대로. 어떤 문제를 골라 무엇을 익히고 무엇을 확장했는지','plan']
+  {group:'🌱 같이 키울 사람을 찾고 있어요', desc:'ddugi와 비슷한 고민을 하고 있거나, 함께 만들어보고 싶은 사람을 찾습니다.', items:[
+    ['같이 씨앗 심을 사람','AI가 진짜 필요한 문제를 정의하고, 직접 만들어보는 과정을 함께할 사람','plan'],
+    ['프론트엔드 / UI 가꾸기','지금 ddugi는 기능 중심이에요. 더 예쁘고 직관적인 화면을 만들어줄 분','plan'],
+    ['백엔드 / 인프라 뿌리내리기','FastAPI + PostgreSQL 구조를 더 단단하게 만들 수 있는 분','plan'],
+    ['콘텐츠 / 브랜딩','ddugi 세계관과 콘텐츠를 함께 키워갈 크리에이터','plan']
   ]},
-  {group:'팀 지식 자산', desc:'고민거리가 쌓일수록 다음 사람이 덜 헤매게 만드는 기능입니다.', items:[
-    ['BoB Library','우수 고민거리를 태그(대상, 업무 유형, 역량, 난이도)로 찾고 설계서, Architecture, 시행착오까지 참고. 정답 템플릿이 아닌 참고 사례','plan'],
-    ['역량 트리','역량 관계 그림에 고민거리와 BoB를 배치. 역량을 누르면 추천 사례','plan'],
-    ['같은 업무 비교','대상과 업무 유형이 같은 고민거리끼리 업무를 어떻게 쪼개고 판단하는지 나란히 보기 (master 전용 — 팀원끼리 비교돼서 관리자 공유 비밀번호로도 못 봄)','plan'],
-    ['업무 SOP 만들기','같은 업무의 고민거리를 모아 서로 빠진 단계와 판단 기준을 채워 표준 절차 초안 생성 (AI 활용)','plan'],
-    ['팀 역량 현황','역량별 경험자 분포. 예: "RAG 경험자는 많고 Backend는 부족" (master 전용 — 개인 평가로 오해·악용될 수 있어 관리자 공유 비밀번호로도 못 봄)','plan']
+  {group:'🌿 앞으로 키우고 싶은 것', desc:'혼자서도 하겠지만, 같이 하면 더 빨리 자랄 수 있는 것들.', items:[
+    ['개인 대시보드','내 씨앗들의 성장 현황을 한눈에 보는 마음의 방','plan'],
+    ['씨앗 라이브러리','잘 자란 씨앗들을 모아서 다음 사람이 참고할 수 있게','plan'],
+    ['AI 직접 연동','복사-붙여넣기 대신 버튼 하나로 진단','plan'],
+    ['성장 경로 시각화','어떤 씨앗을 심고 뭘 배웠는지 한눈에 보이는 지도','plan']
   ]},
-  {group:'고민거리 설계 고도화', desc:'진단 이후의 설계와 검증을 더 구체적으로 돕습니다.', items:[
-    ['3개 문서로 분리','A 고민거리 정의서 / B 구현 설계서 / C 결과 및 회고를 화면 단위로 나누기','plan'],
-    ['해결책 정의','진단 결과를 역할, 기능, Input/Output, AI와 사람의 역할, 해결책 형태로 정리하는 칸','plan'],
-    ['UX/UI 화면표와 Wireframe','화면별 목적, 기능, Input/Output과 간단한 스케치','plan'],
-    ['테스트 Case와 검증 지표','정상, 예외, AI 오답, 권한 없음 등 체크리스트와 미리 정하는 지표','plan'],
-    ['선택형 설계 안내','사례가 쌓이면 몇 가지 선택만으로 "이런 구조로 설계해보세요" 안내','plan']
-  ]},
-  {group:'시스템과 연동', desc:'회사 환경으로 옮기면서 붙일 기능입니다.', items:[
-    ['회사 서버로 이전','지금은 개인 PC에서 실행 중. 회사 환경으로 옮겨서 계속 개발','plan'],
-    ['사내 SSO 로그인','개인 기능의 전제. 관리자 비밀번호 방식도 SSO 권한으로 대체 검토','review'],
-    ['AI 직접 연동','복사해서 붙여넣는 대신 버튼 하나로 진단','plan'],
-    ['내 고민거리 불러오기','로그인 전까지 다른 PC나 브라우저에서도 내 고민거리를 찾는 방법 (방법 조사 중)','review'],
-    ['데이터 모델 확장','사용자 → 커리큘럼 → 고민거리, 고민거리와 역량은 N:M으로 연결','plan']
-  ]},
-  {group:'결정이 필요한 것', desc:'구현 전에 정해야 하는 기준입니다.', items:[
-    ['개념 학습과 실제 적용 구분','예: RAG를 개념만 익혔는지, 실제로 적용했는지 체크를 나눌지','decide']
-  ]},
-  {group:'완료된 것', desc:'결정하고 구현까지 끝난 항목입니다. 기록으로 남겨둡니다.', items:[
-    ['검증 Gate','예측·AI 모델 고민거리는 Rule Baseline → AI 필요성 → AI 성능(Baseline 대비 개선) 순서로 확인 (09-4에 구현)','done'],
-    ['레벨 판정 근거','스스로 체크가 아니라 고민거리 결과물(Gate 통과)로 레벨을 인정하는 방식으로 결정하고 구현함 (13 효과 확인: 결과물 제출 → AI 1차 판정 → 관리자 최종 확인)','done'],
-    ['구현 난이도별 범위','01에 구현 난이도 선택을 추가하고, 해당 없는 메뉴(05, 08 등)에 안내 문구만 붙임. 메뉴를 강제로 막지는 않음 (가벼운 버전)','done']
+  {group:'✅ 이미 열린 열매', desc:'지금까지 만든 것들.', items:[
+    ['검증 Gate','씨앗이 진짜 AI가 필요한지 단계별로 흔들어보기','done'],
+    ['성장 레벨 시스템','경험한 역량을 누적해서 레벨로 보여주기','done'],
+    ['세계관 UI','ddugi 세계관 용어로 전체 도구를 표현','done']
   ]}
 ];
 const ROADMAP_STATUS = {plan:'계획', review:'검토 중', decide:'결정 필요', done:'완료'};
 function renderRoadmapSection(){
-  return '<div class="frame intro"><h2>확장 계획</h2>'+
-      '<p class="intro-lead">지금 ddugi는 고민거리를 정의하고 AI 진단을 받는 데 집중하고 있습니다. 앞으로 이렇게 넓혀갈 수 있습니다.</p>'+
+  return '<div class="frame intro"><h2>🌱 밭 넓히기</h2>'+
+      '<p class="intro-lead">ddugi는 같이 키울 사람을 찾고 있습니다. 비슷한 고민을 하고 있거나, 함께 만들어보고 싶다면 연락해주세요.</p>'+
       '<div class="rm-legend">'+Object.keys(ROADMAP_STATUS).map(k=>'<span class="rm-status rm-'+k+'">'+ROADMAP_STATUS[k]+'</span>').join('')+'</div>'+
     '</div>'+
     ROADMAP.map(g=>'<div class="frame"><h2>'+esc(g.group)+'</h2><div class="fhint" style="margin-bottom:12px">'+esc(g.desc)+'</div>'+
