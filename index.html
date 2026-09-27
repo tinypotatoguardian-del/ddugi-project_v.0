@@ -327,6 +327,8 @@
   .lp-tools{ display:flex; gap:6px; margin:4px 0 10px; }
   .lvtitle{ display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
   .lvtitle .linkbtn{ margin-left:auto; }
+  .lvlink{ text-decoration:none; font-size:13px; opacity:.7; }
+  .lvlink:hover{ opacity:1; }
   #toTop{ position:fixed; right:24px; bottom:70px; z-index:30; display:none; font-family:var(--serif); font-size:13.5px; font-weight:600;
     padding:9px 14px; border-radius:var(--radius); border:1px solid var(--blueprint); background:var(--blueprint); color:#fff; cursor:pointer; box-shadow:0 2px 8px rgba(22,33,43,.18); }
   #toTop.show{ display:block; }
@@ -598,12 +600,27 @@ function lpRecommendHtml(){
   if(!result) html += '<div class="fhint" style="margin-top:6px">AI 진단 결과를 위에 붙여넣은 뒤 "추천 새로고침"을 누르면, 결과에 나온 역량으로 추천이 바뀝니다.</div>';
   return html + '</div>';
 }
+// ai-engineering-course(로컬 클론)에 실제로 맞는 레슨이 있는 항목만 링크. 억지로 다 채우지 않음
+const LEVEL_ITEM_LINKS = {
+  '프롬프트 작성 (질문·지시)': 'https://outcomeschool.com/blog/how-does-chain-of-thought-prompting-work',
+  '결과 검증': 'https://outcomeschool.com/blog/llm-evaluation',
+  'Prompt 설계 (Role·Goal·Constraint·Few-shot)': 'https://outcomeschool.com/blog/how-does-chain-of-thought-prompting-work',
+  'Context 설계': 'https://outcomeschool.com/blog/context-engineering',
+  '반복 업무 Workflow 설계': 'https://outcomeschool.com/blog/how-does-prompt-chaining-work',
+  '결과 검증 기준 설정': 'https://outcomeschool.com/blog/llm-evaluation',
+  'Skill 작성·활용': 'https://outcomeschool.com/blog/what-are-agent-skills',
+  'RAG (Embedding·Vector DB·Retrieval)': 'https://outcomeschool.com/blog/how-does-a-vector-database-work',
+  'Context Engineering': 'https://outcomeschool.com/blog/context-engineering',
+  'Agent·Tool Calling': 'https://outcomeschool.com/blog/ai-agent',
+  'MCP·외부 시스템 연계': 'https://outcomeschool.com/blog/what-is-mcp-model-context-protocol'
+};
 function renderLpTable(f){
   const val = getV(f.store, []);
   const done = f.store==='lp_plan' ? getV('lp_done', []) : [];
   const chip = o => { const c = val.indexOf(o)>-1;
-    if(done.indexOf(o)>-1) return '<label class="opt lp-done"><input type="checkbox" checked disabled data-keep-disabled>'+esc(o)+'<small>경험함</small></label>';
-    return '<label class="opt'+(c?' checked':'')+'"><input type="checkbox" data-checklist="'+f.store+'" data-opt="'+escAttr(o)+'" '+(c?'checked':'')+'>'+esc(o)+'</label>'; };
+    const link = LEVEL_ITEM_LINKS[o] ? ' <a href="'+LEVEL_ITEM_LINKS[o]+'" target="_blank" rel="noopener" class="lvlink" title="더 배우기">📖</a>' : '';
+    if(done.indexOf(o)>-1) return '<label class="opt lp-done"><input type="checkbox" checked disabled data-keep-disabled>'+esc(o)+'<small>경험함</small></label>'+link;
+    return '<label class="opt'+(c?' checked':'')+'"><input type="checkbox" data-checklist="'+f.store+'" data-opt="'+escAttr(o)+'" '+(c?'checked':'')+'>'+esc(o)+'</label>'+link; };
   let html = '<div class="field"><label>'+esc(f.label)+'</label>'+(f.hint ? '<div class="fhint">'+esc(f.hint)+'</div>' : '')+
     '<div class="lp-tools"><button type="button" class="chip-btn" data-action="lp-all" data-target="'+f.store+'">전체 선택</button>'+
     '<button type="button" class="chip-btn" data-action="lp-none" data-target="'+f.store+'">전체 해제</button></div>';
@@ -616,11 +633,47 @@ function renderLpTable(f){
 const LP_DONE_FIELD = {type:'lptable', store:'lp_done', label:'나의 AI 역량: 경험해본 항목', hint:'지금까지(이전 씨앗 포함) 실제로 해본 것을 체크하세요. 레벨이 자동으로 계산됩니다.'};
 const LP_PLAN_FIELD = {type:'lptable', store:'lp_plan', label:'이번 씨앗에서 경험할 AI 역량 (계획)', hint:'위 추천을 담거나 직접 고르세요. 이미 경험한 항목은 "경험함"으로 표시되어 다시 고를 필요가 없어요.'};
 
+// 링크는 ai-engineering-course(로컬 클론) README에서 실제로 확인된 것만. 억지로 채우지 않음
+const GLOSSARY_TERMS = [
+  {term:'프롬프트 (Prompt)', def:'AI에게 주는 질문이나 지시. 얼마나 구체적으로 쓰느냐가 결과 품질을 크게 좌우해요.', link:'https://outcomeschool.com/blog/how-does-chain-of-thought-prompting-work'},
+  {term:'Context Engineering', def:'AI에게 어떤 정보를(전체 대화, 문서, 규칙 등) 언제 보여줄지 설계하는 것. 프롬프트 한 줄보다 큰 개념이에요.', link:'https://outcomeschool.com/blog/context-engineering'},
+  {term:'Prompt Chaining', def:'하나의 복잡한 일을 여러 단계로 쪼개서, 앞 단계 결과를 다음 단계 입력으로 넘기는 방식.', link:'https://outcomeschool.com/blog/how-does-prompt-chaining-work'},
+  {term:'RAG (Retrieval-Augmented Generation)', def:'AI가 답하기 전에 관련 문서를 먼저 찾아와서(검색) 그걸 근거로 답을 만드는 방식. 문서가 많을 때 유용해요.', link:'https://outcomeschool.com/blog/how-does-a-vector-database-work'},
+  {term:'Vector DB / Embedding', def:'글이나 문서를 숫자(벡터)로 바꿔서 "의미가 비슷한 것"을 검색할 수 있게 해주는 저장 방식. RAG의 핵심 부품.', link:'https://outcomeschool.com/blog/how-does-a-vector-database-work'},
+  {term:'AI Agent', def:'질문에 한 번 답하고 끝나는 게 아니라, 여러 단계를 스스로 계획하고 도구를 써가며 일을 끝까지 처리하는 AI.', link:'https://outcomeschool.com/blog/ai-agent'},
+  {term:'Tool Calling / Function Calling', def:'AI가 필요할 때 외부 기능(검색, 계산, DB 조회 등)을 직접 호출해서 쓰는 것.', link:'https://outcomeschool.com/blog/ai-agent'},
+  {term:'MCP (Model Context Protocol)', def:'AI가 여러 외부 시스템·도구와 연결되는 방식을 표준화한 프로토콜.', link:'https://outcomeschool.com/blog/what-is-mcp-model-context-protocol'},
+  {term:'Agent Skill', def:'AI 에이전트에게 특정 작업 절차를 미리 정리해서 필요할 때 불러 쓰게 하는 재사용 가능한 지침 묶음.', link:'https://outcomeschool.com/blog/what-are-agent-skills'},
+  {term:'LLM Evaluation (결과 검증)', def:'AI가 내놓은 결과가 실제로 맞는지, 쓸만한지 확인하는 절차. "그럴듯해 보인다"와 "맞다"는 다릅니다.', link:'https://outcomeschool.com/blog/llm-evaluation'},
+  {term:'환각 (Hallucination)', def:'AI가 틀린 정보를 마치 사실인 것처럼 자신 있게 말하는 현상. 검증 없이 그대로 믿으면 안 되는 이유.'},
+  {term:'AI Slop', def:'검증 없이 AI가 대충 뽑아낸, 품질 낮은 결과물을 그대로 쓰는 것. 뚜기가 가장 경계하는 패턴.'},
+  {term:'Human-in-the-loop', def:'AI가 정보를 모으고 분석은 하되, 최종 판단과 책임은 사람이 지는 구조. 이 프로젝트의 핵심 원칙.'},
+  {term:'Few-shot', def:'AI에게 원하는 답의 예시를 몇 개 미리 보여줘서 형식이나 스타일을 맞추게 하는 방법.'},
+  {term:'Automation (자동화)', def:'정해진 규칙대로 반복되는 작업을 시스템이 대신 처리하는 것. AI 없이도 가능한 경우가 많아요.'}
+];
+function renderGlossarySection(){
+  return '<div class="frame"><h2>🌱 씨앗사전</h2><div class="sub">모르는 말이 나오면 여기서 찾아보세요</div>'+
+    '<div class="hint">뚜기가 쓰는 용어나 진단 과정에 나오는 개념들을 짧게 정리했어요. 더 알아보기 링크는 실제로 확인한 것만 달아뒀어요.</div>'+
+    '<div class="field" style="max-width:360px"><input type="text" id="glossarySearch" placeholder="용어 검색 (예: RAG, 환각, 에이전트)"></div>'+
+    '<div id="glossaryBody"></div>'+
+  '</div>';
+}
+function renderGlossaryBody(){
+  const body = document.getElementById('glossaryBody');
+  if(!body) return;
+  const qq = ((document.getElementById('glossarySearch')||{}).value||'').trim().toLowerCase();
+  const items = GLOSSARY_TERMS.filter(t=>!qq || t.term.toLowerCase().indexOf(qq)>-1 || t.def.toLowerCase().indexOf(qq)>-1);
+  body.innerHTML = !items.length ? '<div class="hint">해당하는 용어가 없어요.</div>' :
+    items.map(t=>'<div class="lvcard" style="margin-bottom:10px"><div class="lvnow">'+esc(t.term)+'</div>'+
+      '<div class="lvnext">'+esc(t.def)+(t.link ? ' <a href="'+t.link+'" target="_blank" rel="noopener">더 알아보기 →</a>' : '')+'</div></div>').join('');
+}
+
 const SECTIONS = [
 /* ---------- A. 진단 입력: 사실만 입력 (요구서 3장) ---------- */
 {id:'mydash', num:'☆', title:'나의 마음의 방', special:'mydash'},
 {id:'intro', num:'', title:'마음의 방 입구', special:'intro'},
 {id:'example', num:'EX', title:'먼저 온 포테이토', special:'example'},
+{id:'glossary', num:'📖', title:'씨앗사전', special:'glossary'},
 {id:'discover', num:'00', title:'씨앗 찾기 (선택)', special:'discover'},
 {id:'s1', num:'01', title:'씨앗 심기 · 지금의 일상', fields:[
   HINT('당신이 바꾸고 싶은 업무는 무엇인가요? 01~02는 AI에게 묻기 전에 직접 생각해서 적는 단계입니다.'),
@@ -673,16 +726,16 @@ const SECTIONS = [
 {id:'diag', num:'3-3', title:'뿌리 내리기', special:'diag'},
 
 /* ---------- 후속: 고민거리 수행 기록 (요구서 7장, 진단 .md에는 포함하지 않음) ---------- */
-{id:'s16', num:'04', title:'참고 씨앗 (BoB)', disabled:true, disabledNote:'준비 중', fields:[
+{id:'s16', num:'04', title:'먼저 자란 씨앗 (BoB)', disabled:true, disabledNote:'준비 중', fields:[
   HINT('설계 전에 비슷한 기존 씨앗을 확인하세요. BoB는 복사해서 쓰는 Template이 아니라 시행착오를 줄이기 위한 Reference입니다.'),
   T('s16_bob','BoB'),
-  T('s16_purpose','참고 목적'),
-  T('s16_arch','참고한 Architecture'),
-  T('s16_tech','참고한 기술'),
-  T('s16_ui','참고한 UI'),
-  TA('s16_solution','참고한 해결 방법')
+  T('s16_purpose','왜 이 씨앗을 봤는지'),
+  T('s16_arch','참고한 뿌리 구조'),
+  T('s16_tech','참고한 양분'),
+  T('s16_ui','참고한 모양'),
+  TA('s16_solution','참고한 키우기 방법')
 ]},
-{id:'s7', num:'05', title:'기능 상세 정의', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s7', num:'05', title:'가지 그리기', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   HINT('AI 진단 결과의 핵심 기능을 기준으로 기능별 상세를 정의하세요. 정답이 아니어도 되니 일단 채워보고, 08 끝에서 AI에게 검토를 요청하세요.'),
   {type:'diffhint', sectionId:'s7'},
   {type:'example05'},
@@ -697,12 +750,12 @@ const SECTIONS = [
     {id:'exception', label:'예외 상황', type:'textarea', ph:'예: 이미 완료된 항목은 알림을 보내지 않는다'}
   ])
 ]},
-{id:'s9', num:'06', title:'UX / UI 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s9', num:'06', title:'눈에 보이는 모양', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   CL('s9_1','6-1. 사용자가 무엇을 보는가?', ['Dashboard','검색','입력','결과','분석','비교','알림','승인/확인','이력','기타']),
   TA('s9_2','6-2. 핵심 사용자 Flow','순서대로 적어주세요. 예: 1) 목록에서 항목 선택 2) 상태 변경 3) 저장하면 이력에 기록'),
   HINT('Dashboard만 만드는 씨앗이라면 업무효율화 목적과 실제 업무 변화가 있는지 재검토한다.')
 ]},
-{id:'s10', num:'07', title:'기술 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s10', num:'07', title:'뿌리 구조', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'glossary07'},
   Object.assign(CL('s10_1','7-1. 전체 Architecture 구성요소', ['Frontend','Backend','Database','API','LLM','RAG','Vector DB','Tool Calling','Workflow','Agent','Automation','Authentication','Logging','기타']), {lvFilter:true}),
   HINT('Model·Prompt·Context 같은 구현 디테일은 나중에 AI(바이브 코딩)의 도움을 받아 채워도 됩니다. 여기서 직접 판단해야 하는 건 "AI가 하는 일"과 "그중 사람이 반드시 확인할 지점"입니다.'),
@@ -712,14 +765,14 @@ const SECTIONS = [
     {id:'detail', label:'세부 사항 (선택, 나중에 채워도 됨)', type:'textarea', ph:'Model, Prompt, Context, RAG, Tool, Memory 등 구현 디테일'}
   ]), {lvFilter:true})
 ]},
-{id:'s11', num:'08', title:'데이터 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s11', num:'08', title:'양분 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'diffhint', sectionId:'s11'},
   {type:'datacandidates'},
   Object.assign(CL('s11_data','8-1. 필요한 데이터 (후보에서 선택, 직접 추가 가능)', [], true), {optsFn:()=>getV('s11_data_candidates',[])}),
   TA('s11_rel','8-2. 데이터 관계 (Entity 순서대로)','예: 고객 문의 → 처리 담당자 → 처리 이력 → 완료 확인'),
   {type:'designreview'}
 ]},
-{id:'s12', num:'09', title:'테스트 및 검증', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s12', num:'09', title:'흔들어보기 (심화)', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'codetest'},
   TA('s12_1','9-1. 테스트 시나리오','어떤 입력에 어떤 결과가 나와야 하는지, 실제로는 어땠는지 적어주세요. 예: 마감 D-1 항목 입력 → 알림 발송 기대 → 실제로 발송됨 (Pass)'),
   RG('s12_2','9-2. AI 품질 검증 (해당하는 경우)', [
@@ -727,22 +780,22 @@ const SECTIONS = [
     {id:'review', label:'사람 검토 필요 여부', type:'text', ph:'예: 발송 전에 담당자가 한 번 확인 필요'}
   ]),
   HINT('AI 진단 결과의 "예상 기대효과"와 비교할 수 있도록 실제로 측정한 값을 적으세요.'),
-  FT('s12_3','9-3. 업무효율 실측', ['소요시간','작업횟수','수작업','오류','기타'], ['Before','After','개선효과']),
+  FT('s12_3','9-3. 열매 무게 재기', ['소요시간','작업횟수','수작업','오류','기타'], ['Before','After','개선효과']),
   HINT('예측·AI 모델 씨앗은 AI를 바로 적용하지 않고 Gate를 차례로 확인합니다. Gate 1: 규칙(기존 방식)으로 계산한 값이 실제와 얼마나 맞는가? / Gate 2: 규칙으로 설명되지 않는 오차 패턴이 있는가? / Gate 3: AI가 Baseline보다 유의미하게 나은가? Gate 1~2를 통과해야 AI를 검토하고, Gate 3에서 Baseline보다 나아야 적용합니다.'),
   FT('s12_gate','9-4. 검증 Gate (예측·AI 모델 씨앗만, 확인한 Gate를 체크)', ['Gate 1. Rule Baseline','Gate 2. AI 필요성','Gate 3. AI 성능'], ['확인 결과 (수치·근거)','통과 여부'], true)
 ]},
-{id:'s13', num:'10', title:'실제 사용 및 운영', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s13', num:'10', title:'밭에서 키우기', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   RW([ T('s13_user','사용자'), T('s13_freq','사용 빈도'), T('s13_when','사용 시점'), T('s13_task','사용 업무') ]),
   CL('s13_2','10-1. 운영 방식', ['개인 사용','팀 사용','부서 사용','전사 확장 가능']),
   Object.assign(CL('s13_3','10-2. 운영에 필요한 요소', ['권한','보안','데이터 관리','Logging','오류 대응','유지보수','사용자 교육']), {lvFilter:true})
 ]},
 {id:'s14', num:'11', title:'수확 일지', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
-  TA('s14_1','11-1. 실제 개선 결과'),
-  TA('s14_2','11-2. 예상과 달랐던 점'),
-  TA('s14_3','11-3. 구현 과정에서 발생한 문제'),
-  TA('s14_4','11-4. 해결 방법'),
-  TA('s14_5','11-5. 재사용 가능한 기술/컴포넌트'),
-  TA('s14_6','11-6. 다음 단계'),
+  TA('s14_1','11-1. 실제로 열린 열매'),
+  TA('s14_2','11-2. 예상과 다르게 자란 것'),
+  TA('s14_3','11-3. 키우면서 생긴 문제'),
+  TA('s14_4','11-4. 어떻게 살렸는지'),
+  TA('s14_5','11-5. 다른 밭에도 심을 수 있는 것'),
+  TA('s14_6','11-6. 다음에 심을 것'),
   CL('s16_reuse','11-7. 내 씨앗에서 재사용 가능한 결과', ['Architecture','Component','Prompt','Workflow','DB 구조','UI','개발 방법','Test 방법','기타'])
 ]},
 {id:'s15', num:'12', title:'성장 레벨', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
@@ -751,7 +804,7 @@ const SECTIONS = [
   Object.assign({}, LP_DONE_FIELD, {label:'12-1. 경험한 AI 역량 (누적)'}),
   {type:'lpresult'}
 ]},
-{id:'s17', num:'13', title:'효과 확인', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s17', num:'13', title:'열매 맛보기', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'check17', groups:[
     {title:'Effect', items:[
       CK17('c12','실제 업무시간 단축 효과를 측정했다'),
@@ -1318,7 +1371,7 @@ function renderSheet(){
   if((state.cur==='dashboard' || state.cur==='tasklist' || state.cur==='taxonomy') && !isAdmin) state.cur='s1';
   if(state.cur==='accounts' && !isMaster) state.cur='s1';
   let sec = SECTIONS.find(s=>s.id===state.cur) || SECTIONS[0];
-  if(sec.disabled){ sec = SECTIONS.find(s=>s.id==='s1'); state.cur = 's1'; }
+  if(sec.disabled && !isMaster){ sec = SECTIONS.find(s=>s.id==='s1'); state.cur = 's1'; }
   if(sec.id==='redefine') prefillRedefineDefaults();
   const sheet = document.getElementById('sheet');
   if(sec.special==='export'){
@@ -1328,6 +1381,9 @@ function renderSheet(){
     sheet.innerHTML = renderRoadmapSection();
   } else if(sec.special==='example'){
     sheet.innerHTML = renderExampleSection() + navFootHtml(sec);
+  } else if(sec.special==='glossary'){
+    sheet.innerHTML = renderGlossarySection() + navFootHtml(sec);
+    renderGlossaryBody();
   } else if(sec.special==='intro'){
     sheet.innerHTML = renderIntroSection() + navFootHtml(sec);
   } else if(sec.special==='discover'){
@@ -1725,9 +1781,9 @@ async function renderDashboard(){
 
 function navFootHtml(sec){
   const idx = SECTIONS.findIndex(s=>s.id===sec.id);
-  // 준비 중(비활성) 섹션은 이전/다음 이동에서 건너뜀
-  let pi = idx-1; while(pi>=0 && SECTIONS[pi].disabled) pi--;
-  let ni = idx+1; while(ni<SECTIONS.length && SECTIONS[ni].disabled) ni++;
+  // 준비 중(비활성) 섹션은 이전/다음 이동에서 건너뜀 (마스터는 모두 볼 수 있음)
+  let pi = idx-1; while(pi>=0 && SECTIONS[pi].disabled && !isMaster) pi--;
+  let ni = idx+1; while(ni<SECTIONS.length && SECTIONS[ni].disabled && !isMaster) ni++;
   const prev = SECTIONS[pi];
   const next = SECTIONS[ni];
   // 어디로 가는지 목적지 이름을 그대로 보여줌 (다음 예시로 넘어가는 버튼과 헷갈리지 않게)
@@ -1754,7 +1810,7 @@ function updateRulerAndNav(){
   navHtml += SECTIONS.filter(s=>s.special!=='dashboard' && s.special!=='roadmap' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy').map(s=>{
     const active = s.id===state.cur;
     const filled = !s.special && sectionFilled(s);
-    if(s.disabled){
+    if(s.disabled && !isMaster){
       if(NAV_GROUPS[s.id]){
         skipDisabledGroup = true;
         const m = NAV_GROUPS[s.id].match(/^([A-Z])\.\s*(.+)$/);
@@ -2916,6 +2972,7 @@ function ensureArr(id, len){
 document.addEventListener('input', function(e){
   const t = e.target;
   if(t.id==='taskListSearch'){ renderTaskListBody(); return; }
+  if(t.id==='glossarySearch'){ renderGlossaryBody(); return; }
   if(t.matches('[data-bind]')){
     setV(t.getAttribute('data-bind'), t.value);
     const g = document.getElementById('gateOut'); if(g) g.value = buildGatePrompt();
@@ -3086,7 +3143,7 @@ document.addEventListener('click', function(e){
     if(!target) return;
     if((target==='dashboard' || target==='tasklist' || target==='taxonomy') && !isAdmin) return;
     if(target==='accounts' && !isMaster) return;
-    { const tsec = SECTIONS.find(s=>s.id===target); if(tsec && tsec.disabled) return; }
+    { const tsec = SECTIONS.find(s=>s.id===target); if(tsec && tsec.disabled && !isMaster) return; }
     state.cur = target;
     persist();
     renderSheet();
