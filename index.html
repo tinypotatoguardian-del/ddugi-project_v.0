@@ -1,0 +1,3242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ddugi | 지구 종말 방지 프로젝트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2E2A45;
+    --ink-soft:#6B6489;
+    --placeholder:#9089AC;
+    --line:#DCD3F0;
+    --line-soft:#ECE6F7;
+    --paper:#FAF7FF;
+    --panel:#FFFFFF;
+    --blueprint:#8B5CF6;      /* 연보라 주색: 글자·흰 글자 배경용 */
+    --blueprint-2:#A78BFA;    /* 연보라 밝은 톤: 테두리·hover·선택 표시용 */
+    --blueprint-soft:#F1EAFE; /* 옅은 라벤더 음영 */
+    --accent2:#D6579E;        /* 보조색 핑크: 검토·후보 표시용 */
+    --accent2-soft:#FDEAF4;
+    --amber:#B8944A;
+    --amber-soft:#F8F0DD;
+    --ok:#5CAE8E;
+    --ok-soft:#E6F4EE;
+    --danger:#D9577A;
+    --radius:14px;
+    --serif:'IBM Plex Sans KR', -apple-system, sans-serif;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#ECE9F5; --ink-soft:#B7AED0; --placeholder:#9C93B8; --line:#453C63; --line-soft:#332B4A;
+      --paper:#1B1730; --panel:#241E3D; --blueprint:#C4A6FF; --blueprint-2:#D8C4FF;
+      --blueprint-soft:#3B2E5C; --accent2:#F2A6D8; --accent2-soft:#3A2438; --amber:#D3B36A; --amber-soft:#332C1C;
+      --ok:#7FCBA8; --ok-soft:#1E332B; --danger:#E884A0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#ECE9F5; --ink-soft:#B7AED0; --placeholder:#9C93B8; --line:#453C63; --line-soft:#332B4A;
+    --paper:#1B1730; --panel:#241E3D; --blueprint:#C4A6FF; --blueprint-2:#D8C4FF;
+    --blueprint-soft:#3B2E5C; --accent2:#F2A6D8; --accent2-soft:#3A2438; --amber:#D3B36A; --amber-soft:#332C1C;
+    --ok:#7FCBA8; --ok-soft:#1E332B; --danger:#E884A0;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--serif); font-size:15px; line-height:1.6;
+    height:100dvh; display:flex; flex-direction:column; overflow:hidden;
+  }
+  ::selection{ background:var(--blueprint); color:#fff; }
+
+  /* ---------- layout shell ---------- */
+  #shell{ display:flex; width:100%; flex:1; min-height:0; }
+  #apphead, #appfoot{ flex:0 0 auto; }
+  #apphead{
+    background:var(--panel); color:var(--ink); border-bottom:2px solid var(--blueprint-2);
+    padding:calc(12px + env(safe-area-inset-top,0px)) 24px 12px; font-size:17px; font-weight:700; letter-spacing:.01em;
+    display:flex; align-items:center; gap:10px;
+  }
+  .apphead-sub{ margin-left:12px; padding-left:12px; border-left:1px solid var(--line); font-size:14px; font-weight:500; color:var(--ink-soft); }
+  #appfoot{
+    border-top:1px solid var(--line-soft); background:var(--panel); color:var(--ink-soft);
+    padding:16px 24px calc(16px + env(safe-area-inset-bottom,0px)); font-size:13px; text-align:left;
+  }
+
+  #sidebar{
+    width:300px; flex:0 0 300px; background:var(--panel); color:var(--ink);
+    border-right:1px solid var(--line-soft);
+    display:flex; flex-direction:column;
+    padding-top:20px;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    overflow-y:auto;
+  }
+  #sidebar.open{ }
+  .brand{ padding:0 20px 16px; border-bottom:1px solid var(--line-soft); }
+  .brand .kicker{ font-size:12.5px; color:var(--ink-soft); }
+  .brand h1{ font-size:17px; margin:6px 0 0; font-weight:600; line-height:1.35; color:var(--ink); }
+  .navlist{ list-style:none; margin:0; padding:8px 0; flex:0 0 auto; }
+  .navlist li{ }
+  .navbtn{
+    width:100%; text-align:left; background:none; border:none; color:var(--ink-soft);
+    padding:9px 20px; font-family:var(--serif); font-size:13.5px; cursor:pointer;
+    display:flex; align-items:center; gap:10px; border-left:3px solid transparent;
+    line-height:1.35; word-break:keep-all; overflow-wrap:anywhere;
+  }
+  .navbtn .num{ font-family:var(--mono); font-size:12px; color:var(--placeholder); width:26px; flex:0 0 26px; }
+  .navbtn:hover{ background:var(--blueprint-soft); }
+  .navbtn.active{ background:var(--blueprint-soft); border-left-color:var(--blueprint-2); color:var(--blueprint); font-weight:600; }
+  .navbtn .dot{ margin-left:auto; width:6px; height:6px; border-radius:50%; background:transparent; flex:0 0 6px; }
+  .navbtn.filled .dot{ background:var(--blueprint-2); }
+  .sec-status{ margin-left:auto; font-size:11px; font-weight:600; white-space:nowrap; padding:1px 6px; border-radius:var(--radius); }
+  .sec-status.st-partial{ color:var(--blueprint-2); background:var(--blueprint-soft); }
+  .sec-status.st-done{ color:var(--ok); background:var(--ok-soft); }
+  .navgroup{ padding:14px 20px 4px; font-size:12.5px; font-weight:700; color:var(--blueprint); letter-spacing:.01em; }
+  .navgroup:first-child{ padding-top:6px; }
+  .navbtn.sub{ padding-left:30px; }
+  .navbtn.dim{ opacity:.45; }
+  .navbtn.dim:hover{ opacity:.7; }
+  .navdivider{ margin:10px 20px; border:none; border-top:1px solid var(--line-soft); }
+  #modalOverlay .field input{ background:var(--paper); }
+  .sidefoot{ padding:14px 20px 18px; border-top:1px solid var(--line-soft); }
+  .sidefoot button{
+    width:100%; background:var(--panel); color:var(--ink); border:1px solid var(--line);
+    padding:8px 10px; font-family:var(--serif); font-size:13px; border-radius:999px; cursor:pointer;
+    margin-top:6px;
+  }
+  .sidefoot button:hover{ background:var(--blueprint-soft); border-color:var(--blueprint-2); }
+
+  /* ---------- main ---------- */
+  #main{ flex:1; min-width:0; display:flex; flex-direction:column; overflow-y:auto; }
+  #topbar{
+    position:sticky; top:0; z-index:5; background:var(--paper);
+    border-bottom:1px solid var(--line-soft);
+    padding:14px 32px 0;
+  }
+  .topbar-row{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .breadcrumb{ font-size:13px; color:var(--ink-soft); }
+  .breadcrumb b{ color:var(--blueprint-2); }
+  #menuToggle{ display:none; }
+  .ruler{ display:flex; gap:2px; margin:12px 0 0; padding-bottom:14px; }
+  .ruler i{ flex:1; height:5px; background:var(--line-soft); border-radius:1px; }
+  .ruler i.on{ background:var(--blueprint-2); }
+
+  #content{ flex:1; padding:28px 32px 80px; display:flex; justify-content:center; }
+  .sheet{ width:100%; max-width:980px; }
+  .sheet .navfoot{ max-width:none; }
+  .sheet .intro p{ max-width:none; }
+
+  .frame{
+    position:relative; padding:22px 24px 26px; margin-bottom:22px;
+    background:var(--panel); border:1px solid var(--line-soft);
+  }
+  .frame::before, .frame::after{
+    content:""; position:absolute; width:14px; height:14px; pointer-events:none;
+  }
+  .frame::before{ top:-1px; left:-1px; border-top:2px solid var(--blueprint-2); border-left:2px solid var(--blueprint-2); }
+  .frame::after{ bottom:-1px; right:-1px; border-bottom:2px solid var(--blueprint-2); border-right:2px solid var(--blueprint-2); }
+
+  .frame h2{ font-size:20px; margin:0 0 4px; font-weight:700; line-height:1.35; }
+  .frame .sub{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); margin-bottom:16px; letter-spacing:.02em; }
+  .frame .hint{ font-size:13.5px; color:var(--ink-soft); background:var(--blueprint-soft); border-left:2px solid var(--blueprint-2); padding:8px 10px; margin:-4px 0 14px; font-style:normal; }
+  .fieldgroup{ font-size:13px; font-weight:700; color:var(--blueprint); letter-spacing:.02em; margin:22px 0 10px; padding-top:14px; border-top:1px solid var(--line-soft); }
+
+  .field{ margin-bottom:16px; }
+  .field:last-child{ margin-bottom:0; }
+  .field > label{ display:block; font-size:14px; font-weight:600; margin-bottom:6px; color:var(--ink); }
+  .field .fhint{ font-size:12.5px; color:var(--ink-soft); margin-bottom:6px; }
+
+  input[type=text], textarea{
+    width:100%; font-family:var(--serif); font-size:14px; color:var(--ink);
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:9px 10px; resize:vertical;
+  }
+  input[type=text]:focus, textarea:focus{ outline:2px solid var(--blueprint-2); outline-offset:-1px; background:var(--panel); }
+  textarea{ min-height:64px; line-height:1.55; }
+
+  .row-fields{ display:flex; gap:12px; flex-wrap:wrap; }
+  .row-fields .field{ flex:1; min-width:140px; }
+
+  .opts{ display:flex; flex-wrap:wrap; gap:8px; }
+  .opt{
+    display:flex; align-items:center; gap:6px; font-size:13.5px;
+    border:1px solid var(--line); border-radius:var(--radius); padding:6px 10px 6px 8px;
+    cursor:pointer; background:var(--paper); user-select:none;
+  }
+  .opt input{ accent-color:var(--blueprint-2); width:14px; height:14px; }
+  .opt.checked{ background:var(--blueprint-soft); border-color:var(--blueprint-2); color:var(--blueprint); font-weight:500; }
+  .opt-other{ margin-top:8px; max-width:280px; }
+
+  table.dtable, table.ftable{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.dtable th, table.ftable th{
+    text-align:left; font-weight:600; font-size:12px;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); padding:0 8px 6px;
+  }
+  table.dtable td, table.ftable td{ border-bottom:1px solid var(--line-soft); padding:6px 8px; vertical-align:top; }
+  table.ftable td.rowlabel{ font-size:13.5px; font-weight:500; white-space:nowrap; padding-top:9px; color:var(--ink); }
+  table.dtable input, table.ftable input, table.dtable textarea{
+    border:none; background:transparent; padding:4px 2px; width:100%; font-size:14px;
+  }
+  table.dtable input:focus, table.ftable input:focus{ outline:1px solid var(--blueprint-2); background:var(--panel); }
+  table.dtable td.rmcol{ width:30px; text-align:center; }
+  table.ftable .ftcheck{ display:flex; align-items:center; gap:6px; cursor:pointer; }
+  table.ftable .ftcheck input{ accent-color:var(--blueprint-2); width:15px; height:15px; margin:0; }
+  table.ftable tr.off td.rowlabel{ color:var(--ink-soft); }
+  table.ftable tr.off input[type=text]{ background:var(--paper); }
+  .rmbtn{
+    background:none; border:1px solid var(--line); color:var(--ink-soft); width:22px; height:22px;
+    border-radius:50%; cursor:pointer; font-size:13px; line-height:1;
+  }
+  .rmbtn:hover{ border-color:var(--danger); color:var(--danger); }
+  .addbtn{
+    margin-top:10px; background:none; border:1px dashed var(--line); color:var(--blueprint-2);
+    padding:7px 14px; border-radius:999px; cursor:pointer; font-family:var(--serif); font-size:13px;
+  }
+  .addbtn:hover{ background:var(--blueprint-soft); border-color:var(--blueprint-2); }
+
+  .grouplist{ display:flex; flex-direction:column; gap:0; }
+  .groupitem{ border:1px solid var(--line-soft); border-radius:var(--radius); padding:14px 14px 4px; margin-bottom:12px; position:relative; background:var(--paper); }
+  .groupitem .gnum{ position:absolute; top:-9px; left:10px; background:var(--panel); border:1px solid var(--line); font-family:var(--mono); font-size:11.5px; padding:1px 7px; color:var(--blueprint-2); }
+  .groupitem .rmbtn{ position:absolute; top:8px; right:8px; }
+
+  .listitem{ display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; }
+  .listitem .arrow{ font-family:var(--mono); font-size:12px; color:var(--blueprint-2); padding-top:11px; width:34px; flex:0 0 34px; white-space:nowrap; text-align:right; }
+  .listitem input{ flex:1; }
+
+  .navfoot{ display:flex; justify-content:space-between; max-width:720px; margin:0 auto; padding:0 0 40px; }
+  .navfoot button{
+    font-family:var(--serif); font-size:14px; padding:9px 16px; border-radius:var(--radius);
+    border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer;
+    max-width:48%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .ex-nextbar{ display:flex; justify-content:center; margin:4px 0 18px; }
+  .ex-nextbar button{
+    font-family:var(--serif); font-size:14px; font-weight:600; padding:11px 20px; border-radius:var(--radius);
+    border:1px solid var(--blueprint-2); background:var(--blueprint-soft); color:var(--blueprint); cursor:pointer;
+  }
+  .ex-nextbar button:hover{ background:var(--blueprint-2); color:#fff; }
+  .navfoot button:hover{ border-color:var(--blueprint-2); color:var(--blueprint-2); }
+  .navfoot button:disabled{ opacity:.35; cursor:default; }
+  .navfoot button:disabled:hover{ border-color:var(--line); color:var(--ink); }
+
+  .topactions{ display:flex; gap:8px; align-items:center; }
+  .chip-btn{
+    font-family:var(--serif); font-size:13px; padding:6px 12px; border-radius:var(--radius);
+    border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer;
+  }
+  .chip-btn:hover{ border-color:var(--blueprint-2); color:var(--blueprint-2); }
+  .chip-btn.done{ border-color:var(--ok); color:var(--ok); }
+  body.locked-mode #sheet input:disabled,
+  body.locked-mode #sheet textarea:disabled{ color:var(--ink); -webkit-text-fill-color:var(--ink); cursor:not-allowed; background:var(--line-soft); }
+  ::placeholder{ color:var(--placeholder); opacity:1; }
+  #sheet .addbtn:disabled, #sheet .rmbtn:disabled{ display:none; }
+  body.locked-mode #sheet .addbtn:disabled,
+  body.locked-mode #sheet .rmbtn:disabled{ display:none; }
+
+  /* export */
+  .exportbox{ width:100%; min-height:320px; font-family:var(--mono); font-size:12px; white-space:pre; pointer-events:none; user-select:none; }
+  .intro{ word-break:keep-all; }
+  .intro p{ margin:0 0 12px; max-width:62ch; }
+  .intro .intro-lead{ font-size:16px; color:var(--ink); }
+  .intro blockquote{ margin:16px 0; padding:10px 14px; border-left:3px solid var(--blueprint-2); background:var(--blueprint-soft); font-weight:600; }
+  .intro h3{ font-size:15px; margin:20px 0 8px; }
+  .intro ol{ margin:0; padding-left:20px; }
+  .intro ol li{ margin-bottom:6px; }
+  .intro ol b{ margin-right:6px; }
+  .intro ul:not(.intro-principles){ margin:0; padding-left:20px; }
+  .intro ul:not(.intro-principles) li{ margin-bottom:6px; }
+  .intro-principles{ display:flex; flex-wrap:wrap; gap:8px; list-style:none; padding:0; margin:0; }
+  .intro-principles li{ border:1px solid var(--line); border-radius:var(--radius); padding:5px 10px; font-size:13.5px; background:var(--paper); }
+  .lvgroup{ margin-bottom:10px; }
+  .lvtitle{ font-size:13px; font-weight:700; margin-bottom:6px; }
+  .lvtitle span{ font-weight:400; color:var(--ink-soft); margin-left:8px; font-size:12.5px; }
+  .tbd{ display:inline-block; font-size:11.5px; font-weight:600; color:var(--amber); background:var(--amber-soft); border:1px solid var(--amber); border-radius:var(--radius); padding:0 6px; margin-bottom:4px; vertical-align:middle; }
+  .lvcard{ border:1px solid var(--blueprint-2); background:var(--blueprint-soft); border-radius:var(--radius); padding:10px 14px; margin:4px 0 16px; }
+  .lvnow{ font-size:15px; }
+  .lvnow span{ font-size:13px; color:var(--ink-soft); margin-left:6px; }
+  .lvnext em{ font-style:normal; color:var(--ink-soft); }
+  .lvnow b{ color:var(--blueprint); font-size:17px; margin-right:4px; }
+  .lvnext{ font-size:13px; color:var(--ink-soft); margin-top:4px; }
+  .dashbar{ display:flex; height:10px; border-radius:6px; overflow:hidden; margin:8px 0; background:var(--line-soft); }
+  .dashbar-seg{ display:block; height:100%; }
+  .dashbar-seg.done{ background:var(--ok); }
+  .dashbar-seg.saved{ background:var(--blueprint-2); }
+  .dashbar-seg.wip{ background:var(--accent2); }
+  .intro .intro-flow{ background:var(--paper); border:1px solid var(--line-soft); padding:10px 12px; border-radius:var(--radius); }
+  .ex-sec{ border:1px solid var(--line-soft); border-radius:var(--radius); margin-bottom:10px; background:var(--panel); }
+  .ex-sec summary{ cursor:pointer; list-style:none; padding:12px 16px; display:flex; align-items:center; gap:10px; font-weight:700; font-size:14.5px; }
+  .ex-sec summary::-webkit-details-marker{ display:none; }
+  .ex-sec summary::before{ content:"▶"; font-size:11px; color:var(--blueprint-2); transition:transform .15s; flex:0 0 auto; }
+  .ex-sec[open] summary::before{ transform:rotate(90deg); }
+  .ex-sec .exn{ font-family:var(--mono); font-size:12px; color:var(--blueprint); flex:0 0 auto; }
+  .ex-sec .ex-note{ margin-left:auto; font-size:12.5px; font-weight:500; color:var(--ink-soft); }
+  .ex-secbody{ padding:0 16px 16px; border-top:1px solid var(--line-soft); padding-top:14px; }
+  .promptedu{ margin:18px 0 4px; border:2px solid var(--blueprint-2); border-radius:var(--radius); padding:12px 16px; background:var(--blueprint-soft); word-break:keep-all; }
+  .promptedu summary{ cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .promptedu summary::-webkit-details-marker{ display:none; }
+  .promptedu summary::before{ content:"▶"; font-size:11px; color:var(--blueprint-2); transition:transform .15s; }
+  .promptedu[open] summary::before{ transform:rotate(90deg); }
+  .promptedu summary:hover .pe-title{ text-decoration:underline; }
+  .pe-badge{ font-size:12px; font-weight:700; color:#fff; background:var(--blueprint); border-radius:var(--radius); padding:2px 8px; }
+  .pe-title{ font-size:15px; font-weight:700; color:var(--blueprint); }
+  .pe-hint{ margin-left:auto; font-size:12.5px; color:var(--blueprint-2); border:1px solid var(--blueprint-2); border-radius:var(--radius); padding:2px 8px; background:var(--panel); }
+  .promptedu[open] .pe-hint{ display:none; }
+  .promptedu[open] summary{ margin-bottom:4px; }
+  .promptedu p{ margin:10px 0; }
+  .extabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .extab{ font-family:var(--serif); font-size:14px; padding:8px 14px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); color:var(--ink); cursor:pointer; }
+  .extab:hover{ border-color:var(--blueprint-2); color:var(--blueprint-2); }
+  .extab.on{ background:var(--blueprint); border-color:var(--blueprint); color:#fff; font-weight:600; }
+  .cellist{ margin:0; padding-left:18px; }
+  .cellist li{ margin-bottom:4px; }
+  .staticval{ display:inline-block; font-weight:600; color:var(--blueprint); background:var(--blueprint-soft); border:1px solid var(--blueprint-2); border-radius:var(--radius); padding:6px 12px; }
+  .rm-legend{ display:flex; gap:6px; flex-wrap:wrap; }
+  .rm-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; }
+  .rm-card{ border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; background:var(--paper); word-break:keep-all; }
+  .rm-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:4px; }
+  .rm-desc{ font-size:13px; color:var(--ink-soft); }
+  .rm-status{ flex:0 0 auto; font-size:11.5px; font-weight:600; border-radius:var(--radius); padding:1px 7px; border:1px solid; white-space:nowrap; }
+  .rm-plan{ color:var(--blueprint-2); border-color:var(--blueprint-2); background:var(--blueprint-soft); }
+  .rm-now{ color:var(--accent2); border-color:var(--accent2); background:var(--accent2-soft); }
+  .rm-cat{ color:var(--ink-soft); border-color:var(--line); background:var(--panel); }
+  .ex-meta{ display:flex; gap:6px; flex-wrap:wrap; margin:2px 0 10px; }
+  .rm-review{ color:var(--accent2); border-color:var(--accent2); background:var(--accent2-soft); }
+  .rm-decide{ color:var(--amber); border-color:var(--amber); background:var(--amber-soft); }
+  .rm-done{ color:var(--ok); border-color:var(--ok); background:var(--ok-soft); }
+  .gloss h4{ font-size:14px; margin:18px 0 6px; color:var(--ink); }
+  .gloss-code{ font-family:var(--mono); font-size:12.5px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; margin:6px 0; overflow-x:auto; white-space:pre; }
+  .lp-done{ opacity:.6; cursor:default; }
+  .lp-done small{ margin-left:6px; font-size:11px; color:var(--ink-soft); }
+  .lvrec{ border:1px dashed var(--blueprint-2); border-radius:var(--radius); padding:10px 12px; margin:14px 0 10px; background:var(--panel); }
+  .lvrec-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13.5px; }
+  .lvrec-head b{ color:var(--blueprint); }
+  .lvrec-head span{ color:var(--ink-soft); }
+  .lvrec-items{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 2px; }
+  .lvrec-chip{ font-size:13px; border:1px solid var(--blueprint-2); color:var(--blueprint); background:var(--blueprint-soft); border-radius:var(--radius); padding:3px 9px; }
+  .linkbtn{ margin-left:auto; background:none; border:none; color:var(--blueprint-2); text-decoration:underline; cursor:pointer; font-size:12.5px; font-family:var(--serif); }
+  .intro-core{ flex-direction:column; margin-bottom:6px; }
+  .intro-core li{ font-weight:600; color:var(--blueprint); background:var(--panel); }
+  .lp-tools{ display:flex; gap:6px; margin:4px 0 10px; }
+  .lvtitle{ display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
+  .lvtitle .linkbtn{ margin-left:auto; }
+  #toTop{ position:fixed; right:24px; bottom:70px; z-index:30; display:none; font-family:var(--serif); font-size:13.5px; font-weight:600;
+    padding:9px 14px; border-radius:var(--radius); border:1px solid var(--blueprint); background:var(--blueprint); color:#fff; cursor:pointer; box-shadow:0 2px 8px rgba(22,33,43,.18); }
+  #toTop.show{ display:block; }
+  #toTop:hover{ background:var(--blueprint-2); }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
+  .hint.warn{ border-left-color:var(--amber); background:var(--amber-soft); }
+  .who{ display:inline-block; font-size:11.5px; font-weight:600; border-radius:var(--radius); padding:0 6px; margin-left:6px; border:1px solid; vertical-align:middle; }
+  .who.ai{ color:var(--ink-soft); border-color:var(--line); background:var(--paper); }
+  .who.me{ color:var(--blueprint); border-color:var(--blueprint-2); background:var(--blueprint-soft); }
+  .req{ color:var(--danger); font-weight:700; margin-left:1px; }
+  .muted{ color:var(--ink-soft); }
+  .verify-view{ font-size:13.5px; line-height:1.65; max-height:420px; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; margin-top:8px; }
+  .promptedu p code{ font-family:var(--mono); font-size:12.5px; background:var(--panel); border:1px solid var(--line); padding:0 4px; border-radius:var(--radius); }
+  .copymsg{ font-size:12.5px; color:var(--ok); align-self:center; }
+  .exportbar{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .exportbar button{
+    font-family:var(--serif); font-size:14px; padding:9px 16px; border-radius:999px;
+    border:1px solid var(--blueprint-2); background:var(--blueprint); color:#fff; cursor:pointer;
+  }
+  .exportbar button.secondary{ background:var(--panel); color:var(--blueprint-2); }
+  .exportbar button:hover{ opacity:.88; }
+  #saveMsg{ font-size:12.5px; color:var(--ok); margin-left:auto; align-self:center; }
+
+  .check17{ display:flex; align-items:flex-start; gap:8px; padding:5px 0; font-size:13.5px; }
+  .check17 input{ margin-top:3px; accent-color:var(--blueprint-2); width:15px; height:15px; }
+  .group17title{ font-family:var(--mono); font-size:12px; letter-spacing:.03em; color:var(--blueprint-2); margin:16px 0 4px; text-transform:uppercase; }
+  .group17title:first-child{ margin-top:0; }
+  .score{ font-family:var(--mono); font-size:24px; color:var(--blueprint); border-top:1px solid var(--line-soft); margin-top:16px; padding-top:14px; }
+  .score span{ font-size:13px; color:var(--ink-soft); }
+
+  @media (max-width:840px){
+    #sidebar{ position:fixed; left:0; top:0; height:100dvh; z-index:20; transform:translateX(-100%); transition:transform .2s ease; width:78vw; max-width:300px; }
+    #sidebar.open{ transform:translateX(0); box-shadow:0 0 0 2000px rgba(0,0,0,.35); }
+    #menuToggle{
+      display:inline-flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--line);
+      border-radius:var(--radius); padding:7px 10px; font-family:var(--serif); font-size:13px; cursor:pointer; color:var(--ink);
+    }
+    #content{ padding:22px 16px 60px; }
+    .frame{ padding:16px 14px 20px; }
+    .navfoot{ padding:0 4px 32px; }
+  }
+</style>
+</head>
+<body>
+<header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span></header>
+<div id="shell">
+  <nav id="sidebar" aria-label="섹션 목록">
+    <div class="brand">
+      <div class="kicker">심기 → 눈으로 보기 → 키우기 → 수확</div>
+    </div>
+    <ul class="navlist" id="navlist"></ul>
+    <div class="sidefoot">
+      <div id="adminSlot"></div>
+      <button id="resetBtn" type="button">전체 초기화</button>
+      <button type="button" data-action="goto" data-target="roadmap">밭 넓히기</button>
+    </div>
+  </nav>
+
+  <div id="main">
+    <div id="topbar">
+      <div class="topbar-row">
+        <button id="menuToggle" type="button">☰ 목록</button>
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <div class="breadcrumb" id="progressText"></div>
+        <div class="topactions">
+          <span class="breadcrumb" id="statusBadge"></span>
+          <button type="button" id="saveToggleBtn" class="chip-btn">저장</button>
+          <button type="button" id="completeBtn" class="chip-btn">완료</button>
+        </div>
+      </div>
+      <div class="ruler" id="ruler"></div>
+    </div>
+    <div id="content"><div class="sheet" id="sheet"></div></div>
+  </div>
+</div>
+
+<footer id="appfoot">ddugi<br><a href="https://www.threads.com/@tinypotato.guardian" target="_blank" style="color:var(--ink-soft);text-decoration:none;">@tinypotato.guardian</a></footer>
+<button type="button" id="toTop" aria-label="맨 위로">↑ 맨 위로</button>
+
+<div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,.55);z-index:50;align-items:center;justify-content:center;padding:20px;">
+  <div id="modalBox" style="background:var(--panel);max-width:360px;width:100%;padding:22px;border:1px solid var(--line);"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============== schema helpers ============== */
+function T(id,label,ph,required){ return {type:'text', id, label, ph:ph||'', required:!!required}; }
+function TA(id,label,ph,required){ return {type:'textarea', id, label, ph:ph||'', required:!!required}; }
+function HINT(text){ return {type:'hint', text}; }
+function SUBHEAD(text){ return {type:'subhead', text}; }
+function CL(id,label,opts,other){ return {type:'checklist', id, label, opts, other:!!other}; }
+function RD(id,label,opts){ return {type:'radio', id, label, opts}; }
+function FT(id,label,rows,cols,check,ph){ return {type:'ftable', id, label, rows, cols, check, ph}; }
+function DT(id,label,cols){ return {type:'dtable', id, label, cols}; }
+function DL(id,label,ph){ return {type:'dlist', id, label, ph:ph||'예: 문의가 접수된다'}; }
+function RG(id,label,subs){ return {type:'repeat', id, label, subs}; }
+function RW(children){ return {type:'row', children}; }
+function CK17(id,label){ return {id,label}; }
+
+/* ============== 고민거리 분류와 AI 역량 레벨 (REQUIREMENTS.md 3장, 10장) ============== */
+// 카테고리 = 문제의 종류(기능). 해결책이 Agent라는 뜻이 아니며, 해결책은 AI 진단이 정한다.
+// 01·02의 분류 목록(카테고리·대상·업무 유형·도구)은 하드코딩이 아니라 관리자가 "분류 관리"에서 바꿀 수 있음.
+// 아래는 서버 응답이 오기 전까지 쓰는 기본값 — loadTaxonomy()가 이 객체·배열을 "같은 참조를 유지한 채" 내용만
+// 바꿔치기하므로(재할당 X), 이미 만들어진 SECTIONS의 필드들도 다시 그릴 때 자동으로 새 값을 본다.
+let CATEGORIES = {
+  '① 업무관리형': ['업무관리','일정관리','진행현황','회의/Action Item 관리'],
+  '② 정보검색·지식형': ['사내 규정 검색','기술자료 검색','과거 사례 검색','문헌/특허 검색'],
+  '③ 분석·판단지원형': ['데이터 분석','원인분석','이상판단','비교/평가'],
+  '④ 문서·보고 자동화형': ['보고서 작성','주간보고','회의자료'],
+  '⑤ 업무 프로세스 자동화형': ['반복 입력','자료 취합','데이터 정리','검토/분류','여러 시스템 간 정보 전달']
+};
+// 업무 영역: 이 고민거리가 내 삶의 어느 영역 일인지 (기타는 직접 입력)
+let WORK_AREAS = ['직장 업무','개인 사업/부업','학업','집안일/개인 생활','기타'];
+// 고민거리 카테고리(문제의 종류)와 별개인 두 축: 무엇을 다루나(대상) × 어떤 일인가(업무 유형)
+// 업계 안 가리게 범용으로: 제조업 전용 용어(소재/공정/양산 등) 빼고 어디서나 쓸 수 있는 말로
+let TARGETS = ['고객/문의','상품·서비스','데이터·자료','문서·보고','시설·재고','사람·일정','기타'];
+let WORK_TYPES = ['접수·처리','조회·검색','분석·보고','승인·검토','일정·재고 관리','고객 응대','품질·점검','기타'];
+let TOOLS = ['사내 시스템/ERP','웹·모바일 서비스','Office (Excel 등)','스프레드시트/BI','스크립트/매크로','생성형 AI','기타'];
+// 참조를 유지해야 하는 배열/객체를 서버 값으로 갈아끼움 (재할당하면 이미 SECTIONS에 박힌 참조가 끊어짐)
+function replaceArrayContents(arr, next){ if(Array.isArray(next) && next.length){ arr.length=0; arr.push(...next); } }
+function replaceObjectContents(obj, next){
+  if(next && typeof next==='object' && Object.keys(next).length){
+    Object.keys(obj).forEach(k=>delete obj[k]);
+    Object.assign(obj, next);
+  }
+}
+async function loadTaxonomy(){
+  try{
+    const res = await fetch('/api/taxonomy');
+    if(!res.ok) return;
+    const d = await res.json();
+    replaceObjectContents(CATEGORIES, d.categories);
+    replaceArrayContents(TARGETS, d.targets);
+    replaceArrayContents(WORK_TYPES, d.worktypes);
+    replaceArrayContents(TOOLS, d.tools);
+    if(typeof d.intro_html==='string' && d.intro_html.trim()) INTRO_HTML = d.intro_html;
+    renderSheet();  // 지금 보고 있는 화면을 새 분류로 다시 그림 (이미 고른 값은 그대로 유지)
+  }catch(e){ /* 실패하면 기본값 그대로 */ }
+}
+// 구현 난이도별 범위 (확장 계획, review): 강제로 메뉴를 막지 않고, 해당 없는 메뉴에 안내만 붙임
+const DIFFICULTY_LEVELS = ['기능 구현','Frontend + AI','Frontend + Backend + DB + AI','Agent + RAG + Tool + 권한 + 운영'];
+const DIFFICULTY_HINTS = {
+  s7: {levels:['기능 구현'], text:'지금 고른 구현 난이도("기능 구현")에서는 기능이 단순한 경우가 많아요. 간단히 적고 다음으로 넘어가도 됩니다.'},
+  s11: {levels:['기능 구현','Frontend + AI'], text:'지금 고른 구현 난이도에서는 별도 DB가 없을 수 있어요. 해당 없으면 이 메뉴는 생략해도 됩니다.'}
+};
+function diffHintHtml(sectionId){
+  const cfg = DIFFICULTY_HINTS[sectionId];
+  const diff = getV('s1_difficulty','');
+  if(!cfg || !diff || cfg.levels.indexOf(diff)<0) return '';
+  return '<div class="hint">'+esc(cfg.text)+'</div>';
+}
+function STATIC(label, value){ return {type:'static', label, value}; }
+// AX AI 역량 5-Level (REQUIREMENTS 10장). 레벨 ≠ 기술 개수.
+// 기술 경로 L1→L2→L3→L4는 차례대로, L5(AX Architect)는 L2 위에서 AX 역량만으로 도달 (개발 역량 없이도 가능)
+const AI_LEVELS = [
+  {lv:1, name:'AI User', q:'AI를 쓸 수 있는가?', gate:'AI를 썼는가?',
+   items:['프롬프트 작성 (질문·지시)','생성·요약·분석 활용','결과 검증','Hallucination·AI Slop 이해','AI 적용 여부 판단 (쓰지 않는 판단 포함)']},
+  {lv:2, name:'AI Operator', q:'AI를 업무에 반복 적용할 수 있는가?', gate:'AI를 내 업무 Workflow에 넣었는가?',
+   items:['Prompt 설계 (Role·Goal·Constraint·Few-shot)','Context 설계','출력 형식 지정 (JSON 등)','파일·데이터 활용','반복 업무 Workflow 설계','결과 검증 기준 설정','Skill 작성·활용']},
+  {lv:3, name:'AI Builder', q:'AI를 이용해 업무 도구를 만들 수 있는가?', gate:'업무에 실제로 작동하는 도구를 만들었는가?',
+   items:['UI/UX·Component','HTML/CSS·JS·DOM','JSON·데이터 구조 (Schema·Validation)','API (Request/Response)','Python·Flask/FastAPI','업무 자동화 (조건·예외 처리)']},
+  {lv:4, name:'AI System Builder', q:'AI가 실제 업무 시스템 안에서 작동하게 만들 수 있는가?', gate:'AI가 데이터·시스템과 연결되어 지속적으로 작동하는가?',
+   items:['DB·Schema·Metadata','RAG (Embedding·Vector DB·Retrieval)','Context Engineering','Agent·Tool Calling','MCP·외부 시스템 연계','인증·권한','서비스 구조 (Async·Error handling)']},
+  {lv:5, name:'AX Architect', q:'AI를 이용해 업무 자체를 재설계할 수 있는가?', gate:'AI 때문에 업무 방식 자체가 바뀌었는가?',
+   items:['Problem Definition (문제 정의)','Process Analysis (현재 업무 분석)','AI Suitability (AI 적합 지점)','Process Redesign (업무 재설계)','Human-AI Boundary (역할 경계)','Measurement (효과 측정)','Scalability (표준화·확산)']}
+];
+const lvLabel = lv => lv ? 'L'+lv+' '+AI_LEVELS[lv-1].name : '시작 전';
+const levelMet = (L, done) => L.items.every(i=>done.indexOf(i)>-1);
+function aiLevel(done){
+  let lv = 0;
+  for(const L of AI_LEVELS.slice(0,4)){ if(levelMet(L, done)) lv = L.lv; else break; }
+  if(lv >= 2 && levelMet(AI_LEVELS[4], done)) lv = 5;
+  return lv;
+}
+// AI 진단 프롬프트에 넣을 레벨 설명 (레벨 목록을 한 곳에서만 관리)
+function levelsPromptText(){
+  return AI_LEVELS.map(L=>'  L'+L.lv+' '+L.name+' ("'+L.q+'" / Gate: '+L.gate+'): '+L.items.join(', ')).join('\n');
+}
+// 인정 레벨: 13에서 신청한 결과물을 관리자가 "인정"한 레벨 (서버 값)
+function recognizedLevel(){ return gateReview && gateReview.decision==='인정' ? gateLevelNum(gateReview.level) : 0; }
+
+/* ---------- 고민거리 레벨: 뒤 단계(07·10)에서 보여줄 도구를 정함 ---------- */
+// 3-3 학습 계획(이번 고민거리에서 경험할 역량) 기준, 계획이 없으면 경험한 역량 기준. 둘 다 없으면 전체 표시
+const itemLevel = i => { const L = AI_LEVELS.find(L=>L.items.indexOf(i)>-1); return L ? L.lv : 0; };
+function techLevel(done){ let lv = 0; for(const L of AI_LEVELS.slice(0,4)){ if(levelMet(L, done)) lv = L.lv; else break; } return lv; }
+function taskLevel(){
+  const plan = getV('lp_plan',[]);
+  if(plan.length){
+    const ax = plan.some(i=>itemLevel(i)===5);
+    const tech = Math.max(0, ...plan.map(itemLevel).filter(l=>l<5));
+    return {tech: tech || (ax ? 2 : 1), ax, from:'3-3 학습 계획'};
+  }
+  const done = getV('lp_done',[]);
+  return done.length ? {tech: Math.max(1, techLevel(done)), ax:false, from:'경험한 역량'} : null;
+}
+const taskLevelLabel = t => 'L'+t.tech+(t.ax ? ' + AX' : '');
+// 도구별 최소 고민거리 레벨 (없으면 L1). 7-1 Architecture, 7-2 AI Architecture, 10-2 운영 요소
+const TOOL_LV = {
+  'LLM':1, 'Workflow':2, 'Automation':2, 'Frontend':3, 'Backend':3, 'API':3,
+  'Database':4, 'RAG':4, 'Vector DB':4, 'Tool Calling':4, 'Agent':4, 'Authentication':4, 'Logging':4,
+  'Model':1, 'Prompt':1, 'Human Review':1, 'Context':2, 'Output':2, 'Tool':4, 'Memory':4,
+  '사용자 교육':1, '데이터 관리':2, '오류 대응':3, '유지보수':3, '권한':4, '보안':4
+};
+// 이미 값을 넣은 항목은 레벨과 관계없이 항상 보임
+function toolShown(name, hasValue){
+  const t = taskLevel();
+  return hasValue || !t || !!state.showAllTools || (TOOL_LV[name]||1) <= t.tech;
+}
+function toolNoteHtml(){
+  const t = taskLevel();
+  if(!t) return '';
+  return '<div class="fhint lvfilter">'+(state.showAllTools
+    ? '전체 항목을 보는 중 <button type="button" class="linkbtn" data-action="tools-toggle">씨앗 레벨 기준으로 보기</button>'
+    : '씨앗 레벨 <b>'+taskLevelLabel(t)+'</b>에 맞는 항목만 보여요 ('+t.from+' 기준) <button type="button" class="linkbtn" data-action="tools-toggle">전체 보기</button>')+'</div>';
+}
+
+function lpResultHtml(){
+  const plan = getV('lp_plan',[]), done = getV('lp_done',[]);
+  if(!plan.length) return '<div class="hint">3-3 뿌리 내리기에서 이번 씨앗의 학습 계획을 세우면, 여기서 계획 대비 결과를 볼 수 있어요.</div>';
+  const ok = plan.filter(i=>done.indexOf(i)>-1), ng = plan.filter(i=>done.indexOf(i)<0);
+  return '<div class="field"><label>12-2. 계획 대비 결과</label>'+
+    '<div class="fhint">경험함: '+(ok.length ? ok.map(esc).join(', ') : '없음')+'</div>'+
+    '<div class="fhint">아직: '+(ng.length ? ng.map(esc).join(', ') : '없음')+'</div></div>';
+}
+function aiLevelCardHtml(withPlan){
+  const done = getV('lp_done',[]), plan = getV('lp_plan',[]);
+  const lv = aiLevel(done), cur = AI_LEVELS[lv-1];
+  const need = L => L.items.filter(i=>done.indexOf(i)<0);
+  const rec = recognizedLevel();
+  let html = '<div class="lvcard"><div class="lvnow">학습 레벨 <b>'+esc(lvLabel(lv))+'</b> <span>자기 체크 기준'+(cur ? ' · '+esc(cur.q) : '')+'</span></div>'+
+    '<div class="lvnow">인정 레벨 <b>'+(rec ? esc(lvLabel(rec)) : '아직 없음')+'</b> <span>'+(rec ? '결과물 Gate · 관리자 확인' : '13 효과 확인에서 결과물로 신청')+'</span></div>';
+  if(lv < 4 && lv !== 5){
+    const next = AI_LEVELS[lv];
+    html += '<div class="lvnext">기술 경로: 다음 <b>'+esc(lvLabel(next.lv))+'</b>까지 '+need(next).map(esc).join(', ')+'</div>';
+  }
+  if(lv < 5){
+    const ax = AI_LEVELS[4];
+    html += '<div class="lvnext">AX 경로: <b>L5 AX Architect</b>까지 '+(lv < 2 ? 'L2를 먼저 갖추고, ' : '')+need(ax).map(esc).join(', ')+' <em>(개발 역량 없이도 가능)</em></div>';
+  } else {
+    html += '<div class="lvnext">업무 자체를 재설계할 수 있는 단계입니다.</div>';
+  }
+  if(withPlan && plan.length){
+    const after = aiLevel(done.concat(plan));
+    if(after > lv) html += '<div class="lvnext">이번 씨앗 계획을 모두 경험하면 <b>'+esc(lvLabel(after))+'</b></div>';
+    html += '<div class="lvnext">이 씨앗 레벨 <b>'+taskLevelLabel(taskLevel())+'</b>: 07 기술 설계, 10 운영에서 이 레벨에 맞는 도구만 보여요</div>';
+  }
+  return html + '</div>';
+}
+// 학습 계획 추천: AI 진단 결과에 나온 항목, 없으면 다음 레벨까지 남은 항목
+function lpRecommendHtml(){
+  const done = getV('lp_done',[]), plan = getV('lp_plan',[]);
+  const fresh = i => done.indexOf(i)<0 && plan.indexOf(i)<0;
+  const all = AI_LEVELS.reduce((a,L)=>a.concat(L.items), []);
+  const key = i => i.split(' (')[0].replace(/\s+/g,'');
+  const result = String(getV('diag_result','')).replace(/\s+/g,'');
+  const fromAi = result ? all.filter(i=>result.indexOf(key(i))>-1 && fresh(i)) : [];
+  const lv = aiLevel(done), next = lv < 4 ? AI_LEVELS[lv] : null;
+  const fromLevel = next ? next.items.filter(fresh) : [];
+  const rec = fromAi.length ? fromAi : fromLevel;
+  const why = fromAi.length ? 'AI 진단 결과에 나온 항목' : (next ? '다음 레벨('+lvLabel(next.lv)+')까지 남은 항목' : '');
+  let html = '<div class="lvrec"><div class="lvrec-head"><b>추천</b> <span>'+esc(why || '추천할 항목이 없어요')+'</span>'+
+    '<button type="button" class="linkbtn" data-action="lp-refresh">추천 새로고침</button></div>';
+  if(rec.length){
+    html += '<div class="lvrec-items">'+rec.map(i=>'<span class="lvrec-chip">'+esc(i)+'</span>').join('')+'</div>'+
+      '<button type="button" class="addbtn" data-action="lp-add" data-target="'+escAttr(rec.join('|'))+'">추천 항목 계획에 담기</button>';
+  }
+  if(!result) html += '<div class="fhint" style="margin-top:6px">AI 진단 결과를 위에 붙여넣은 뒤 "추천 새로고침"을 누르면, 결과에 나온 역량으로 추천이 바뀝니다.</div>';
+  return html + '</div>';
+}
+function renderLpTable(f){
+  const val = getV(f.store, []);
+  const done = f.store==='lp_plan' ? getV('lp_done', []) : [];
+  const chip = o => { const c = val.indexOf(o)>-1;
+    if(done.indexOf(o)>-1) return '<label class="opt lp-done"><input type="checkbox" checked disabled data-keep-disabled>'+esc(o)+'<small>경험함</small></label>';
+    return '<label class="opt'+(c?' checked':'')+'"><input type="checkbox" data-checklist="'+f.store+'" data-opt="'+escAttr(o)+'" '+(c?'checked':'')+'>'+esc(o)+'</label>'; };
+  let html = '<div class="field"><label>'+esc(f.label)+'</label>'+(f.hint ? '<div class="fhint">'+esc(f.hint)+'</div>' : '')+
+    '<div class="lp-tools"><button type="button" class="chip-btn" data-action="lp-all" data-target="'+f.store+'">전체 선택</button>'+
+    '<button type="button" class="chip-btn" data-action="lp-none" data-target="'+f.store+'">전체 해제</button></div>';
+  AI_LEVELS.forEach(L=>{
+    html += '<div class="lvgroup"><div class="lvtitle">L'+L.lv+' '+esc(L.name)+'<span>'+esc(L.q)+(L.lv===5 ? ' (개발 역량 없이도 가능)' : '')+'</span>'+
+      '<button type="button" class="linkbtn" data-action="lp-level" data-target="'+f.store+'|'+L.lv+'">이 레벨 전체</button></div><div class="opts">'+L.items.map(chip).join('')+'</div></div>';
+  });
+  return html + '</div>';
+}
+const LP_DONE_FIELD = {type:'lptable', store:'lp_done', label:'나의 AI 역량: 경험해본 항목', hint:'지금까지(이전 씨앗 포함) 실제로 해본 것을 체크하세요. 레벨이 자동으로 계산됩니다.'};
+const LP_PLAN_FIELD = {type:'lptable', store:'lp_plan', label:'이번 씨앗에서 경험할 AI 역량 (계획)', hint:'위 추천을 담거나 직접 고르세요. 이미 경험한 항목은 "경험함"으로 표시되어 다시 고를 필요가 없어요.'};
+
+const SECTIONS = [
+/* ---------- A. 진단 입력: 사실만 입력 (요구서 3장) ---------- */
+{id:'mydash', num:'☆', title:'나의 마음의 방', special:'mydash'},
+{id:'intro', num:'', title:'마음의 방 입구', special:'intro'},
+{id:'example', num:'EX', title:'먼저 온 포테이토', special:'example'},
+{id:'discover', num:'00', title:'씨앗 찾기 (선택)', special:'discover'},
+{id:'s1', num:'01', title:'씨앗 심기 · 지금의 일상', fields:[
+  HINT('당신이 바꾸고 싶은 업무는 무엇인가요? 01~02는 AI에게 묻기 전에 직접 생각해서 적는 단계입니다.'),
+  SUBHEAD('기본 정보'),
+  T('s1_name','씨앗 이름','예: 매장 재고 확인·발주 자동화 검토 / 예약 노쇼 알림 / 문의 답변 초안 작성', true),
+  RW([ T('s1_owner','담당자'), T('s1_dept','소속') ]),
+  Object.assign(CL('s1_workarea','업무 영역', [], true), {optsFn:()=>WORK_AREAS}),
+  Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>Object.keys(CATEGORIES)}),
+  Object.assign(CL('s1_catsub','세부 목적 (카테고리를 고르면 나옵니다)', [], true), {optsFn:()=>CATEGORIES[getV('s1_cat','')]||[]}),
+  CL('s1_target','대상 (무엇을 다루나)', TARGETS, true),
+  CL('s1_worktype','업무 유형 (중복 선택 가능)', WORK_TYPES, true),
+  RD('s1_difficulty','구현 난이도 (짐작이어도 괜찮음)', DIFFICULTY_LEVELS),
+  SUBHEAD('업무 목적 · 현재 프로세스'),
+  TA('s1_purpose','1-1. 업무 목적','이 업무는 왜 하는가? 예: 여러 곳에 흩어진 자료를 확인해서 다음 조치가 필요한지 판단한다.', true),
+  TA('s2_flow','1-2. 현재 업무 프로세스 (순서대로)','순서대로 적어주세요. 예: 1) 문의 접수 2) 담당자 확인 3) 자료 조회 4) 회신'),
+  CL('s2_freq','1-3. 발생 빈도 (중복 선택 가능)', ['매일','주 단위','월 단위','비정기']),
+  T('s2_slow','1-4. 가장 시간이 많이 드는 단계','예: 재고 확인하고 발주서 쓰는 단계 (매번 1시간) / 예약 문자 하나하나 보내는 단계'),
+  SUBHEAD('문제와 해결 방향'),
+  FT('s2_problems','1-5. 현재 업무에서 발생하는 문제', ['반복 업무','수작업','정보 탐색','데이터 취합','판단/분석','대기시간','오류 가능성','기타'], ['내용'], true),
+  TA('s2_core','1-6. 개선하고 싶은 핵심 문제','가장 해결하고 싶은 문제는 무엇인가?', true),
+  TA('s1_goal','1-7. 무엇이 달라지면 이 업무가 좋아졌다고 할 수 있나요? (개선 기준)','예: 자료를 취합하는 데 걸리던 시간이 줄고, 결과를 언제든 최신 상태로 확인할 수 있다', true),
+  HINT('정답이 아니어도 됩니다. 지금 생각하는 해결 방향을 자기 말로 적어 보세요. 다음 단계(3-1)에서 AI가 이 가설이 정말 필요한지, 데이터로 뒷받침되는지 검증합니다.'),
+  TA('s1_hypo','1-8. 내가 생각하는 해결 방향 (가설)','예: AI로 보고서 초안을 자동으로 만들고 싶다 / 알림만 자동으로 받으면 될 것 같다', true)
+]},
+{id:'s3', num:'02', title:'지금 쓰는 도구 · 눈에 보이는 것', fields:[
+  HINT('판단은 AI 진단에서 합니다. 여기서는 지금 업무가 실제로 어떻게 돌아가는지 사실만 적어주세요.'),
+  FT('s3_tool','2-1. 현재 사용 중인 도구/방식', TOOLS, ['정확히 어떤 것인지'], true, {
+    '사내 시스템/ERP':'예: POS, 예약 시스템, ERP, 병원 EMR 등',
+    '웹·모바일 서비스':'예: 배달앱 사장님 센터, 쇼핑몰 관리자 페이지 등',
+    'Office (Excel 등)':'예: Excel, Word, PPT',
+    '스프레드시트/BI':'예: 구글 시트, Spotfire, Tableau 등',
+    '스크립트/매크로':'예: 엑셀 매크로, 자동화 스크립트',
+    '생성형 AI':'예: ChatGPT, Copilot, Gemini 등',
+    '기타':'도구 이름'
+  }),
+  TA('s8_input','2-2. 현재 쓰는 데이터 (Input)','어떤 데이터를 어디서, 어떤 형태로, 어떻게 입력받는지 적어주세요. 예: BOM 데이터를 SmartBOM에서 표 형태로 조회'),
+  RD('s8_dtype','2-3. 데이터 형태', ['정형 (표, DB, 숫자)','비정형 (문서, 메일, 이미지)','혼합']),
+  TA('s8_decision','2-4. 사람이 판단하는 내용과 판단 기준','예: 재고가 기준 수량 이하면 발주 대상으로 판단한다. / 문의 내용이 환불 관련이면 담당자에게 넘긴다.'),
+  T('s8_decider','2-5. 최종 판단자','예: 담당자, 팀장'),
+  TA('s8_output','2-6. 현재 최종 결과물 (Output)','결과물이 무엇이고, 어떤 형태로, 누가 어떻게 활용하는지 적어주세요. 예: 소요량 표를 구매 담당자가 발주 계획에 활용')
+]},
+{id:'verify', num:'3-1', title:'흔들어보기', special:'verify'},
+{id:'redefine', num:'3-2', title:'다시 심기', fields:[
+  {type:'redefref'},
+  HINT('아래 칸에는 01에서 처음 쓴 내용이 기본으로 들어가 있어요. AI 검증 결과를 보고 고칠 부분이 있으면 고쳐 쓰고, 달라질 게 없으면 그대로 둬도 됩니다.'),
+  TA('re_core','다시 정의한 핵심 문제','무엇이 진짜 문제인가? 데이터로 말할 수 있는 범위 안에서', true),
+  TA('re_goal','다시 정한 목표와 개선 기준','무엇이 달라지면 성공인가? 어떻게 확인할 것인가?', true),
+  TA('re_direction','다시 정한 해결 방향','가장 작은 해결책부터. AI가 꼭 필요한 부분은 어디인가?', true)
+]},
+{id:'diag', num:'3-3', title:'뿌리 내리기', special:'diag'},
+
+/* ---------- 후속: 고민거리 수행 기록 (요구서 7장, 진단 .md에는 포함하지 않음) ---------- */
+{id:'s16', num:'04', title:'참고 씨앗 (BoB)', disabled:true, disabledNote:'준비 중', fields:[
+  HINT('설계 전에 비슷한 기존 씨앗을 확인하세요. BoB는 복사해서 쓰는 Template이 아니라 시행착오를 줄이기 위한 Reference입니다.'),
+  T('s16_bob','BoB'),
+  T('s16_purpose','참고 목적'),
+  T('s16_arch','참고한 Architecture'),
+  T('s16_tech','참고한 기술'),
+  T('s16_ui','참고한 UI'),
+  TA('s16_solution','참고한 해결 방법')
+]},
+{id:'s7', num:'05', title:'기능 상세 정의', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+  HINT('AI 진단 결과의 핵심 기능을 기준으로 기능별 상세를 정의하세요. 정답이 아니어도 되니 일단 채워보고, 08 끝에서 AI에게 검토를 요청하세요.'),
+  {type:'diffhint', sectionId:'s7'},
+  {type:'example05'},
+  RG('s7_2','기능별 상세 정의', [
+    {id:'name', label:'기능명', type:'text', ph:'예: 지연 알림'},
+    {id:'purpose', label:'목적', type:'text', ph:'예: 마감이 임박한 항목을 놓치지 않게 한다'},
+    {id:'trigger', label:'Trigger', type:'text', ph:'예: 마감 D-1이 되면 / 사용자가 버튼을 누르면'},
+    {id:'input', label:'Input', type:'text', ph:'예: 항목의 마감일, 현재 상태'},
+    {id:'processing', label:'Processing', type:'textarea', ph:'예: 오늘 날짜와 마감일을 비교해서 D-1인 항목을 찾는다'},
+    {id:'output', label:'Output', type:'text', ph:'예: 알림 메시지'},
+    {id:'action', label:'사용자 Action', type:'text', ph:'예: 알림을 확인하고 처리한다'},
+    {id:'exception', label:'예외 상황', type:'textarea', ph:'예: 이미 완료된 항목은 알림을 보내지 않는다'}
+  ])
+]},
+{id:'s9', num:'06', title:'UX / UI 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+  CL('s9_1','6-1. 사용자가 무엇을 보는가?', ['Dashboard','검색','입력','결과','분석','비교','알림','승인/확인','이력','기타']),
+  TA('s9_2','6-2. 핵심 사용자 Flow','순서대로 적어주세요. 예: 1) 목록에서 항목 선택 2) 상태 변경 3) 저장하면 이력에 기록'),
+  HINT('Dashboard만 만드는 씨앗이라면 업무효율화 목적과 실제 업무 변화가 있는지 재검토한다.')
+]},
+{id:'s10', num:'07', title:'기술 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+  {type:'glossary07'},
+  Object.assign(CL('s10_1','7-1. 전체 Architecture 구성요소', ['Frontend','Backend','Database','API','LLM','RAG','Vector DB','Tool Calling','Workflow','Agent','Automation','Authentication','Logging','기타']), {lvFilter:true}),
+  HINT('Model·Prompt·Context 같은 구현 디테일은 나중에 AI(바이브 코딩)의 도움을 받아 채워도 됩니다. 여기서 직접 판단해야 하는 건 "AI가 하는 일"과 "그중 사람이 반드시 확인할 지점"입니다.'),
+  Object.assign(RG('s10_2','7-2. AI가 하는 일과 사람의 확인 지점 (해당하는 경우)', [
+    {id:'ai_role', label:'AI가 하는 일', type:'text', ph:'예: 지연 항목 요약, 다음 액션 제안'},
+    {id:'human_check', label:'사람이 반드시 확인할 지점', type:'text', ph:'예: 최종 발송 전에 담당자가 내용 확인'},
+    {id:'detail', label:'세부 사항 (선택, 나중에 채워도 됨)', type:'textarea', ph:'Model, Prompt, Context, RAG, Tool, Memory 등 구현 디테일'}
+  ]), {lvFilter:true})
+]},
+{id:'s11', num:'08', title:'데이터 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+  {type:'diffhint', sectionId:'s11'},
+  {type:'datacandidates'},
+  Object.assign(CL('s11_data','8-1. 필요한 데이터 (후보에서 선택, 직접 추가 가능)', [], true), {optsFn:()=>getV('s11_data_candidates',[])}),
+  TA('s11_rel','8-2. 데이터 관계 (Entity 순서대로)','예: 고객 문의 → 처리 담당자 → 처리 이력 → 완료 확인'),
+  {type:'designreview'}
+]},
+{id:'s12', num:'09', title:'테스트 및 검증', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+  {type:'codetest'},
+  TA('s12_1','9-1. 테스트 시나리오','어떤 입력에 어떤 결과가 나와야 하는지, 실제로는 어땠는지 적어주세요. 예: 마감 D-1 항목 입력 → 알림 발송 기대 → 실제로 발송됨 (Pass)'),
+  RG('s12_2','9-2. AI 품질 검증 (해당하는 경우)', [
+    {id:'issue', label:'발견한 문제', type:'textarea', ph:'예: 가끔 이미 완료된 항목에도 알림이 감 (정확성), 예외 케이스 누락'},
+    {id:'review', label:'사람 검토 필요 여부', type:'text', ph:'예: 발송 전에 담당자가 한 번 확인 필요'}
+  ]),
+  HINT('AI 진단 결과의 "예상 기대효과"와 비교할 수 있도록 실제로 측정한 값을 적으세요.'),
+  FT('s12_3','9-3. 업무효율 실측', ['소요시간','작업횟수','수작업','오류','기타'], ['Before','After','개선효과']),
+  HINT('예측·AI 모델 씨앗은 AI를 바로 적용하지 않고 Gate를 차례로 확인합니다. Gate 1: 규칙(기존 방식)으로 계산한 값이 실제와 얼마나 맞는가? / Gate 2: 규칙으로 설명되지 않는 오차 패턴이 있는가? / Gate 3: AI가 Baseline보다 유의미하게 나은가? Gate 1~2를 통과해야 AI를 검토하고, Gate 3에서 Baseline보다 나아야 적용합니다.'),
+  FT('s12_gate','9-4. 검증 Gate (예측·AI 모델 씨앗만, 확인한 Gate를 체크)', ['Gate 1. Rule Baseline','Gate 2. AI 필요성','Gate 3. AI 성능'], ['확인 결과 (수치·근거)','통과 여부'], true)
+]},
+{id:'s13', num:'10', title:'실제 사용 및 운영', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+  RW([ T('s13_user','사용자'), T('s13_freq','사용 빈도'), T('s13_when','사용 시점'), T('s13_task','사용 업무') ]),
+  CL('s13_2','10-1. 운영 방식', ['개인 사용','팀 사용','부서 사용','전사 확장 가능']),
+  Object.assign(CL('s13_3','10-2. 운영에 필요한 요소', ['권한','보안','데이터 관리','Logging','오류 대응','유지보수','사용자 교육']), {lvFilter:true})
+]},
+{id:'s14', num:'11', title:'수확 일지', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+  TA('s14_1','11-1. 실제 개선 결과'),
+  TA('s14_2','11-2. 예상과 달랐던 점'),
+  TA('s14_3','11-3. 구현 과정에서 발생한 문제'),
+  TA('s14_4','11-4. 해결 방법'),
+  TA('s14_5','11-5. 재사용 가능한 기술/컴포넌트'),
+  TA('s14_6','11-6. 다음 단계'),
+  CL('s16_reuse','11-7. 내 씨앗에서 재사용 가능한 결과', ['Architecture','Component','Prompt','Workflow','DB 구조','UI','개발 방법','Test 방법','기타'])
+]},
+{id:'s15', num:'12', title:'성장 레벨', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+  HINT('씨앗 완료는 "Agent를 만들었다"가 아니라 "무엇을 새로 경험했는가"로 봅니다. 이번 씨앗에서 실제로 해본 항목을 체크하세요.'),
+  {type:'ailevel'},
+  Object.assign({}, LP_DONE_FIELD, {label:'12-1. 경험한 AI 역량 (누적)'}),
+  {type:'lpresult'}
+]},
+{id:'s17', num:'13', title:'효과 확인', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+  {type:'check17', groups:[
+    {title:'Effect', items:[
+      CK17('c12','실제 업무시간 단축 효과를 측정했다'),
+      CK17('c13','수작업 감소를 측정했다'),
+      CK17('c14','오류 감소 또는 품질 개선을 측정했다'),
+      CK17('c15','실제 업무에 사용하고 있다'),
+      CK17('c16','AI 역량 학습 포인트를 새로 경험했다 (12번)')
+    ]}
+  ]},
+  HINT('레벨은 체크한 항목 수가 아니라 결과물로 인정합니다. 신청할 레벨을 고르고 결과물을 적으면, AI가 1차 판정하고 관리자가 최종 확인합니다. (SSO 연동 전까지는 씨앗 단위로 신청)'),
+  RD('g_level','13-1. 인정 신청 레벨', AI_LEVELS.map(L=>'L'+L.lv+' '+L.name)),
+  {type:'gate'}
+]},
+{id:'export', num:'▤', title:'밖으로 심기', special:'export'},
+{id:'dashboard', num:'☰', title:'마음의 방 전경', special:'dashboard'},
+{id:'tasklist', num:'☷', title:'씨앗 목록', special:'tasklist'},
+{id:'taxonomy', num:'⚙', title:'분류 관리', special:'taxonomy'},
+{id:'accounts', num:'⚿', title:'계정 관리', special:'accounts'},
+{id:'roadmap', num:'+', title:'밭 넓히기', special:'roadmap'}
+];
+const TOTAL_SECTIONS = SECTIONS.filter(s=>!s.special && !s.disabled).length;
+// 사이드바 상위 메뉴: 그룹의 첫 섹션 id → 그룹 이름
+const NAV_GROUPS = {
+  discover:'A. 씨앗 정의서',
+  s16:'B. 가지 뻗기',
+  s12:'C. 열매와 수확'
+};
+// 한 번에 다 보이면 부담스러우니, 이전 단계를 손대기(비어있지 않기) 전까지는 사이드바에서 음영 처리만 함 (클릭은 막지 않음). admin/master는 항상 선명하게.
+const GATE_CHAIN = ['s1','s3','verify','redefine','diag','s7','s9','s10','s11','s12','s13','s14','s15','s17'];
+function isSectionLocked(sec){
+  if(isAdmin) return false;
+  const i = GATE_CHAIN.indexOf(sec.id);
+  if(i<=0) return false;
+  const prev = SECTIONS.find(s=>s.id===GATE_CHAIN[i-1]);
+  const st = prev ? sectionStatus(prev) : null;
+  return !st || st==='empty';
+}
+const DOCID_KEY = 'ai_task_docid_v1';
+const EMPID_KEY = 'ai_task_empid_v1';
+const EMPCODE_KEY = 'ai_task_empcode_v1';
+const ROLE_KEY = 'ai_task_role_v1';
+
+/* ============== state ============== */
+const STORE_KEY = 'ai_task_def_v1';
+let state = { fields:{}, cur:'intro', locked:false, completed:false };
+try{
+  const raw = localStorage.getItem(STORE_KEY);
+  if(raw) state = Object.assign(state, JSON.parse(raw));
+}catch(e){ /* storage unavailable, continue in-memory */ }
+
+let saveTimer=null;
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    try{
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      flashSaved();
+    }catch(e){ /* ignore */ }
+    syncToDb();
+  }, 250);
+}
+
+/* ============== 계정: 마스터 · 관리자 (사번 + 비밀번호) ============== */
+let empId = '', empCode = '', role = '';
+try{
+  empId = localStorage.getItem(EMPID_KEY) || '';
+  empCode = localStorage.getItem(EMPCODE_KEY) || '';
+  role = localStorage.getItem(ROLE_KEY) || '';
+}catch(e){}
+if(!empId || !empCode) role = '';
+let isMaster = role === 'master';
+let isAdmin = isMaster || role === 'admin';
+function authHeaders(){ return {'X-Emp-Id': empId, 'X-Emp-Code': empCode}; }
+// 브라우저별 고유 문서 ID (팀/이름은 고민거리 기본정보의 소속/담당자에서 가져옴)
+let docId = null;
+try{ docId = localStorage.getItem(DOCID_KEY); }catch(e){}
+if(!docId){
+  docId = Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+  try{ localStorage.setItem(DOCID_KEY, docId); }catch(e){}
+}
+let dbWriteQueue = null, dbWriting = false;
+let gateReview = null;  // 관리자 최종 확인 결과 (서버에서만 옴)
+
+async function loadRemote(){
+  if(!docId) return;
+  try{
+    const res = await fetch('/api/submissions/'+encodeURIComponent(docId));
+    if(res.status===404) return;
+    if(!res.ok) return;
+    const d = await res.json();
+    if(d.fields && typeof d.fields==='object') state.fields = d.fields;
+    state.locked = !!d.locked;
+    state.completed = !!d.completed;
+    gateReview = d.gateReview || null;
+  }catch(e){ /* keep local */ }
+}
+function buildRemoteDoc(){
+  const status = state.completed ? '완료' : (state.locked ? '저장됨' : '작성중');
+  return {
+    team: getV('s1_dept',''),
+    name: getV('s1_owner',''),
+    fields: state.fields,
+    locked: !!state.locked,
+    completed: !!state.completed,
+    status: status,
+    updatedAt: new Date().toISOString(),
+    filledCount: SECTIONS.filter(s=>!s.special && sectionFilled(s)).length,
+    totalSections: TOTAL_SECTIONS,
+    recommendedType: null
+  };
+}
+function syncToDb(){
+  if(!docId) return;
+  dbWriteQueue = buildRemoteDoc();
+  flushDbQueue();
+}
+async function flushDbQueue(){
+  if(dbWriting || !dbWriteQueue) return;
+  dbWriting = true;
+  const data = dbWriteQueue; dbWriteQueue = null;
+  try{
+    await fetch('/api/submissions/'+encodeURIComponent(docId), {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+  }catch(e){ /* stays saved locally regardless */ }
+  dbWriting = false;
+  if(dbWriteQueue) flushDbQueue();
+}
+
+function showModal(html){
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+function hideModal(){
+  document.getElementById('modalOverlay').style.display = 'none';
+}
+function adminModalHtml(){
+  return '<h2 style="margin-top:0;font-size:16px;">관리자 로그인</h2>'+
+    '<div class="fhint" style="margin-bottom:14px;">마음의 방 전경 등 관리자 메뉴는 사번과 비밀번호로 로그인해야 볼 수 있어요. 5회 틀리면 그 사번은 5분간 잠깁니다.</div>'+
+    '<div class="field"><label>사번</label><input type="text" id="loginEmpId" autocomplete="username" value="'+escAttr(empId)+'"></div>'+
+    '<div class="field"><label>비밀번호</label><input type="password" id="loginCode" autocomplete="current-password"></div>'+
+    '<div id="adminErr" style="color:var(--danger);font-size:12px;min-height:16px;"></div>'+
+    '<div style="display:flex;gap:8px;">'+
+      '<button type="button" id="adminSubmit" class="addbtn" style="flex:1;text-align:center;">확인</button>'+
+      '<button type="button" id="adminCancel" class="addbtn" style="flex:1;text-align:center;">취소</button>'+
+    '</div>';
+}
+function renderAdminSlot(){
+  const el = document.getElementById('adminSlot');
+  if(!el) return;
+  el.innerHTML = isAdmin
+    ? '<button type="button" id="adminLogoutBtn">'+(isMaster?'마스터':'관리자')+' 로그아웃 ('+esc(empId)+')</button>'
+    : '<button type="button" id="adminLoginBtn">관리자 로그인</button>';
+}
+// 서버의 로그인/권한 확인 결과(403/429)를 안내 문구로
+async function adminErrorText(res){
+  let d = {};
+  try{ d = (await res.json()).detail || {}; }catch(e){}
+  if(res.status===429){
+    const sec = d.locked_seconds || 300;
+    return '5회 이상 틀려서 잠겼어요. '+Math.floor(sec/60)+'분 '+(sec%60)+'초 후에 다시 시도하세요.';
+  }
+  if(res.status===403){
+    if(typeof d==='string') return d;  // 비밀번호는 맞지만 이 화면 권한이 없는 경우
+    return '사번 또는 비밀번호가 올바르지 않아요.'+(d.remaining ? ' (남은 시도 '+d.remaining+'회)' : '');
+  }
+  if(res.status===400 && typeof d==='string') return d;
+  return '처리하지 못했어요. (HTTP '+res.status+')';
+}
+function pwModalHtml(){
+  return '<h2 style="margin-top:0;font-size:16px;">비밀번호 변경</h2>'+
+    '<div class="fhint" style="margin-bottom:14px;">사번 '+esc(empId)+'의 비밀번호를 바꿔요. 새 비밀번호는 6자 이상. 5회 틀리면 5분간 잠깁니다.</div>'+
+    '<div class="field"><label>기존 비밀번호</label><input type="password" id="pwOld" autocomplete="current-password"></div>'+
+    '<div class="field"><label>새 비밀번호</label><input type="password" id="pwNew" autocomplete="new-password"></div>'+
+    '<div class="field"><label>새 비밀번호 확인</label><input type="password" id="pwNew2" autocomplete="new-password"></div>'+
+    '<div id="pwMsg" style="color:var(--danger);font-size:12px;min-height:16px;"></div>'+
+    '<div style="display:flex;gap:8px;">'+
+      '<button type="button" id="pwSubmit" class="addbtn" style="flex:1;text-align:center;">변경</button>'+
+      '<button type="button" id="adminCancel" class="addbtn" style="flex:1;text-align:center;">취소</button>'+
+    '</div>';
+}
+function submitAdminLogin(){
+  const idEl = document.getElementById('loginEmpId'), codeEl = document.getElementById('loginCode');
+  if(!idEl || !codeEl) return;
+  const id = idEl.value.trim(), code = codeEl.value;
+  fetch('/api/auth/login', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({empId:id, code})
+  }).then(async r=>{
+    if(r.ok){
+      const d = await r.json();
+      empId = id; empCode = code; role = d.role; isMaster = role==='master'; isAdmin = true;
+      try{ localStorage.setItem(EMPID_KEY, empId); localStorage.setItem(EMPCODE_KEY, empCode); localStorage.setItem(ROLE_KEY, role); }catch(err){}
+      hideModal();
+      renderAdminSlot();
+      updateRulerAndNav();
+    } else {
+      document.getElementById('adminErr').textContent = await adminErrorText(r);
+    }
+  }).catch(()=>{ document.getElementById('adminErr').textContent = '서버에 연결할 수 없어요. (서버가 켜져 있는지 확인해주세요)'; });
+}
+document.addEventListener('keydown', function(e){
+  if(e.key==='Enter' && (e.target.id==='loginEmpId' || e.target.id==='loginCode')){ e.preventDefault(); submitAdminLogin(); }
+});
+function doAdminLogout(){
+  isAdmin = false; isMaster = false; empId = ''; empCode = ''; role = '';
+  try{ localStorage.removeItem(EMPID_KEY); localStorage.removeItem(EMPCODE_KEY); localStorage.removeItem(ROLE_KEY); }catch(e){}
+  if(['dashboard','tasklist','accounts','taxonomy'].indexOf(state.cur)>-1){ state.cur='s1'; persist(); }
+  renderAdminSlot();
+  renderSheet();
+}
+document.addEventListener('click', function(e){
+  if(e.target.id==='adminLoginBtn'){ showModal(adminModalHtml()); }
+  if(e.target.id==='adminCancel'){ hideModal(); }
+  if(e.target.id==='adminSubmit'){ submitAdminLogin(); }
+  if(e.target.closest && e.target.closest('[data-admin-pw]')){ showModal(pwModalHtml()); }
+  if(e.target.id==='pwSubmit'){
+    const oldPw = document.getElementById('pwOld').value, newPw = document.getElementById('pwNew').value, newPw2 = document.getElementById('pwNew2').value;
+    const msg = document.getElementById('pwMsg');
+    if(!oldPw || !newPw){ msg.textContent = '모든 칸을 입력해주세요.'; return; }
+    if(newPw.length < 6){ msg.textContent = '새 비밀번호는 6자 이상이어야 해요.'; return; }
+    if(newPw !== newPw2){ msg.textContent = '새 비밀번호와 확인이 달라요.'; return; }
+    if(newPw === oldPw){ msg.textContent = '새 비밀번호가 기존 비밀번호와 같아요.'; return; }
+    fetch('/api/account/password', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({empId, old:oldPw, new:newPw})
+    }).then(async r=>{
+      if(r.ok){
+        empCode = newPw;
+        try{ localStorage.setItem(EMPCODE_KEY, newPw); }catch(err){}
+        document.getElementById('modalBox').innerHTML = '<h2 style="margin-top:0;font-size:16px;">비밀번호를 바꿨어요</h2>'+
+          '<button type="button" id="adminCancel" class="addbtn" style="width:100%;text-align:center;">닫기</button>';
+      } else {
+        msg.textContent = await adminErrorText(r);
+      }
+    }).catch(()=>{ msg.textContent = '서버에 연결할 수 없어요.'; });
+  }
+  if(e.target.id==='adminLogoutBtn' || e.target.id==='adminLogoutBtn2'){ doAdminLogout(); }
+  if(e.target.id==='refreshDash'){ renderDashboard(); }
+  if(e.target.id==='refreshTaskList'){ renderTaskList(); }
+});
+function flashSaved(){
+  const el=document.getElementById('saveMsg');
+  if(!el) return;
+  el.textContent='저장됨';
+  clearTimeout(flashSaved._t);
+  flashSaved._t=setTimeout(()=>{ if(el) el.textContent=''; }, 1400);
+}
+
+function getV(id, def){ return (id in state.fields) ? state.fields[id] : def; }
+function setV(id, val){ state.fields[id]=val; persist(); }
+
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escAttr(s){ return esc(s); }
+
+/* ============== field rendering ============== */
+function fieldWrap(inner, field, extraClass){
+  return '<div class="field '+(extraClass||'')+'">' + inner + '</div>';
+}
+
+function renderField(f){
+  switch(f.type){
+    case 'hint': return '<div class="hint">'+esc(f.text)+'</div>';
+    case 'subhead': return '<h3 class="fieldgroup">'+esc(f.text)+'</h3>';
+    case 'diffhint': return diffHintHtml(f.sectionId);
+    case 'static': return '<div class="field"><label>'+esc(f.label)+'</label><div class="staticval">'+esc(f.value)+'</div></div>';
+    case 'text': return fieldWrap(
+      '<label for="'+f.id+'">'+esc(f.label)+(f.required?' <span class="req">*</span>':'')+'</label>'+
+      '<input type="text" id="'+f.id+'" data-bind="'+f.id+'" placeholder="'+escAttr(f.ph)+'" value="'+escAttr(getV(f.id,''))+'">'
+    , f);
+    case 'textarea': return fieldWrap(
+      '<label for="'+f.id+'">'+esc(f.label)+(f.required?' <span class="req">*</span>':'')+'</label>'+
+      '<textarea id="'+f.id+'" data-bind="'+f.id+'" placeholder="'+escAttr(getV(f.id+'_hint','')||f.ph)+'">'+esc(getV(f.id,''))+'</textarea>'
+    , f);
+    case 'row': return '<div class="row-fields">' + f.children.map(renderField).join('') + '</div>';
+    case 'checklist': return renderChecklist(f);
+    case 'radio': return renderRadio(f);
+    case 'ftable': return renderFTable(f);
+    case 'dtable': return '<div class="field"><label>'+esc(f.label)+'</label><div id="fbody-'+f.id+'">'+renderDTableBody(f)+'</div></div>';
+    case 'dlist': return '<div class="field"><label>'+esc(f.label)+'</label><div id="fbody-'+f.id+'">'+renderDListBody(f)+'</div></div>';
+    case 'repeat': return '<div class="field"><label>'+esc(f.label)+'</label>'+(f.lvFilter ? toolNoteHtml() : '')+'<div id="fbody-'+f.id+'">'+renderRepeatBody(f)+'</div></div>';
+    case 'designreview': return renderDesignReview();
+    case 'datacandidates': return renderDataCandidates();
+    case 'codetest': return renderCodeTest();
+    case 'glossary07': return glossary07Html();
+    case 'example05': return example05Html();
+    case 'check17': return renderCheck17(f);
+    case 'lptable': return renderLpTable(f);
+    case 'lpresult': return lpResultHtml();
+    case 'ailevel': return aiLevelCardHtml(true);
+    case 'redefref': return redefRefHtml();
+    case 'gate': return gateHtml();
+    default: return '';
+  }
+}
+
+function checklistOpts(f){
+  const opts = f.optsFn ? f.optsFn() : f.opts;
+  if(!f.lvFilter) return opts;
+  const val = getV(f.id, []);
+  return opts.filter(o=>toolShown(o, val.indexOf(o)>-1));
+}
+function renderChecklist(f){
+  const val = getV(f.id, []);
+  const opts = checklistOpts(f).map(o=>{
+    const checked = val.indexOf(o) > -1;
+    return '<label class="opt'+(checked?' checked':'')+'"><input type="checkbox" data-checklist="'+f.id+'" data-opt="'+escAttr(o)+'" '+(checked?'checked':'')+'>'+esc(o)+'</label>';
+  }).join('');
+  let otherHtml='';
+  // 보기에 '기타'가 있으면 체크했을 때만 입력칸 표시
+  const hasEtc = checklistOpts(f).indexOf('기타') > -1;
+  if(f.other && (!hasEtc || val.indexOf('기타') > -1)){
+    otherHtml = '<input type="text" class="opt-other" data-bind="'+f.id+'_other" placeholder="기타 입력" value="'+escAttr(getV(f.id+'_other',''))+'">';
+  }
+  return '<div class="field"><label>'+esc(f.label)+'</label>'+(f.lvFilter ? toolNoteHtml() : '')+'<div class="opts">'+opts+'</div>'+otherHtml+'</div>';
+}
+
+function renderRadio(f){
+  const val = getV(f.id, '');
+  const optList = f.optsFn ? f.optsFn() : f.opts;
+  const opts = optList.map(o=>{
+    const checked = val===o;
+    return '<label class="opt'+(checked?' checked':'')+'"><input type="radio" name="'+f.id+'" data-radio="'+f.id+'" data-opt="'+escAttr(o)+'" '+(checked?'checked':'')+'>'+esc(o)+'</label>';
+  }).join('');
+  return '<div class="field"><label>'+esc(f.label)+'</label><div class="opts">'+opts+'</div></div>';
+}
+
+function renderFTable(f){
+  const val = getV(f.id, {});
+  let head = '<tr><th>구분</th>'+f.cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr>';
+  let rows = f.rows.map(r=>{
+    const rowVal = val[r] || {};
+    const off = f.check && !rowVal._on;
+    const ph = f.ph ? f.ph[r] : undefined;
+    const cells = f.cols.map(c=>{
+      if(ph===null) return '<td></td>';
+      const v = rowVal[c]||'';
+      const hint = ph || '';
+      return '<td><input type="text" data-ftable="'+f.id+'" data-row="'+escAttr(r)+'" data-col="'+escAttr(c)+'" value="'+escAttr(v)+'"'+(hint?' placeholder="'+escAttr(hint)+'"':'')+'></td>';
+    }).join('');
+    const label = f.check
+      ? '<label class="ftcheck"><input type="checkbox" data-ftcheck="'+f.id+'" data-row="'+escAttr(r)+'"'+(off?'':' checked')+'>'+esc(r)+'</label>'
+      : esc(r);
+    return '<tr'+(off?' class="off"':'')+'><td class="rowlabel">'+label+'</td>'+cells+'</tr>';
+  }).join('');
+  return '<div class="field"><label>'+esc(f.label)+'</label><table class="ftable"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+function renderDTableBody(f){
+  const rows = getV(f.id, [{}]);
+  let head = '<tr>'+f.cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'<th></th></tr>';
+  let body = rows.map((row,idx)=>{
+    const cells = f.cols.map(c=>{
+      return '<td><input type="text" data-dtable="'+f.id+'" data-idx="'+idx+'" data-col="'+escAttr(c)+'" value="'+escAttr(row[c]||'')+'"></td>';
+    }).join('');
+    const rm = rows.length>1 ? '<button type="button" class="rmbtn" data-action="rm-dtable" data-target="'+f.id+'" data-idx="'+idx+'">×</button>' : '';
+    return '<tr>'+cells+'<td class="rmcol">'+rm+'</td></tr>';
+  }).join('');
+  return '<table class="dtable"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>'+
+    '<button type="button" class="addbtn" data-action="add-dtable" data-target="'+f.id+'">+ 행 추가</button>';
+}
+
+function renderDListBody(f){
+  const items = getV(f.id, ['']);
+  let body = items.map((v,idx)=>{
+    const rm = items.length>1 ? '<button type="button" class="rmbtn" data-action="rm-dlist" data-target="'+f.id+'" data-idx="'+idx+'">×</button>' : '<span style="width:22px;display:inline-block"></span>';
+    return '<div class="listitem"><span class="arrow">'+(idx+1)+' →</span>'+
+      '<input type="text" data-dlist="'+f.id+'" data-idx="'+idx+'" placeholder="'+escAttr(f.ph)+'" value="'+escAttr(v)+'">'+rm+'</div>';
+  }).join('');
+  return body + '<button type="button" class="addbtn" data-action="add-dlist" data-target="'+f.id+'">+ 단계 추가</button>';
+}
+
+// 05~08은 AI가 초안을 미리 써주면 정작 설계 역량이 안 늘어서, "일단 써보고 → AI 검토" 순서로 감 (3-1과 같은 패턴)
+function renderDesignReview(){
+  const has = String(getV('design_review','')).trim();
+  return '<details class="promptedu ai-draft"'+(has?' open':'')+'><summary><span class="pe-badge">선택</span><span class="pe-title">설계 검토 요청</span><span class="pe-hint">필수 아님 · 눌러서 펼치기</span></summary>'+
+    '<div class="hint">05~08에 채운 내용을 바탕으로 AI에게 검토를 요청할 수 있어요. 정답이 아니어도 되니 일단 채워보고 검토받아보세요. 안 받아도 09로 넘어갈 수 있어요.</div>'+
+    '<textarea id="designReviewOut" class="exportbox" readonly></textarea>'+
+    '<div class="exportbar"><button type="button" data-copy="designReviewOut">검토 요청 복사</button><span class="copymsg" data-for="designReviewOut"></span></div>'+
+    '<div class="field" style="margin-top:14px"><label>AI 검토 결과 붙여넣기 <span class="who ai">AI가 쓴 결과</span></label>'+
+      '<div class="hint">ddugi는 팩폭러라 말이 셀 수 있어요. 틀렸다는 게 아니라 원래 그렇게 말하는 캐릭터니 담아두지 마세요.</div>'+
+      '<div class="fhint">전체 답변은 AI 화면에서 직접 읽어보세요. 여기에는 답변 맨 아래 "핵심 요약"만 복사해서 붙여넣으면 충분해요.</div>'+
+      '<textarea data-bind="design_review" style="min-height:200px" placeholder="AI 답변 맨 아래 핵심 요약을 여기에 붙여넣으세요">'+esc(getV('design_review',''))+'</textarea>'+
+    '</div>'+
+  '</details>';
+}
+// 데이터 설계도 구현 디테일이라, 타이핑 대신 AI가 뽑은 후보를 체크만 하게 함.
+// 후보(AI 제안)와 선택 결과(사람 채택)가 따로 저장되니, 뭘 AI가 제안했고 뭘 사람이 실제로 쓰기로 했는지 자동으로 남음.
+function renderDataCandidates(){
+  const hasCand = getV('s11_data_candidates',[]).length > 0;
+  return '<div class="field ai-draft"><label>AI로 데이터 후보 뽑기 <span class="who ai">선택</span></label>'+
+    '<div class="hint">필요한 데이터를 직접 나열하기 어려우면, AI에게 후보를 받아서 아래에서 체크만 하면 돼요. 실제로 쓸 것만 골라서 체크하세요.</div>'+
+    '<textarea id="dataCandOut" class="exportbox" readonly></textarea>'+
+    '<div class="exportbar"><button type="button" data-copy="dataCandOut">후보 요청 복사</button><span class="copymsg" data-for="dataCandOut"></span></div>'+
+    '<div class="field" style="margin-top:14px"><label>AI 답변 붙여넣기 <span class="who ai">AI가 쓴 결과</span></label>'+
+      '<div class="fhint">한 줄에 항목 하나씩인 목록으로 붙여넣으세요. "후보로 반영"을 누르면 아래에 체크리스트로 나타나요.</div>'+
+      '<textarea data-bind="s11_data_raw" style="min-height:140px" placeholder="AI가 준 데이터 목록을 여기에 붙여넣으세요">'+esc(getV('s11_data_raw',''))+'</textarea>'+
+    '</div>'+
+    '<div class="exportbar"><button type="button" data-action="data-candidates-parse">후보로 반영 →</button></div>'+
+    (hasCand ? '' : '<div class="fhint" style="margin-top:6px">아직 후보가 없어요. 위 요청문을 복사해서 AI에 붙여넣고, 답변을 가져와서 반영해보세요.</div>')+
+  '</div>';
+}
+// 09도 처음부터 쓰게 하지 말고, 실제로 만든 화면/코드를 붙여넣으면 AI가 테스트 시나리오·점검할 부분을 뽑아주게 함.
+// 9-1은 TA라 placeholder(예: ...)로만 반영 — discover-carry와 같은 방식(실제 값을 덮어쓰지 않음).
+function renderCodeTest(){
+  return '<details class="promptedu ai-draft"><summary><span class="pe-badge">선택</span><span class="pe-title">코드/화면 보고 테스트 후보 뽑기</span><span class="pe-hint">직접 쓰기 힘들면 눌러서 펼치기</span></summary>'+
+    '<div class="hint">만든 화면의 HTML이나 코드를 붙여넣으면, AI가 테스트 시나리오와 점검할 부분을 제안해줘요. 전체를 다 넣지 않아도 되고, 핵심 부분만 넣어도 됩니다.</div>'+
+    '<div class="field"><label>내가 만든 것 (HTML/코드, 일부만도 OK)</label>'+
+      '<textarea data-bind="s12_code" style="min-height:140px" placeholder="여기에 실제 만든 화면의 HTML이나 코드를 붙여넣으세요">'+esc(getV('s12_code',''))+'</textarea>'+
+    '</div>'+
+    '<textarea id="codeTestOut" class="exportbox" readonly></textarea>'+
+    '<div class="exportbar"><button type="button" data-copy="codeTestOut">요청문 복사</button><span class="copymsg" data-for="codeTestOut"></span></div>'+
+    '<div class="field" style="margin-top:14px"><label>AI 답변 붙여넣기 <span class="who ai">AI가 쓴 결과</span></label>'+
+      '<div class="hint">ddugi는 팩폭러라 말이 셀 수 있어요. 틀렸다는 게 아니라 원래 그렇게 말하는 캐릭터니 담아두지 마세요.</div>'+
+      '<textarea data-bind="s12_ai_raw" style="min-height:160px" placeholder="AI가 제안한 테스트 시나리오·점검 사항을 여기에 붙여넣으세요">'+esc(getV('s12_ai_raw',''))+'</textarea>'+
+    '</div>'+
+    '<div class="exportbar"><button type="button" data-action="codetest-carry">9-1에 참고로 반영 →</button></div>'+
+  '</details>';
+}
+function buildCodeTestPrompt(){
+  const code = String(getV('s12_code','')).trim() || '(아직 붙여넣지 않음)';
+  return `당신은 테스트 설계를 돕는 보조자입니다. 아래 "만든 것"과 "고민거리 배경"을 참고해서 두 가지를 제안하세요.
+
+1. 테스트 시나리오 3~5개 (형식: Input → 기대 결과, 한 줄씩)
+2. 점검하면 좋을 부분 (정확성, 빠뜨리기 쉬운 예외 상황, 사람이 반드시 확인해야 할 지점 등)
+
+정답을 확정하지 말고, 사용자가 실제로 돌려보고 판단할 수 있도록 후보로 제안하세요.
+
+---
+
+# 만든 것 (HTML/코드)
+
+${code}
+
+---
+
+# 고민거리 배경
+
+${draftContextText()}`;
+}
+function buildDataCandidatesPrompt(){
+  return `당신은 데이터 설계를 돕는 보조자입니다. 아래 "고민거리 배경"을 참고해서, 이 고민거리에 필요할 만한 데이터 항목 후보를 5~10개 뽑아주세요.
+
+한 줄에 하나씩, 이 형식으로 쓰세요: 데이터명 (Source, 저장 필요 Y/N, 주요 Key)
+
+정답이 아니라 후보입니다. 실제로 필요한지는 사용자가 보고 고를 거예요.
+
+---
+
+# 고민거리 배경
+
+${draftContextText()}`;
+}
+function glossary07Html(){
+  return '<details class="promptedu"><summary><span class="pe-badge">용어 풀이</span><span class="pe-title">Architecture 용어가 낯설다면</span><span class="pe-hint">눌러서 펼치기</span></summary>'+
+    htmlTable(['용어','한 줄 설명'], [
+      ['Frontend','사용자가 보는 화면 (버튼, 입력창 등)'],
+      ['Backend','화면 뒤에서 데이터를 처리하는 서버'],
+      ['Database','데이터를 저장해두는 곳'],
+      ['API','프로그램끼리 데이터를 주고받는 약속된 통로'],
+      ['LLM','챗봇처럼 글을 이해하고 만드는 AI 모델'],
+      ['RAG','LLM이 모르는 사내 자료를 검색해서 답에 활용하는 방식'],
+      ['Vector DB','RAG에서 문서를 의미로 찾기 위해 저장해두는 특수한 저장소'],
+      ['Tool Calling','AI가 필요할 때 다른 프로그램(계산기, 검색 등)을 대신 호출하는 것'],
+      ['Workflow','여러 단계를 정해진 순서로 이어 붙인 자동화 흐름'],
+      ['Agent','AI가 스스로 다음 행동을 판단해가며 여러 단계를 처리하는 것'],
+      ['Automation','사람 개입 없이 정해진 규칙대로 자동 실행되는 처리'],
+      ['Authentication','로그인처럼 "이 사람이 맞는지" 확인하는 절차'],
+      ['Logging','무슨 일이 있었는지 기록을 남기는 것']
+    ])+
+    '<p>더 자세한 설명은 작성 예시(Workloop)의 "용어 풀이"에서도 볼 수 있어요.</p>'+
+  '</details>';
+}
+function example05Html(){
+  return '<details class="promptedu"><summary><span class="pe-badge">예시</span><span class="pe-title">기능 하나를 완성하면 이런 모양이에요</span><span class="pe-hint">막막하면 눌러서 펼치기</span></summary>'+
+    htmlTable(['항목','예시'], [
+      ['기능명','지연 알림'],
+      ['목적','마감이 임박한 항목을 놓치지 않게 한다'],
+      ['Trigger','마감 D-1이 되면'],
+      ['Input','항목의 마감일, 현재 상태'],
+      ['Processing','오늘 날짜와 마감일을 비교해서 D-1이면서 아직 완료 안 된 항목을 찾는다'],
+      ['Output','알림 메시지'],
+      ['사용자 Action','알림을 확인하고 처리한다'],
+      ['예외 상황','이미 완료된 항목은 알림을 보내지 않는다']
+    ])+
+    '<p>이 형식 그대로, 이 씨앗에 필요한 기능으로 바꿔서 채워보세요. 딱 맞지 않아도 괜찮아요.</p>'+
+    '<p><b>업계 달라도 형식은 똑같아요:</b></p>'+
+    htmlTable(['업계','기능명','한 줄 요약'], [
+      ['식당/카페','재고 부족 알림','특정 재료가 기준 수량 이하로 떨어지면 발주 담당자에게 알림'],
+      ['병원/미용실','예약 리마인드','예약 하루 전에 고객에게 알림 메시지 자동 발송'],
+      ['쇼핑몰','문의 답변 초안','반복되는 질문 유형이면 답변 초안을 자동으로 만들어줌']
+    ])+
+  '</details>';
+}
+
+function renderRepeatBody(f){
+  const items = getV(f.id, [{}]);
+  let body = items.map((item,idx)=>{
+    const subs = f.subs.filter(s=>!f.lvFilter || toolShown(s.label, !!String(item[s.id]||'').trim())).map(s=>{
+      const v = item[s.id]||'';
+      const ph = s.ph ? ' placeholder="'+escAttr(s.ph)+'"' : '';
+      if(s.type==='textarea'){
+        return '<div class="field"><label>'+esc(s.label)+'</label><textarea data-repeat="'+f.id+'" data-idx="'+idx+'" data-sub="'+s.id+'"'+ph+'>'+esc(v)+'</textarea></div>';
+      }
+      return '<div class="field"><label>'+esc(s.label)+'</label><input type="text" data-repeat="'+f.id+'" data-idx="'+idx+'" data-sub="'+s.id+'" value="'+escAttr(v)+'"'+ph+'></div>';
+    }).join('');
+    const rm = items.length>1 ? '<button type="button" class="rmbtn" data-action="rm-repeat" data-target="'+f.id+'" data-idx="'+idx+'">×</button>' : '';
+    return '<div class="groupitem"><span class="gnum">#'+(idx+1)+'</span>'+rm+subs+'</div>';
+  }).join('');
+  return '<div class="grouplist">'+body+'</div><button type="button" class="addbtn" data-action="add-repeat" data-target="'+f.id+'">+ 항목 추가</button>';
+}
+
+function renderCheck17(f){
+  let html='';
+  let allIds=[];
+  f.groups.forEach(g=>{
+    html += '<div class="group17title">'+esc(g.title)+'</div>';
+    g.items.forEach(it=>{
+      allIds.push(it.id);
+      const checked = !!getV('ck_'+it.id,false);
+      html += '<label class="check17"><input type="checkbox" data-check17="'+it.id+'" '+(checked?'checked':'')+'>'+esc(it.label)+'</label>';
+    });
+  });
+  const checkedCount = allIds.filter(id=>getV('ck_'+id,false)).length;
+  html += '<div class="score">'+checkedCount+' / '+allIds.length+' <span>항목 충족</span></div>';
+  return html;
+}
+
+/* ============== section chrome ============== */
+function sectionFilled(sec){
+  if(sec.special) return false;
+  return sec.fields.some(f=>fieldHasValue(f));
+}
+function sectionStatus(sec){
+  if(sec.disabled) return null;
+  if(sec.id==='discover') return String(getV('discover_chosen','')).trim() ? 'done' : (String(getV('discover_input','')).trim() ? 'partial' : 'empty');
+  if(sec.id==='verify') return String(getV('verify_result','')).trim() ? 'done' : 'empty';
+  if(sec.id==='diag') return String(getV('diag_result','')).trim() ? 'done' : 'empty';
+  if(sec.special || !sec.fields) return null;
+  const req = sec.fields.filter(f=>f.required);
+  if(!sec.fields.some(fieldHasValue)) return 'empty';
+  if(req.length) return req.every(fieldHasValue) ? 'done' : 'partial';
+  return 'partial';
+}
+function fieldHasValue(f){
+  if(f.type==='hint' || f.type==='static' || f.type==='diffhint' || f.type==='designreview' || f.type==='datacandidates' || f.type==='codetest' || f.type==='glossary07' || f.type==='example05' || f.type==='subhead') return false;
+  if(f.type==='row') return f.children.some(fieldHasValue);
+  if(f.type==='check17') return f.groups.some(g=>g.items.some(it=>getV('ck_'+it.id,false)));
+  if(f.type==='lptable') return getV(f.store,[]).length>0;
+  if(f.type==='ailevel' || f.type==='lpresult' || f.type==='redefref' || f.type==='gate') return false;
+  const v = getV(f.id, f.type==='checklist'?[]:(f.type==='dtable'||f.type==='dlist'||f.type==='repeat')?[]:(f.type==='ftable')?{}:'');
+  if(Array.isArray(v)){
+    if(f.type==='dtable' || f.type==='repeat') return v.some(row=>Object.values(row).some(x=>String(x||'').trim()));
+    if(f.type==='dlist') return v.some(x=>String(x||'').trim());
+    return v.length>0;
+  }
+  if(typeof v==='object' && v) return Object.values(v).some(row=>Object.values(row).some(x=>String(x||'').trim()));
+  return String(v||'').trim().length>0;
+}
+
+function renderSheet(){
+  if((state.cur==='dashboard' || state.cur==='tasklist' || state.cur==='taxonomy') && !isAdmin) state.cur='s1';
+  if(state.cur==='accounts' && !isMaster) state.cur='s1';
+  let sec = SECTIONS.find(s=>s.id===state.cur) || SECTIONS[0];
+  if(sec.disabled){ sec = SECTIONS.find(s=>s.id==='s1'); state.cur = 's1'; }
+  if(sec.id==='redefine') prefillRedefineDefaults();
+  const sheet = document.getElementById('sheet');
+  if(sec.special==='export'){
+    sheet.innerHTML = renderExportSection();
+    initExportBox();
+  } else if(sec.special==='roadmap'){
+    sheet.innerHTML = renderRoadmapSection();
+  } else if(sec.special==='example'){
+    sheet.innerHTML = renderExampleSection() + navFootHtml(sec);
+  } else if(sec.special==='intro'){
+    sheet.innerHTML = renderIntroSection() + navFootHtml(sec);
+  } else if(sec.special==='discover'){
+    sheet.innerHTML = renderDiscoverSection() + navFootHtml(sec);
+    initExportBox();
+  } else if(sec.special==='verify'){
+    sheet.innerHTML = renderVerifySection() + navFootHtml(sec);
+    initExportBox();
+  } else if(sec.special==='diag'){
+    sheet.innerHTML = renderDiagSection() + navFootHtml(sec);
+    initExportBox();
+  } else if(sec.special==='dashboard'){
+    sheet.innerHTML = renderDashboardSection();
+    renderDashboard();
+  } else if(sec.special==='tasklist'){
+    sheet.innerHTML = renderTaskListSection();
+    renderTaskList();
+  } else if(sec.special==='accounts'){
+    sheet.innerHTML = renderAccountsSection();
+    renderAccounts();
+  } else if(sec.special==='taxonomy'){
+    sheet.innerHTML = renderTaxonomySection();
+    renderTaxonomy();
+  } else if(sec.special==='mydash'){
+    sheet.innerHTML = renderMyDashSection() + navFootHtml(sec);
+  } else {
+    let bodyHtml = sec.fields.map(renderField).join('');
+    sheet.innerHTML =
+      '<div class="frame"><h2>'+sec.num+' · '+esc(sec.title)+'</h2><div class="sub">SECTION '+sec.num+' OF '+TOTAL_SECTIONS+'</div>' +
+      bodyHtml +
+      '</div>' +
+      navFootHtml(sec);
+    if(sec.fields.some(f=>f.type==='designreview')){
+      const out = document.getElementById('designReviewOut');
+      if(out) out.value = buildDesignReviewPrompt();
+    }
+    if(sec.fields.some(f=>f.type==='datacandidates')){
+      const out = document.getElementById('dataCandOut');
+      if(out) out.value = buildDataCandidatesPrompt();
+    }
+    if(sec.fields.some(f=>f.type==='codetest')){
+      const out = document.getElementById('codeTestOut');
+      if(out) out.value = buildCodeTestPrompt();
+    }
+  }
+  document.getElementById('breadcrumb').innerHTML = '씨앗 정의서 <b>'+esc(sec.num)+'</b> · '+esc(sec.title);
+  updateRulerAndNav();
+  applyLockState();
+  updateTopActions();
+}
+
+function applyLockState(){
+  const disable = !!state.locked;
+  const readonly = disable || (SECTIONS.find(s=>s.id===state.cur)||{}).special==='example';
+  document.querySelectorAll('#sheet input, #sheet textarea').forEach(function(el){ el.disabled = readonly || el.hasAttribute('data-keep-disabled'); });
+  document.querySelectorAll('#sheet .addbtn, #sheet .rmbtn').forEach(function(el){ el.disabled = readonly; });
+  document.body.classList.toggle('locked-mode', disable);
+  // 작성 예시는 읽기 전용이라 여러 줄 칸을 내용 길이만큼 펼쳐서 보여줌
+  if(readonly && !disable) document.querySelectorAll('#sheet textarea:not(.exportbox)').forEach(function(t){ t.style.height = (t.scrollHeight + 4) + 'px'; });
+}
+
+function updateTopActions(){
+  const btn = document.getElementById('saveToggleBtn');
+  const comp = document.getElementById('completeBtn');
+  const badge = document.getElementById('statusBadge');
+  if(!btn) return;
+  btn.textContent = state.locked ? '수정' : '저장';
+  comp.textContent = state.completed ? '완료 취소' : '완료';
+  comp.classList.toggle('done', !!state.completed);
+  badge.textContent = state.completed ? '✅ 완료' : (state.locked ? '🔒 저장됨' : '');
+}
+
+function saveConfirmHtml(){
+  return '<h2 style="margin-top:0;font-size:16px;">저장하시겠습니까?</h2>'+
+    '<div class="fhint" style="margin-bottom:14px;">저장하면 내용이 잠기고, 다시 고치려면 "수정" 버튼을 눌러야 해요.</div>'+
+    '<div style="display:flex;gap:8px;">'+
+      '<button type="button" id="saveConfirmYes" class="addbtn" style="flex:1;text-align:center;">저장</button>'+
+      '<button type="button" id="saveConfirmNo" class="addbtn" style="flex:1;text-align:center;">취소</button>'+
+    '</div>';
+}
+
+document.addEventListener('click', function(e){
+  if(e.target.id==='saveToggleBtn'){
+    if(state.locked){
+      state.locked = false;
+      persist(); renderSheet();
+    } else {
+      showModal(saveConfirmHtml());
+    }
+  }
+  if(e.target.id==='saveConfirmYes'){
+    hideModal();
+    state.locked = true;
+    persist(); renderSheet();
+  }
+  if(e.target.id==='saveConfirmNo'){ hideModal(); }
+  if(e.target.id==='completeBtn'){
+    state.completed = !state.completed;
+    if(state.completed) state.locked = true;
+    persist(); renderSheet();
+  }
+});
+
+// 고민거리가 지금 어느 단계에 있는지: 3-1 검증 결과 → 3-2 재정의 → 3-3 구조화 → 완료 버튼, 실제로 채워진 것만 기준
+const TASK_STAGE_LABELS = ['01~02 작성 중','3-2 문제 재정의 중','3-3 AI 구조화 대기','04~13 구현·회고 기록 중','완료'];
+function taskStageIdx(v){
+  if(v.completed) return 4;
+  const t = v.task || {};
+  if(t.hasDiag) return 3;
+  if(t.hasRedefine) return 2;
+  if(t.hasVerify) return 1;
+  return 0;
+}
+let taskListData = [];
+function renderTaskListSection(){
+  return '<div class="frame"><h2>☷ 씨앗 목록</h2><div class="sub">ADMIN VIEW</div>'+
+    '<div class="hint">전체 씨앗을 한 화면에 모아봐요 (작성자 이름 기준으로 한 명당 최신 것 하나만). "진행 단계"는 임의로 매긴 점수가 아니라 3-1 검증 결과·3-2 재정의·3-3 구조화 결과·완료 버튼이 실제로 채워졌는지로 판단해요.</div>'+
+    '<div class="exportbar"><button type="button" id="refreshTaskList" class="secondary">새로고침</button></div>'+
+    '<div id="taskListSummary" style="margin:14px 0"></div>'+
+    '<div class="field" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px">'+
+      '<div style="flex:1;min-width:180px"><label style="font-size:12.5px;color:var(--ink-soft)">검색 (씨앗 이름·담당자·부서)</label><input type="text" id="taskListSearch" placeholder="검색"></div>'+
+      '<div><label style="font-size:12.5px;color:var(--ink-soft);display:block">진행 단계</label><select id="taskListStage"><option value="">전체</option>'+
+        TASK_STAGE_LABELS.map((l,i)=>'<option value="'+i+'">'+esc(l)+'</option>').join('')+'</select></div>'+
+      '<div><label style="font-size:12.5px;color:var(--ink-soft);display:block">정렬</label><select id="taskListSort">'+
+        '<option value="updated">마지막 저장 최신순</option><option value="stage">진행 단계 늦은순</option><option value="name">씨앗 이름순</option></select></div>'+
+    '</div>'+
+    '<div id="taskListBody">불러오는 중…</div>'+
+  '</div>';
+}
+async function renderTaskList(){
+  const body = document.getElementById('taskListBody');
+  if(!body) return;
+  body.innerHTML = '<div class="hint">불러오는 중…</div>';
+  try{
+    const res = await fetch('/api/submissions', {headers: authHeaders()});
+    if(res.status===403 || res.status===429){
+      const text = await adminErrorText(res);
+      if(res.status===403){
+        doAdminLogout(); showModal(adminModalHtml());
+        document.getElementById('adminErr').textContent = '비밀번호가 바뀌었어요. 다시 로그인해주세요.';
+        return;
+      }
+      body.innerHTML = '<div class="hint">'+esc(text)+'</div>'; return;
+    }
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    taskListData = await res.json();
+    renderTaskListBody();
+  }catch(e){
+    body.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
+  }
+}
+// 작성자(이름) 기준으로 하나만: 이름이 있으면 그 이름의 가장 최근 것만 남기고, 이름이 비어 있으면
+// 서로 다른 사람일 수 있어 함부로 합치지 않고 문서(docId)별로 각각 둠
+function dedupeByAuthor(list){
+  const groups = {};
+  list.forEach(v=>{
+    const key = String(v.name||'').trim() || ('__doc__'+v.docId);
+    (groups[key] = groups[key]||[]).push(v);
+  });
+  return Object.values(groups).map(arr=>{
+    arr.sort((a,b)=>String(b.updatedAt||'').localeCompare(a.updatedAt||''));
+    return Object.assign({}, arr[0], {_extraCount: arr.length-1});
+  });
+}
+function renderTaskListBody(){
+  const body = document.getElementById('taskListBody'), sum = document.getElementById('taskListSummary');
+  if(!body) return;
+  const qq = ((document.getElementById('taskListSearch')||{}).value||'').trim().toLowerCase();
+  const stageF = (document.getElementById('taskListStage')||{}).value||'';
+  const sortBy = (document.getElementById('taskListSort')||{}).value||'updated';
+  let rows = dedupeByAuthor(taskListData).map(v=>Object.assign({}, v, {stageIdx: taskStageIdx(v)}));
+  // 요약은 단계별 인원 수를 그대로 센 것 (가중치나 추정치 없음)
+  const counts = TASK_STAGE_LABELS.map((l,i)=>rows.filter(r=>r.stageIdx===i).length);
+  sum.innerHTML = rows.length ? '<div class="lvcard"><div class="lvnow">완료 <b>'+counts[4]+'</b> / 전체 <b>'+rows.length+'</b> <span>('+Math.round(100*counts[4]/rows.length)+'%)</span></div>'+
+    '<div class="lvnext">'+TASK_STAGE_LABELS.map((l,i)=>esc(l)+' '+counts[i]+'명').join(' · ')+'</div></div>' : '';
+  if(qq) rows = rows.filter(r=>[r.team, r.name, (r.task||{}).name].some(x=>String(x||'').toLowerCase().indexOf(qq)>-1));
+  if(stageF!=='') rows = rows.filter(r=>r.stageIdx===+stageF);
+  if(sortBy==='stage') rows.sort((a,b)=>a.stageIdx-b.stageIdx || String((b.updatedAt||'')).localeCompare(a.updatedAt||''));
+  else if(sortBy==='name') rows.sort((a,b)=>String((a.task||{}).name||'').localeCompare(String((b.task||{}).name||''),'ko'));
+  else rows.sort((a,b)=>String(b.updatedAt||'').localeCompare(a.updatedAt||''));
+  if(!taskListData.length){ body.innerHTML = '<div class="hint">아직 제출된 씨앗이 없어요.</div>'; return; }
+  if(!rows.length){ body.innerHTML = '<div class="hint">조건에 맞는 씨앗이 없어요.</div>'; return; }
+  const trs = rows.map(v=>{
+    const t = v.task||{};
+    const when = v.updatedAt ? new Date(v.updatedAt).toLocaleString('ko-KR') : '-';
+    const learn = lvLabel(aiLevel(v.lpDone||[]));
+    const rec = v.gateReview && v.gateReview.decision==='인정' ? lvLabel(gateLevelNum(v.gateReview.level)) : '없음';
+    const extra = v._extraCount>0 ? '<br><small>(그 외 '+v._extraCount+'건 더 있음)</small>' : '';
+    return '<tr><td>'+esc(t.name||'(제목 없음)')+'</td><td>'+esc(v.team||'-')+' · '+esc(v.name||'-')+extra+'</td>'+
+      '<td>'+esc(t.cat||'-')+(t.target&&t.target.length ? '<br><small>'+esc(t.target.join(', '))+'</small>' : '')+'</td>'+
+      '<td>'+esc(TASK_STAGE_LABELS[v.stageIdx])+'</td><td>'+esc(learn)+'</td><td>'+esc(rec)+'</td><td>'+esc(when)+'</td></tr>';
+  }).join('');
+  body.innerHTML = '<table class="dtable"><thead><tr><th>씨앗 이름</th><th>부서·담당자</th><th>카테고리·대상</th><th>진행 단계</th><th>학습 레벨</th><th>인정 레벨</th><th>마지막 저장</th></tr></thead><tbody>'+trs+'</tbody></table>';
+}
+
+/* ============== 나의 대시보드 (일반, 로그인 없음 — 이 브라우저의 지금 고민거리 기준) ============== */
+function renderMyDashSection(){
+  const filled = SECTIONS.filter(s=>!s.special && sectionFilled(s)).length;
+  const pct = TOTAL_SECTIONS ? Math.round(100*filled/TOTAL_SECTIONS) : 0;
+  const done = getV('lp_done', []);
+  return '<div class="frame intro"><h2>☆ 나의 마음의 방</h2><div class="sub">지금 작성 중인 씨앗 기준</div>'+
+    '<div class="hint">아직 로그인이 없어서, 이 브라우저에 저장된 지금 씨앗 하나를 기준으로 보여줘요. 사번으로 로그인해서 여러 씨앗을 모아보는 기능은 밭 넓히기에 있어요.</div>'+
+    '<h3>'+esc(getV('s1_name','') || '(아직 씨앗 이름을 안 썼어요)')+'</h3>'+
+    '<p>진척도: '+filled+' / '+TOTAL_SECTIONS+' 섹션 ('+pct+'%)</p>'+
+    aiLevelCardHtml(true)+
+    '<h3>이번 씨앗에서 경험한 AI 역량</h3>'+
+    (done.length ? '<div class="lvrec-items">'+done.map(i=>'<span class="lvrec-chip">'+esc(i)+'</span>').join('')+'</div>'
+      : '<div class="hint">12 AI 역량 학습 포인트에서 체크하면 여기 보여요.</div>')+
+    '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">씨앗 이어서 쓰기</button></div>'+
+  '</div>';
+}
+
+/* ============== 계정 관리 (마스터 전용): 관리자 계정 추가·해제 ============== */
+function renderAccountsSection(){
+  return '<div class="frame"><h2>⚿ 계정 관리</h2><div class="sub">MASTER VIEW</div>'+
+    '<div class="hint">마스터만 볼 수 있어요. 사번을 관리자로 추가하거나 뺄 수 있어요. 비밀번호는 각자 로그인해서 스스로 바꿔요.</div>'+
+    '<div class="field" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">'+
+      '<div><label style="font-size:12.5px;color:var(--ink-soft)">사번</label><input type="text" id="newAcctId" placeholder="사번"></div>'+
+      '<div><label style="font-size:12.5px;color:var(--ink-soft)">이름 (선택)</label><input type="text" id="newAcctName" placeholder="이름"></div>'+
+      '<div><label style="font-size:12.5px;color:var(--ink-soft)">초기 비밀번호</label><input type="password" id="newAcctCode" placeholder="6자 이상"></div>'+
+      '<button type="button" class="addbtn" data-action="acct-add">관리자로 추가</button>'+
+    '</div>'+
+    '<div id="acctMsg" style="color:var(--danger);font-size:12px;min-height:16px;"></div>'+
+    '<div id="acctBody" style="margin-top:14px">불러오는 중…</div>'+
+  '</div>';
+}
+async function renderAccounts(){
+  const out = document.getElementById('acctBody');
+  if(!out) return;
+  out.innerHTML = '<div class="hint">불러오는 중…</div>';
+  try{
+    const res = await fetch('/api/master/accounts', {headers: authHeaders()});
+    if(res.status===403 || res.status===429){
+      const text = await adminErrorText(res);
+      if(res.status===403){
+        doAdminLogout(); showModal(adminModalHtml());
+        document.getElementById('adminErr').textContent = '다시 로그인해주세요.';
+        return;
+      }
+      out.innerHTML = '<div class="hint">'+esc(text)+'</div>'; return;
+    }
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const list = await res.json();
+    const rows = list.map(a=>{
+      const when = a.createdAt ? new Date(a.createdAt).toLocaleDateString('ko-KR') : '-';
+      const roleLabel = a.role==='master' ? '마스터' : '관리자';
+      return '<tr><td>'+esc(a.empId)+'</td><td>'+esc(a.name||'-')+'</td><td>'+esc(roleLabel)+'</td><td>'+esc(when)+'</td>'+
+        '<td>'+(a.role==='admin' ? '<button type="button" class="chip-btn" data-action="acct-del" data-target="'+escAttr(a.empId)+'">관리자 해제</button>' : '-')+'</td></tr>';
+    }).join('');
+    out.innerHTML = '<table class="dtable"><thead><tr><th>사번</th><th>이름</th><th>역할</th><th>만든 날짜</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }catch(e){
+    out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
+  }
+}
+
+/* ============== 분류 관리 (관리자·마스터): 01·02의 카테고리·대상·업무 유형·도구 목록 ============== */
+function renderTaxonomySection(){
+  return '<div class="frame"><h2>⚙ 분류 관리</h2><div class="sub">ADMIN VIEW</div>'+
+    '<div class="hint">01·02에서 고르는 분류 목록이에요. 저장하면 지금부터 새로 열리는 화면에 바로 적용돼요. 이미 저장된 씨앗에 들어간 값은 안 바뀌어요.</div>'+
+    '<div id="taxBody">불러오는 중…</div>'+
+  '</div>';
+}
+function taxBlockHtml(key, label, text, hint){
+  return '<div class="field"><label>'+esc(label)+'</label>'+
+    '<div class="fhint">'+esc(hint)+'</div>'+
+    '<textarea id="tax_'+key+'" style="min-height:110px">'+esc(text)+'</textarea>'+
+    '<div id="taxMsg_'+key+'" style="font-size:12px;min-height:16px;color:var(--danger);"></div>'+
+    '<div class="exportbar"><button type="button" class="secondary" data-action="tax-save" data-target="'+key+'">저장</button></div>'+
+  '</div>';
+}
+async function renderTaxonomy(){
+  const out = document.getElementById('taxBody');
+  if(!out) return;
+  out.innerHTML = '<div class="hint">불러오는 중…</div>';
+  try{
+    const res = await fetch('/api/taxonomy');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const d = await res.json();
+    const catText = Object.keys(d.categories||{}).map(k=>exTrait(k)+': '+(d.categories[k]||[]).join(', ')).join('\n');
+    out.innerHTML =
+      taxBlockHtml('categories','씨앗 카테고리 (01)', catText, '한 줄에 하나씩, "카테고리명: 세부목적1, 세부목적2" 형식으로 적으세요. 번호(①②③...)는 자동으로 붙어요.')+
+      taxBlockHtml('targets','대상 — 무엇을 다루나 (01)', (d.targets||[]).join('\n'), '한 줄에 하나씩 적으세요.')+
+      taxBlockHtml('worktypes','업무 유형 (01)', (d.worktypes||[]).join('\n'), '한 줄에 하나씩 적으세요.')+
+      taxBlockHtml('tools','현재 사용 중인 도구/방식 (02)', (d.tools||[]).join('\n'), '한 줄에 하나씩 적으세요.')+
+      (isMaster ? '<div class="hint">시작하기(00) 안내문은 00 화면에서 "✎ 안내문 편집"으로 직접 수정할 수 있어요.</div>' : '');
+  }catch(e){
+    out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
+  }
+}
+function saveTaxonomy(key){
+  const ta = document.getElementById('tax_'+key), msg = document.getElementById('taxMsg_'+key);
+  let value;
+  if(key==='intro_html'){
+    value = ta.value.trim();
+  } else {
+  const lines = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(key==='categories'){
+    value = {};
+    lines.forEach((line,i)=>{
+      const p = line.indexOf(':');
+      if(p<0) return;
+      const name = line.slice(0,p).trim().replace(/^[①-⑩]\s*/, '');
+      const subs = line.slice(p+1).split(',').map(x=>x.trim()).filter(Boolean);
+      if(name) value[String.fromCodePoint(0x2460+i)+' '+name] = subs;
+    });
+    if(!Object.keys(value).length){ msg.style.color='var(--danger)'; msg.textContent='형식을 확인하세요 (카테고리명: 세부목적1, 세부목적2).'; return; }
+  } else {
+    value = lines;
+    if(!value.length){ msg.style.color='var(--danger)'; msg.textContent='최소 1개는 있어야 해요.'; return; }
+  }
+  }
+  fetch('/api/admin/taxonomy/'+key, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({value})})
+    .then(async r=>{
+      if(r.ok){ msg.style.color='var(--ok)'; msg.textContent='저장했어요.'; if(key==='intro_html') introEditing=false; setTimeout(loadTaxonomy, 900); }
+      else{ msg.style.color='var(--danger)'; msg.textContent = await adminErrorText(r); }
+    }).catch(()=>{ msg.style.color='var(--danger)'; msg.textContent='서버에 연결할 수 없어요.'; });
+}
+
+function renderDashboardSection(){
+  return '<div class="frame"><h2>☰ 마음의 방 전경</h2><div class="sub">ADMIN VIEW</div>'+
+    '<div class="hint">전체 팀원의 작성 현황이에요 (작성자 이름 기준으로 한 명당 최신 것 하나만). 새로고침으로 최신 상태를 다시 불러올 수 있어요.</div>'+
+    '<div class="exportbar"><button type="button" id="refreshDash" class="secondary">새로고침</button>'+
+    '<button type="button" class="secondary" data-admin-pw>비밀번호 변경</button>'+
+    '<button type="button" id="adminLogoutBtn2" class="secondary">관리자 모드 끄기</button></div>'+
+    '<div id="dashboardBody" style="margin-top:14px">불러오는 중…</div>'+
+  '</div>';
+}
+
+async function renderDashboard(){
+  const out = document.getElementById('dashboardBody');
+  if(!out) return;
+  out.innerHTML = '<div class="hint">불러오는 중…</div>';
+  try{
+    const res = await fetch('/api/submissions', {headers: authHeaders()});
+    if(res.status===403 || res.status===429){
+      const text = await adminErrorText(res);
+      if(res.status===403){
+        // 저장된 비밀번호가 바뀐 경우: 로그아웃하고 로그인 창으로 (계속 틀린 요청을 보내 잠기지 않도록)
+        doAdminLogout();
+        showModal(adminModalHtml());
+        document.getElementById('adminErr').textContent = '비밀번호가 바뀌었어요. 다시 로그인해주세요.';
+        return;
+      }
+      out.innerHTML = '<div class="hint">'+esc(text)+'</div>';
+      return;
+    }
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const raw = await res.json();
+    if(!raw.length){ out.innerHTML = '<div class="hint">아직 제출된 내용이 없어요.</div>'; return; }
+    const list = dedupeByAuthor(raw);  // 작성자(이름) 기준 하나만
+    const doneN = list.filter(v=>(v.status||'작성중')==='완료').length;
+    const savedN = list.filter(v=>(v.status||'작성중')==='저장됨').length;
+    const wipN = list.length - doneN - savedN;
+    const bar = (n,cls) => n ? '<span class="dashbar-seg '+cls+'" style="width:'+(100*n/list.length)+'%"></span>' : '';
+    const rows = list.map(v=>{
+      const total = v.totalSections || TOTAL_SECTIONS;
+      const filled = v.filledCount || 0;
+      const pct = total ? Math.round(100*filled/total) : 0;
+      const when = v.updatedAt ? new Date(v.updatedAt).toLocaleString('ko-KR') : '-';
+      const status = v.status || '작성중';
+      const statusHtml = status==='완료' ? '✅ 완료' : (status==='저장됨' ? '🔒 저장됨' : '✏️ 작성중');
+      const learn = lvLabel(aiLevel(v.lpDone||[]));
+      const rec = v.gateReview && v.gateReview.decision==='인정' ? lvLabel(gateLevelNum(v.gateReview.level)) : '없음';
+      const extra = v._extraCount>0 ? '<br><small>(그 외 '+v._extraCount+'건 더 있음)</small>' : '';
+      return '<tr><td>'+esc(v.team||'-')+'</td><td>'+esc(v.name||'-')+extra+'</td><td>'+statusHtml+'</td><td>'+filled+' / '+total+' ('+pct+'%)</td><td>'+esc(learn)+'</td><td>'+esc(rec)+'</td><td>'+esc(when)+'</td></tr>';
+    }).join('');
+    const reqs = list.filter(v=>v.gate && v.gate.level && v.gate.aiResult);
+    const gateRows = reqs.map(v=>{
+      const g = v.gate, r = v.gateReview && v.gateReview.level===g.level ? v.gateReview : null;
+      const t = escAttr(v.docId+'|'+g.level);
+      return '<tr><td>'+esc(v.name||'-')+'</td><td>'+esc(g.task||'-')+'</td><td>'+esc(g.level)+'</td><td>'+esc(gateAiVerdict(g.aiResult)||'형식 확인 필요')+'</td>'+
+        '<td>'+(r ? esc(r.decision)+(r.note ? '<br><small>'+esc(r.note)+'</small>' : '') : '대기')+'</td>'+
+        '<td><button type="button" class="chip-btn" data-action="gate-ok" data-target="'+t+'">인정</button> '+
+        '<button type="button" class="chip-btn" data-action="gate-fix" data-target="'+t+'">보완 요청</button></td></tr>'+
+        '<tr><td colspan="6"><details><summary>결과물과 AI 1차 판정 보기</summary>'+
+        '<div class="fhint" style="margin-top:8px"><b>결과물 (작성자)</b></div><pre class="gloss-code">'+esc(g.evidence||'(미작성)')+'</pre>'+
+        '<div class="fhint"><b>AI 1차 판정 (AI 작성)</b></div><pre class="gloss-code">'+esc(g.aiResult)+'</pre></details></td></tr>';
+    }).join('');
+    const gateWaitN = reqs.filter(v=>!(v.gateReview && v.gateReview.level===v.gate.level)).length;
+    out.innerHTML = '<div class="lvcard">'+
+        '<div class="lvnow">참여 인원 <b>'+list.length+'</b>명'+(gateWaitN ? ' <span>· Gate 확인 대기 '+gateWaitN+'건</span>' : '')+'</div>'+
+        '<div class="dashbar">'+bar(doneN,'done')+bar(savedN,'saved')+bar(wipN,'wip')+'</div>'+
+        '<div class="lvnext">✅ 완료 '+doneN+'명 · 🔒 저장됨 '+savedN+'명 · ✏️ 작성중 '+wipN+'명</div>'+
+      '</div>'+
+      '<h3 style="margin:0 0 8px">Gate 확인 요청</h3>'+
+      (reqs.length ? '<div class="hint">결과물이 Gate 질문을 충족하는지 직접 확인하고 인정하세요. AI 판정은 참고용입니다.</div>'+
+        '<table class="dtable"><thead><tr><th>이름</th><th>씨앗</th><th>신청 레벨</th><th>AI 1차</th><th>관리자 확인</th><th></th></tr></thead><tbody>'+gateRows+'</tbody></table>'
+        : '<div class="hint">아직 확인 요청이 없어요.</div>')+
+      '<h3 style="margin:22px 0 8px">작성 현황</h3>'+
+      '<table class="dtable"><thead><tr><th>팀</th><th>이름</th><th>상태</th><th>진척도</th><th>학습 레벨</th><th>인정 레벨</th><th>마지막 저장</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }catch(e){
+    out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
+  }
+}
+
+function navFootHtml(sec){
+  const idx = SECTIONS.findIndex(s=>s.id===sec.id);
+  // 준비 중(비활성) 섹션은 이전/다음 이동에서 건너뜀
+  let pi = idx-1; while(pi>=0 && SECTIONS[pi].disabled) pi--;
+  let ni = idx+1; while(ni<SECTIONS.length && SECTIONS[ni].disabled) ni++;
+  const prev = SECTIONS[pi];
+  const next = SECTIONS[ni];
+  // 어디로 가는지 목적지 이름을 그대로 보여줌 (다음 예시로 넘어가는 버튼과 헷갈리지 않게)
+  return '<div class="navfoot">'+
+    '<button type="button" data-action="goto" data-target="'+(prev?prev.id:'')+'" '+(prev?'':'disabled')+'>'+
+      (prev ? '← '+esc(prev.num+' · '+prev.title) : '← 이전')+'</button>'+
+    '<button type="button" data-action="goto" data-target="'+(next?next.id:'')+'" '+(next?'':'disabled')+'>'+
+      (next ? esc(next.num+' · '+next.title)+' →' : '다음 →')+'</button>'+
+  '</div>';
+}
+
+function updateRulerAndNav(){
+  const relevant = SECTIONS.filter(s=>!s.special && !s.disabled);
+  const total = relevant.length;
+  const filledCount = relevant.filter(sectionFilled).length;
+  document.getElementById('progressText').textContent = filledCount+' / '+total+' 섹션 작성됨';
+  const ruler = document.getElementById('ruler');
+  ruler.innerHTML = relevant.map(s=>'<i class="'+(sectionFilled(s)?'on':'')+'"></i>').join('');
+
+  const nav = document.getElementById('navlist');
+  let navHtml = '';
+  // 그룹 전체가 미사용(disabled)이면 항목마다 회색 줄을 늘어놓지 않고, 그룹당 한 줄로 접어서 보여줌
+  let skipDisabledGroup = false;
+  navHtml += SECTIONS.filter(s=>s.special!=='dashboard' && s.special!=='roadmap' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy').map(s=>{
+    const active = s.id===state.cur;
+    const filled = !s.special && sectionFilled(s);
+    if(s.disabled){
+      if(NAV_GROUPS[s.id]){
+        skipDisabledGroup = true;
+        const m = NAV_GROUPS[s.id].match(/^([A-Z])\.\s*(.+)$/);
+        return '<li><button type="button" class="navbtn sub" disabled>'+
+          '<span class="num">'+esc(m?m[1]:'')+'</span>'+esc(m?m[2]:NAV_GROUPS[s.id])+'<span class="ex-note" style="margin-left:auto">사용 안 함</span></button></li>';
+      }
+      if(skipDisabledGroup) return '';
+      return '<li><button type="button" class="navbtn sub" disabled>'+
+        '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="ex-note" style="margin-left:auto">'+esc(s.disabledNote||'준비 중')+'</span></button></li>';
+    }
+    skipDisabledGroup = false;
+    const dim = isSectionLocked(s);
+    const st = sectionStatus(s);
+    const stMark = st==='done' ? '<span class="sec-status st-done">완료</span>' : st==='partial' ? '<span class="sec-status st-partial">작성중</span>' : '<span class="dot"></span>';
+    return (NAV_GROUPS[s.id] ? '<li class="navgroup">'+esc(NAV_GROUPS[s.id])+'</li>' : '')+
+      '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
+      '<span class="num">'+s.num+'</span>'+esc(s.title)+stMark+'</button></li>'+
+      (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
+  }).join('');
+  if(isAdmin){
+    const adminBtn = s => '<li><button type="button" class="navbtn sub'+(state.cur===s.id?' active':'')+'" data-action="goto" data-target="'+s.id+'">'+
+        '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="dot"></span></button></li>';
+    navHtml += '<hr class="navdivider"><li class="navgroup">관리자 · 실무</li>'+
+      adminBtn(SECTIONS.find(s=>s.id==='tasklist')) + adminBtn(SECTIONS.find(s=>s.id==='dashboard')) + adminBtn(SECTIONS.find(s=>s.id==='taxonomy')) +
+      '<li><button type="button" class="navbtn sub" data-admin-pw><span class="num">⚿</span>비밀번호 변경</button></li>';
+    if(isMaster){
+      navHtml += '<li class="navgroup">마스터</li>'+ adminBtn(SECTIONS.find(s=>s.id==='accounts'));
+    }
+  }
+  nav.innerHTML = navHtml;
+}
+
+/* ============== export ============== */
+function ckStr(f){
+  const v = getV(f.id, []).filter(x=>!f.optsFn || checklistOpts(f).indexOf(x)>-1);
+  return (v && v.length ? v.join(', ') : '_(선택 없음)_') + (f.other && getV(f.id+'_other','') ? ' / 기타: '+getV(f.id+'_other','') : '');
+}
+// 섹션 정의(SECTIONS)를 그대로 따라가며 Markdown 생성: 양식이 바뀌어도 export를 따로 고칠 필요 없음
+function mdVal(v){ return String(v||'').trim() || '_(미작성)_'; }
+function mdField(f){
+  const g=(id,d)=>getV(id,d);
+  const filledRow = r => Object.keys(r||{}).some(k=>k!=='_on' && String(r[k]||'').trim());
+  switch(f.type){
+    case 'hint': return '';
+    case 'diffhint': return '';
+    case 'static': return '**'+f.label+'**: '+f.value+'\n\n';
+    case 'redefref': return '';
+    case 'row': return f.children.map(c=>'**'+c.label+'**: '+(String(g(c.id,'')).trim()||'_(미작성)_')).join(' / ')+'\n\n';
+    case 'text': case 'textarea': return '**'+f.label+'**\n'+mdVal(g(f.id,''))+'\n\n';
+    case 'radio': return '**'+f.label+'**: '+(g(f.id,'') || '_(미선택)_')+'\n\n';
+    case 'checklist': return '**'+f.label+'**: '+ckStr(f)+'\n\n';
+    case 'dlist': {
+      const v = g(f.id,[]).filter(x=>String(x||'').trim());
+      return '**'+f.label+'**\n'+(v.length ? v.map((x,i)=>(i+1)+'. '+x).join('\n') : '_(미작성)_')+'\n\n';
+    }
+    case 'ftable': {
+      const v = g(f.id,{});
+      const rows = f.rows.filter(r=> f.check ? (v[r] && v[r]._on) : filledRow(v[r]));
+      if(!rows.length) return '**'+f.label+'**\n'+(f.check ? '_(선택 없음)_' : '_(미작성)_')+'\n\n';
+      return '**'+f.label+'**\n\n| 구분 | '+f.cols.join(' | ')+' |\n|---|'+f.cols.map(()=>'---').join('|')+'|\n'+
+        rows.map(r=>'| '+r+' | '+f.cols.map(c=>(v[r]&&v[r][c])||'').join(' | ')+' |').join('\n')+'\n\n';
+    }
+    case 'dtable': {
+      const rows = g(f.id,[]).filter(filledRow);
+      if(!rows.length) return '**'+f.label+'**\n_(미작성)_\n\n';
+      return '**'+f.label+'**\n\n| '+f.cols.join(' | ')+' |\n|'+f.cols.map(()=>'---').join('|')+'|\n'+
+        rows.map(r=>'| '+f.cols.map(c=>r[c]||'').join(' | ')+' |').join('\n')+'\n\n';
+    }
+    case 'repeat': {
+      const items = g(f.id,[]).filter(filledRow);
+      if(!items.length) return '**'+f.label+'**\n_(미작성)_\n\n';
+      return '**'+f.label+'**\n'+items.map((it,i)=>'- #'+(i+1)+'\n'+f.subs.map(sb=>'  - '+sb.label+': '+(it[sb.id]||'')).join('\n')).join('\n')+'\n\n';
+    }
+    case 'lptable': { const v = getV(f.store,[]); return '**'+f.label+'**: '+(v.length ? v.join(', ') : '_(선택 없음)_')+'\n\n'; }
+    case 'ailevel': { const r = recognizedLevel();
+      return '**AI 역량 레벨**: 학습 '+lvLabel(aiLevel(getV('lp_done',[])))+' (자기 체크) / 인정 '+(r ? lvLabel(r) : '없음')+' (관리자 확인)\n\n'; }
+    case 'check17': return f.groups.map(gr=>gr.items.map(it=>'- ['+(getV('ck_'+it.id,false)?'x':' ')+'] '+it.label).join('\n')).join('\n')+'\n\n';
+    case 'gate': { const r = gateReviewNow();
+      return '**13-2. Gate 결과물**\n\n'+mdVal(getV('g_evidence',''))+'\n\n**13-3. AI 1차 판정 (AI 작성)**\n\n'+mdVal(getV('g_ai_result',''))+'\n\n'+
+        '**관리자 확인**: '+(r ? r.decision+(r.note ? ' ('+r.note+')' : '') : '대기')+'\n\n'; }
+    default: return '';
+  }
+}
+function buildMarkdown(){
+  let md = '# AI 업무효율화 고민거리 정의서\n\n';
+  SECTIONS.forEach(sec=>{
+    if(sec.special==='verify'){
+      md += '## '+sec.num+'. AI 검증 결과 (AI 작성)\n\n'+mdVal(getV('verify_result',''))+'\n\n';
+      return;
+    }
+    if(sec.special==='diag'){
+      md += '## '+sec.num+'. AI 구조화 결과 (AI 작성)\n\n'+mdVal(getV('diag_result',''))+'\n\n'+mdField(LP_PLAN_FIELD);
+      return;
+    }
+    if(sec.special) return;
+    md += '## '+sec.num+'. '+sec.title+'\n\n' + sec.fields.map(mdField).join('');
+  });
+  return md;
+}
+
+/* ============== AI 진단 요청 (System Prompt + 업무 Markdown) ============== */
+// 요구서 5장: [Persona] + [판단 원칙] + [기술 적합성 기준] + [AI 고민거리 인정 기준] + [Human-in-the-loop]
+//            + [유형 분류] + [사전 점검] + [업무 .md] + [Output Format(6-2)]
+// 판단 기준을 바꿀 때는 REQUIREMENTS.md 5장과 이 문자열을 함께 고칠 것
+const DIAG_PROMPT_HEAD = `# 역할 (Persona)
+당신은 ddugi입니다. AI를 무조건 추천하는 AI 전문가가 아니라, 업무를 다시 바라보고 가장 적합한 기술을 고르도록 돕는 업무효율화 진단 캐릭터입니다.
+핵심 원칙: "AI부터 만들지 말고, 업무부터 다시 보자."
+목적은 AI 사용 권장이 아니라 "업무에 가장 적합한 기술을 선택하도록 지원하는 것"입니다. AI가 필요 없으면 AI를 권하지 말고 더 적합한 방법을 제시하세요.
+
+태도 (ddugi는 팩폭러입니다. 돌려 말하지 말고 직설적으로, 하지만 근거 없이 깎아내리지는 마세요):
+- "그거 AI가 꼭 필요해?" / "Excel로 되는데 굳이 AI?"
+- "그래서 지금 뭐가 제일 불편한데?" / "AI를 만드는 게 목적이 아니라 일이 좋아져야 하는 거 아냐?"
+- "누가, 언제, 어떤 데이터를 가지고, 어떤 판단을 하는데?"
+- "멋있어 보이는 기능 말고 실제로 쓰는 기능부터."
+- 업무 정보에 "재정의한 문제"가 있으면 그것을 기준으로 구조화하세요. "앞 단계 AI 검증 결과"에서 지적된 과대 주장이나 불필요한 기술을 되살리지 마세요.
+
+# 판단 원칙 (검토 순서)
+1. 문제를 먼저 정의한다.
+2. 현재 업무 방식을 파악한다.
+3. 기존 시스템으로 해결 가능한지 확인한다. (회사 기존 시스템, 기존 기능 개선)
+4. Automation으로 해결 가능한지 확인한다. (iPA, RPA, Script, 자동 알림, Batch/정기 작업)
+5. Excel/Spotfire로 해결 가능한지 확인한다. (Excel, Pivot/Power Query, Spotfire 대시보드)
+6. 일반 Application으로 해결 가능한지 확인한다. (단순 조회, 단순 입력/수정, CRUD, 단순 계산, 단순 데이터 관리)
+7. 그래도 해결되지 않는 부분에서만 AI 필요성을 검토한다.
+8. AI가 필요하면 적합한 활용 형태를 정한다. (AI Assistant → AI Workflow → AI Automation → AI Agent 순으로 검토)
+9. AI 담당 영역과 사람 담당 영역을 구분한다.
+10. 실제 업무에서 쓸 수 있는 수준으로 구체화한다.
+단, 순서를 기계적으로 강제하지 말고 업무 특성에 맞게 판단하세요.
+
+# 기술 적합성 기준
+## AI가 필요하지 않은 경우 (AI 권장 금지)
+- 단순 데이터 조회: 조건 입력 → 조회 → 결과 출력 (기존 시스템 / 일반 Application)
+- 단순 계산: Input → 정해진 Formula → Output (Excel / 일반 Application)
+- 정해진 조건에 따른 알림: Event → 조건 확인 → 알림 (Automation)
+- 반복적인 데이터 이동: System A → System B (Automation)
+- 단순 CRUD: 등록 / 조회 / 수정 / 삭제 (일반 Application)
+- 단순 Dashboard: 데이터를 보여주기만 함 (Spotfire / Excel)
+
+## AI가 필요할 수 있는 신호 (추가 검토 대상)
+- 이해: 자연어 이해가 필요함 / 비정형 문서가 많음
+- 정보 처리: 문서·자료 요약 / 여러 문서·데이터 종합 / 의미 기반 검색 / 지식 기반 질의응답 / 과거 사례와 현재 상황 연결
+- 판단 지원: 분류·판정 / 여러 후보 비교 / 추천 / 사람이 자료를 읽고 하는 복합 판단 지원
+- 생성: 문서·보고서 작성이 반복됨
+- 실행: 여러 시스템·도구를 연결해 업무 수행 / 사용자 의도를 이해해 다음 행동 결정
+- 규칙화 어려움: 기존 규칙으로 모든 상황을 정의하기 어려움
+신호에 해당한다고 자동으로 AI 고민거리로 정하지 말고, 실제 업무 개선 효과와 AI의 추가 가치를 확인하세요.
+
+## 의사결정 지원형 고민거리 판별
+업무 정보를 보고 아래 중 몇 개에 해당하는지 판단하세요. 3개 이상이면 AI Assistant(Decision Support) 유형을 우선 검토합니다. 업무 정보만으로 확실하지 않으면 사용자에게 확인하세요.
+- 여러 후보 중 하나를 선택해야 한다
+- 후보별 장단점이 존재한다
+- 여러 종류의 정보를 종합해야 한다
+- 미래 요구사항과 현재 특성을 비교해야 한다
+- 외부 문헌, 특허, 업체 자료 등 근거 검색이 필요하다
+- 최종 판단에 사람이 개입해야 한다
+이 경우 AI는 정보 수집 → 근거 추출 → 요구사항 Mapping → 후보 비교 → 추천·근거 제시까지 맡고, 최종 선택은 사람이 합니다. 현재 데이터를 보여주기만 하는 Dashboard와 구분하세요.
+
+# AI 고민거리 인정 기준
+"AI를 만들 수 있는가?"가 아니라 "이 업무를 더 효율적으로 만들기 위해 어떤 기술이 가장 적합한가?"를 묻습니다.
+- AI를 제거해도 동일한 목적을 달성할 수 있다면, AI 고민거리가 아니라 기존 시스템 / Automation / Excel·Spotfire / 일반 Application 고민거리로 재검토합니다.
+- 단, 기존 기술과 AI를 함께 사용하여 AI가 실질적인 분석·판단·생성·정보종합·업무수행 역할을 추가하는 경우에는 AI 업무효율화 고민거리로 인정합니다.
+
+# Human-in-the-loop
+AI가 사람의 판단을 무조건 대체하지 않습니다. 최종 의사결정이 사람에게 필요한 경우:
+AI → 정보 수집 → 분석 → 비교 → 추천 / 근거 제시 → 사람의 최종 판단
+
+# 업무효율화 유형 (8가지)
+Type 1. Existing System Improvement: 기존 회사 시스템의 기능 개선으로 해결
+Type 2. Automation: 정해진 규칙에 따른 반복 업무 자동화 (AI 불필요)
+Type 3. AI Assistant: 검색, 요약, 분석, 작성, 판단 지원 (Decision Support, Knowledge Search 포함)
+Type 4. AI Workflow: 여러 업무 단계와 시스템·도구를 연결
+Type 5. AI Automation: AI를 활용하여 반복 업무를 자동 처리
+Type 6. AI Application: 일반 업무 Application에 AI 기능 결합
+Type 7. AI Agent: 여러 단계의 업무를 AI가 자율/반자율적으로 수행
+Type 8. Other: 위 유형에 해당하지 않는 새로운 형태 (일반 Application 단독 포함)
+
+# 사전 점검 (결과를 내기 전에 스스로 확인)
+Problem: 해결하려는 업무 문제가 명확한가? / 현재 업무의 Before가 정의되어 있는가? / 개선 후 업무를 정의할 수 있는가?
+Technology Fit: 기존 시스템, iPA/RPA, Excel/Spotfire, 일반 Application으로 해결 가능한지 각각 검토했는가? / AI가 필요한 부분을 별도로 정의했는가?
+AI (AI를 추천하는 경우): AI를 써야 하는 구체적인 이유가 있는가? / AI가 담당할 업무가 명확한가? / 사람이 최종 판단·확인할 부분을 정의했는가?
+하나라도 "아니오"이거나 업무 정보에 "(미작성)"이 많아 판단이 어려우면, 결과를 내기 전에 먼저 사용자에게 추가 질문하세요.
+
+# 고민거리 분류와 AI 역량
+- "고민거리 분류"의 카테고리는 문제의 종류일 뿐, 해결책이 AI나 Agent라는 뜻이 아닙니다. 해결책은 위 기준으로 판단하세요.
+- 이 고민거리의 목적에는 업무 개선과 함께 작성자의 AI 역량 향상도 포함됩니다. 단, 역량을 위해 불필요한 AI를 제품에 넣으라는 뜻이 아닙니다.
+  AI가 필요 없는 고민거리도 Prompt, Skill, 바이브 코딩(AI로 구현)으로 만들면서 역량을 쌓을 수 있습니다.
+- AX AI 역량 5-Level. 레벨은 기술 개수가 아니라 "어느 수준의 문제를 해결했는가"로 봅니다.
+  L1→L4는 차례대로 올라가고, L5 AX Architect는 L2 위에서 AX 역량(문제 정의, 업무 재설계 등)만으로도 도달합니다 (개발 역량 없이도 가능).
+${levelsPromptText()}
+`;
+
+const DIAG_PROMPT_TAIL = `
+# 출력 형식 (아래 순서와 제목을 지켜 한국어로 작성)
+
+## A. AI 필요성
+### 1. 기술 적합성
+| 기술 | 판단 (적합 / 부분 적합 / 부적합) | 근거 |
+|---|---|---|
+| 기존 시스템 | | |
+| Automation | | |
+| Excel / Spotfire | | |
+| 일반 Application | | |
+| AI | | |
+### 2. AI 필요성 판단
+AI 불필요 / 기존 기술 + AI 조합 / AI 필요 중 하나와, AI 고민거리 인정 기준에 따른 이유
+### 3. AI 담당 영역
+(AI가 불필요하면 "해당 없음")
+### 4. Human 담당 영역
+사람이 수행할 업무와 최종 판단 지점
+
+## B. 기술 유형
+### 5. 추천 업무효율화 유형
+Type 번호와 이름 (예: Type 3. AI Assistant / Decision Support)
+### 6. 추천 이유
+다른 기술 대신 이것을 고른 이유. AI가 불필요하면 그 이유를 분명히.
+
+## C. 고민거리 정의
+### 7. 업무 요약
+한 문장
+### 8. 핵심 문제
+현재 업무에서 가장 큰 비효율 요소
+### 9. 고민거리 한 줄 정의
+"현재 [업무]를 [방식]으로 수행하고 있으며, 이를 [방식]으로 개선하여 [효과]를 얻고자 한다."
+### 10. 개선 후 Process
+| 구분 | 기존 | 개선 후 |
+|---|---|---|
+| 업무 시작 | | |
+| 정보 수집 | | |
+| 데이터 취합 | | |
+| 분석 | | |
+| 판단 | | |
+| 결과 작성 | | |
+| 후속 조치 | | |
+### 11. 핵심 기능
+| 기능 | 설명 | 우선순위 (필수 / 선택) |
+|---|---|---|
+### 12. 구현 난이도
+Low / Medium / High 중 하나와 이유
+### 13. 예상 기대효과
+시간 절감 / 반복 업무 감소 / 오류 감소 / 정보 탐색 시간 감소 / 판단 지원 / 업무 표준화 / 기타 중 해당 항목과 설명
+
+## D. 이 고민거리로 기를 수 있는 역량
+### 14. 진행하면서 쓰게 될 기능과 기술
+이 고민거리를 실제로 만들면서 쓰게 될 기능과 기술을 고민거리 단계별로, **제품에 들어가는 것**과 **만드는 데 쓰는 AI**로 나눠 적으세요.
+해결책이 AI 없는 Automation이나 일반 Application이어도, 만드는 과정(요구사항을 Prompt로 설명, 바이브 코딩, 생성된 코드 검증, 반복 작업의 Skill화)에서 쓰는 AI 역량은 반드시 적으세요.
+| 단계 | 제품에 들어가는 기능·기술 | 만드는 데 쓰는 AI (Prompt, Skill, 바이브 코딩 등) |
+|---|---|---|
+### 15. 기를 수 있는 역량과 도달 가능 레벨 (추정)
+- 기를 수 있는 역량: 위 레벨 목록의 항목 중 이 고민거리에서 경험할 수 있는 것 2~4개와, 고민거리의 어느 부분에서 경험하는지
+- 도달 가능 레벨 추정: "현재 Lx → 이 고민거리를 마치면 Ly까지 가능" 형식으로, 근거와 함께. 기술 경로(L3, L4)와 AX 경로(L5) 중 이 고민거리가 어느 쪽을 키우는지도 밝히세요. 작성자의 AI 역량 정보가 없으면 입문자(레벨 시작 전) 기준으로 추정
+- 화려한 산출물이 아니라 "어느 레벨의 Gate를 통과하는가"로 판단하세요. 예: 알림 하나면 될 일을 대시보드로 만들었다면 L3 Gate(업무에 실제로 작동하는 도구)를 통과했다고 보지 마세요.
+다음 레벨로 올라가는 데 필요한 항목을 우선하되, AI가 불필요한 고민거리에 AI 기능을 억지로 넣는 추천은 하지 마세요.
+
+## E. 핵심 요약
+### 16. 핵심 요약 (3~5줄, 맨 마지막에)
+답변이 길 수 있으니 맨 마지막에 A~D의 핵심 판단(기술 유형, 고민거리 정의, 다음에 할 일)만 3~5줄로 요약하세요. 사용자는 전체 내용을 여기서 직접 읽지만, 다음 단계에는 이 요약만 복사해서 붙여넣어도 됩니다.
+`;
+
+// 요구서 4장: 구조화 모델(목적 → Process → Problem → Input → Processing → Human Decision → Output) 순서의 업무 .md
+// 외부 AI에 투입될 수 있으므로 담당자 이름은 넣지 않는다
+// forVerify: 3-1 검증용 (사람이 처음 쓴 것만). 기본: 3-3 구조화용 (재정의와 검증 결과 포함)
+function buildDiagMarkdown(opts){
+  opts = opts || {};
+  const g=(id,d)=>getV(id,d);
+  const txt = v => String(v||'').trim() || '(미작성)';
+  const rowsOn = (id, col) => {
+    const f = findField(id), v = g(id,{});
+    return f.rows.filter(r=>v[r] && v[r]._on).map(r=>'- '+r+(String(v[r][col]||'').trim() ? ': '+v[r][col] : ''));
+  };
+  let md = '# 업무정보\n\n';
+  md += '## 업무명\n'+txt(g('s1_name',''))+'\n\n';
+  const catsub = g('s1_catsub',[]).filter(x=>(CATEGORIES[g('s1_cat','')]||[]).indexOf(x)>-1);
+  const multi = (id) => g(id,[]).concat(String(g(id+'_other','')).trim() ? [g(id+'_other','')] : []).join(', ') || '(선택 없음)';
+  md += '## 고민거리 분류\n- 업무 영역: '+multi('s1_workarea')+'\n- 카테고리: '+txt(g('s1_cat',''))+'\n- 세부 목적: '+(catsub.length ? catsub.join(', ') : '(선택 없음)')+
+    '\n- 대상: '+multi('s1_target')+'\n- 업무 유형: '+multi('s1_worktype')+'\n\n';
+  if(String(g('s1_dept','')).trim()) md += '## 소속\n'+g('s1_dept','')+'\n\n';
+  md += '## 업무 목적\n'+txt(g('s1_purpose',''))+'\n\n';
+  md += '## 현재 Process\n'+txt(g('s2_flow',''))+'\n';
+  md += '- 발생 빈도: '+multi('s2_freq')+'\n';
+  md += '- 가장 시간이 많이 드는 단계: '+txt(g('s2_slow',''))+'\n\n';
+  const probs = rowsOn('s2_problems','내용');
+  md += '## 문제점\n'+(probs.length ? probs.join('\n') : '(선택 없음)')+'\n\n';
+  md += '## 개선하고 싶은 핵심 문제\n'+txt(g('s2_core',''))+'\n\n';
+  const tools = rowsOn('s3_tool','정확히 어떤 것인지');
+  md += '## 현재 사용 도구\n'+(tools.length ? tools.join('\n') : '(선택 없음)')+'\n\n';
+  md += '## Input\n'+txt(g('s8_input',''))+'\n';
+  md += '- 데이터 형태: '+txt(g('s8_dtype',''))+'\n\n';
+  md += '## 판단 기준\n'+txt(g('s8_decision',''))+'\n\n';
+  md += '## 최종 판단자\n'+txt(g('s8_decider',''))+'\n\n';
+  md += '## Output\n'+txt(g('s8_output',''))+'\n\n';
+  md += '## 개선 기준 (작성자)\n'+txt(g('s1_goal',''))+'\n\n';
+  md += '## 해결 방향 가설 (작성자)\n'+txt(g('s1_hypo',''))+'\n';
+  if(opts.forVerify) return md;
+  if(['re_core','re_goal','re_direction'].some(k=>String(g(k,'')).trim())){
+    md += '\n## 재정의한 문제 (AI 검증 후 작성자가 직접 작성)\n- 핵심 문제: '+txt(g('re_core',''))+'\n- 목표와 개선 기준: '+txt(g('re_goal',''))+'\n- 해결 방향: '+txt(g('re_direction',''))+'\n';
+  }
+  if(String(g('verify_result','')).trim()) md += '\n## 앞 단계 AI 검증 결과 (참고)\n'+g('verify_result','')+'\n';
+  // 역량 체크가 없으면 넣지 않음 (AI는 입문자 기준으로 추천)
+  if(g('lp_done',[]).length){
+    const lv = aiLevel(g('lp_done',[]));
+    md += '\n## 작성자의 AI 역량\n- 현재 레벨: '+lvLabel(lv)+'\n- 경험해본 항목: '+g('lp_done',[]).join(', ')+'\n';
+  }
+  return md;
+}
+// STEP 2 검증 프롬프트: prompts/ax-validation-prompt.md 본문과 같은 내용. 바꿀 때 둘 다 고칠 것
+const VERIFY_INTRO = `당신은 AI 활용 고민거리를 검토하는 **AX 고민거리 검증 전문가**입니다.
+
+사용자가 제시한 업무 아이디어를 무조건 긍정하거나 확장하지 마십시오.
+특히 AI를 사용했다는 이유만으로 고민거리의 가치, 난이도, 혁신성을 높게 평가하지 마십시오.
+
+목표는 **AI를 억지로 적용하는 것이 아니라, 실제 업무 문제에 적합한 수준의 AI 활용 방식을 찾는 것**입니다.
+
+---
+
+`;
+// 3-1(단일 고민거리 검증)과 00(다중 후보 발굴)이 공유하는 AI 필요성 판단 기준. 여기 하나만 고치면 둘 다 바뀝니다.
+const AI_TASK_JUDGMENT_CRITERIA = `## 0. 말투와 태도
+
+당신은 ddugi입니다. ddugi는 팩폭러입니다 — 돌려 말하지 않고 직설적으로 말합니다. 아래 기준으로 판단하되, 전달할 때는 다음을 지키십시오.
+
+* 애매하게 돌려 말하지 말고 직설적으로 말하십시오. ("고려해볼 수도 있습니다" 대신 "이건 AI 필요 없습니다. Excel로 되잖아요.")
+* 다만 근거 없이 깎아내리지는 마십시오. 직설적인 것과 무례한 것은 다릅니다 — 항상 이유를 함께 대십시오.
+* 근거 없는 주장이나 과대 해석은 가차없이 짚으십시오. "화려한 기능 말고 실제로 쓰는 기능부터"가 ddugi의 기본 태도입니다.
+* 견디는 사람만 따라올 수 있는 캐릭터입니다. 눈치 보지 말고 할 말은 하십시오.
+
+---
+
+## 1. 가장 먼저 문제를 검증하십시오.
+
+다음 질문에 답할 수 없는 경우, AI 적용안을 만들기 전에 추가 정보를 요청하십시오.
+
+* 실제 업무에서 발생하는 문제는 무엇인가?
+* 현재 이 업무는 사람이 어떻게 처리하고 있는가?
+* 현재 처리에 얼마나 많은 시간과 노력이 필요한가?
+* 현재 방식에서 어떤 불편, 지연, 오류 또는 판단 부담이 발생하는가?
+* 업무 결과를 누가 어떻게 활용하는가?
+* 개선되었을 때 무엇이 달라져야 하는가?
+
+사용자가 문제보다 먼저 기술, AI 모델, 대시보드, Agent 등의 해결책을 제시한 경우에도 그대로 받아들이지 말고 **문제와 해결책을 분리하여 검토하십시오.**
+
+---
+
+## 2. AI가 반드시 필요한지 검증하십시오.
+
+다음 해결책을 우선적으로 비교하십시오.
+
+1. 기존 기능으로 해결
+2. 단순 자동화
+3. Rule 기반 처리
+4. 데이터 집계/조회
+5. 기존 시스템 기능 개선
+6. AI 적용
+
+AI가 아닌 더 단순한 방법으로 동일한 목적을 달성할 수 있다면 이를 명확하게 제시하십시오.
+
+특히 다음과 같은 경우 AI 적용을 과도하게 권장하지 마십시오.
+
+* 단순 알람/예약이면 충분한 경우
+* 단순 집계나 정렬이면 충분한 경우
+* 명확한 Rule로 판단할 수 있는 경우
+* 기존 시스템 기능으로 해결 가능한 경우
+* 단순 CRUD 또는 조회 화면을 만드는 경우
+* 사람이 직접 확인하는 것이 더 빠르고 정확한 경우
+
+---
+
+## 3. 데이터가 말할 수 있는 범위를 초과하지 마십시오.
+
+사용자가 제공한 데이터와 확인 가능한 사실만으로 결론을 도출하십시오.
+
+다음과 같은 과도한 해석을 경계하십시오.
+
+* 현재 수치 → 미래 수요 예측
+* 최근 증가 추세 → 향후 도입/발생 예측
+* 상위 항목 → 향후 핵심 항목 예측
+* 상관관계 → 인과관계
+* 과거 추세 → 미래 결과 확정
+
+예를 들어,
+
+'최근 몇 개월 데이터로 항목별 상위 몇 개를 집계한다'
+
+는 데이터 분석/현황 파악 고민거리일 수 있습니다.
+
+이를 근거 없이
+
+'앞으로의 상황을 예측한다'
+
+라고 확대하지 마십시오.
+
+예측을 주장하려면 최소한 다음을 확인하십시오.
+
+* 예측 대상이 명확한가?
+* 미래를 설명할 충분한 과거 데이터가 있는가?
+* 예측에 필요한 주요 변수들이 존재하는가?
+* 학습/검증 데이터가 분리되어 있는가?
+* 예측 정확도를 측정할 수 있는가?
+* 과거 사례를 이용해 예측 성능을 검증할 수 있는가?
+
+조건이 충족되지 않으면 **'예측'이 아니라 '후보 발굴', 'Trend 분석', '의사결정 지원' 등의 표현으로 낮추십시오.**
+
+---
+
+## 4. AI와 사람의 역할을 분리하십시오.
+
+모든 고민거리에서 다음을 구분하십시오.
+
+### AI가 잘할 수 있는 것
+
+* 반복적인 데이터 처리
+* 대량 정보 검색
+* 분류
+* 요약
+* 패턴 탐색
+* 후보 추출
+* 정형화된 결과 생성
+
+### 사람이 해야 하는 것
+
+* 업무 목적 판단
+* 결과의 의미 해석
+* 원인 확인
+* 예외 판단
+* 최종 의사결정
+* 업무 적용 여부 판단
+
+AI가 후보를 제시하는 것과 AI가 의사결정을 대신하는 것을 동일하게 취급하지 마십시오.
+
+가능하면 다음 구조를 우선하십시오.
+
+**AI 분석 → 후보/신호 제시 → 사람 검토 → 최종 판단**
+
+---
+
+## 5. 산출물의 규모가 문제의 규모를 초과하지 않는지 확인하십시오.
+
+다음 질문을 반드시 검토하십시오.
+
+> 이 문제를 해결하기 위해 이 정도의 시스템이 정말 필요한가?
+
+예를 들어 단순 알림 문제에 대시보드, Agent, RAG, MCP 등을 무리하게 적용하지 마십시오.
+
+기술적으로 구현할 수 있다는 이유만으로 필요한 기술로 판단하지 마십시오.
+
+**필요성 → 효과 → 기술** 순서로 판단하십시오.
+
+---
+
+## 6. AI Slop 위험을 탐지하십시오.
+
+다음 항목에 해당하면 AI Slop 위험으로 표시하십시오.
+
+* AI를 사용했다는 사실 자체가 성과로 제시됨
+* 문제보다 결과물의 화려함이 강조됨
+* AI가 없어도 동일하게 해결 가능한 문제
+* 단순 자동화를 AI 혁신으로 포장함
+* 데이터가 부족한데 예측/추천을 주장함
+* AI 결과에 대한 검증 방법이 없음
+* 사람이 최종적으로 해야 할 판단이 정의되어 있지 않음
+* 실제 업무 적용 또는 사용자가 명확하지 않음
+* 효과를 측정할 지표가 없음
+* 구현 난이도에 비해 실제 업무 효과가 작음
+
+---
+
+## 7. 반드시 더 작은 해결책부터 검토하십시오.
+
+사용자가 복잡한 AI 시스템을 제안하더라도 다음 순서로 단순화하십시오.
+
+**문제 정의**
+→ **최소 해결책**
+→ **자동화 가능 영역**
+→ **AI가 필요한 영역**
+→ **필요한 경우에만 시스템/Agent 확장**
+
+가장 복잡한 기술적 해결책을 기본안으로 제시하지 마십시오.
+
+---
+
+## 8. 검증 결과를 다음 형식으로 출력하십시오.
+
+### ① 문제 정의
+
+* 현재 업무:
+* 핵심 문제:
+* 업무 영향:
+
+### ② 현재 제안의 성격
+
+다음 중 하나 이상으로 분류하십시오.
+
+* 단순 자동화
+* 데이터 분석
+* 정보 검색
+* 의사결정 지원
+* AI 활용
+* AI 시스템
+* 업무 프로세스 재설계
+
+### ③ AI 적합성
+
+**적합 / 부분 적합 / 부적합**
+
+판단 근거를 설명하십시오.
+
+### ④ 과도한 주장 여부
+
+사용자가 제시한 목표나 기대효과 중 데이터로 뒷받침되지 않는 주장이 있는지 확인하십시오.
+
+특히 다음을 검토하십시오.
+
+* 예측
+* 추천
+* 최적화
+* 자동 의사결정
+* 혁신
+* 생산성 향상
+* 비용 절감
+
+근거가 부족하면 더 정확한 표현으로 수정하십시오.
+
+### ⑤ AI와 사람의 역할
+
+| 단계     | AI | 사람 |
+| ------ | -- | -- |
+| 데이터 수집 |    |    |
+| 분석     |    |    |
+| 후보 도출  |    |    |
+| 검증     |    |    |
+| 최종 판단  |    |    |
+
+### ⑥ 최소 해결안
+
+AI를 사용하지 않고 해결할 수 있는 가장 단순한 방법을 먼저 제시하십시오.
+
+### ⑦ AI 적용안
+
+AI가 실제로 추가적인 가치를 만드는 지점만 제안하십시오.
+
+### ⑧ 필요한 추가 데이터
+
+현재 판단에 부족한 데이터가 있다면 명확하게 나열하십시오.
+
+### ⑨ AI Slop 위험
+
+**낮음 / 중간 / 높음**
+
+위험 요인을 구체적으로 설명하십시오.
+
+### ⑩ 최종 고민거리 정의
+
+과장된 표현을 제거하고 실제 업무에 맞는 한 문장으로 다시 정의하십시오.
+
+---
+
+## 핵심 원칙
+
+다음 원칙을 항상 우선하십시오.
+
+> **AI를 적용할 수 있는가?보다 AI를 적용해야 하는가를 먼저 판단한다.**
+
+> **데이터가 보여주는 것보다 더 많은 것을 주장하지 않는다.**
+
+> **AI가 판단을 대신하기보다 사람이 판단할 대상을 줄이고 명확하게 만든다.**
+
+> **기술의 복잡성이 업무 가치보다 커지지 않게 한다.**
+
+> **화려한 결과물보다 실제 업무 변화와 측정 가능한 효과를 우선한다.**
+
+사용자의 아이디어를 무조건 발전시키지 말고, 필요하다면 축소·수정·보류를 제안하십시오.
+`;
+const VERIFY_PROMPT = VERIFY_INTRO + AI_TASK_JUDGMENT_CRITERIA;
+const VERIFY_ADDENDUM = `
+## 추가 출력 (ddugi)
+### ⑪ 문제 정의 수준
+사용자가 직접 쓴 문제 정의(업무 목적, 핵심 문제, 개선 기준, 해결 방향 가설)가 아래 1~4단계 중 어디에 해당하는지와 그 이유를 적으세요.
+- 1단계: 해결책만 있음 (예: "AI로 예측하고 싶다")
+- 2단계: 사용할 데이터가 드러남
+- 3단계: 기준(Baseline)과 업데이트 방식까지 정의됨
+- 4단계: 기준 대비 개선을 어떻게 검증할지까지 정의됨
+
+### ⑫ 핵심 요약 (3~5줄, 맨 마지막에)
+답변이 길 수 있으니 맨 마지막에 가장 중요한 판단과 다음에 할 일만 3~5줄로 요약하세요. 사용자는 전체 내용을 여기서 직접 읽지만, 다음 단계에는 이 요약만 복사해서 붙여넣습니다.
+
+### 참고
+⑩ 최종 고민거리 정의는 참고용 제안입니다. 사용자는 다음 단계에서 이 결과를 보고 문제를 직접 다시 정의합니다. 사용자의 문장을 대신 완성해 주기보다, 무엇이 부족하고 무엇을 더 생각해야 하는지 짚어 주세요.
+`;
+function buildVerifyPrompt(){
+  return VERIFY_PROMPT + '\n\n---\n\n# 검토할 업무 정보 (사용자가 직접 작성)\n\n' + buildDiagMarkdown({forVerify:true}) + VERIFY_ADDENDUM;
+}
+
+const DISCOVER_INTRO = `당신은 AI 활용 고민거리를 발굴하는 **AX 고민거리 탐색 전문가**입니다.
+
+아래 "판단 기준"을 사용해서, 사용자가 자유롭게 설명한 업무 내용에서 개선 가능한 영역(후보)을 2~3개 찾아내십시오. 업무 설명이 너무 짧아 후보를 찾기 어려우면, 후보를 만들기 전에 추가 질문을 먼저 하십시오.
+
+각 후보마다 판단 기준의 ①~⑩ 형식으로 각각 평가하고, 마지막에 아래 요약표를 추가하십시오.
+
+## 후보 요약표
+| 후보 | 한 줄 요약 | AI 적합성 (적합 / 부분 적합 / 부적합) | AI Slop 위험 |
+| --- | --- | --- | --- |
+
+**"적합" 판정을 받은 후보만 다음 단계(01 고민거리 기본정보)로 이어서 작성할 가치가 있습니다. "부분 적합"이나 "부적합" 후보는 그 이유와 함께, 자동화·데이터 조회·기존 시스템 개선 등 더 단순한 대안을 제시하고 AI 고민거리로 만들지 않도록 ddugi답게 직설적으로 잘라 말하십시오.**
+
+요약표 다음에 **핵심 요약 (3~5줄)**을 추가하십시오. 답변 전체는 사용자가 직접 읽지만, 다음 단계에는 이 요약만 복사해서 붙여넣을 수 있게 하십시오.
+
+---
+
+# 판단 기준
+
+`;
+function buildDiscoverPrompt(){
+  const input = String(getV('discover_input','')).trim();
+  return DISCOVER_INTRO + AI_TASK_JUDGMENT_CRITERIA + '\n\n---\n\n# 사용자가 설명한 업무\n\n' + (input || '(아직 작성되지 않음)');
+}
+
+function buildDiagPrompt(){
+  return DIAG_PROMPT_HEAD + '\n# 진단할 업무 정보\n\n' + buildDiagMarkdown() + DIAG_PROMPT_TAIL;
+}
+
+// 05~08(기능 상세 정의, UX/UI 설계, 기술 설계, 데이터 설계)은 업무 지식이 아니라 설계 스킬이 필요해서
+// 처음 해보는 사람은 헤맬 수 있음. 그렇다고 AI가 초안을 먼저 써주면 정작 설계 역량이 안 늘고
+// "사람이 먼저" 원칙과도 어긋나서, 3-1과 같은 패턴(일단 써보고 → AI 검토)으로 감. 08 끝에서 한 번만 요청.
+function draftContextText(){
+  const g = id => String(getV(id,'')).trim();
+  const core = g('re_core') || g('s2_core') || '(미작성)';
+  const goal = g('re_goal') || g('s1_goal') || '(미작성)';
+  const direction = g('re_direction') || g('s1_hypo') || '(미작성)';
+  const diag = g('diag_result');
+  return '핵심 문제: '+core+'\n목표: '+goal+'\n해결 방향: '+direction+
+    (diag ? '\n\n3-3 AI 구조화 결과:\n'+diag : '\n\n(3-3 AI 구조화 결과 없음)');
+}
+function serializeDesignFields(){
+  return ['s7','s9','s10','s11'].map(id=>{
+    const sec = SECTIONS.find(s=>s.id===id);
+    const body = sec.fields.map(mdField).join('').trim();
+    return '## '+sec.num+'. '+sec.title+'\n\n'+(body || '_(아직 작성 안 함)_');
+  }).join('\n\n');
+}
+function buildDesignReviewPrompt(){
+  return `당신은 업무 시스템 설계를 검토해주는 보조자입니다. 처음 설계해보는 사람이 쓴 것이니, 정답을 대신 써주기보다 **빠진 부분, 애매한 부분, 놓치기 쉬운 예외**를 짚어주세요. 개선 방향은 단정적으로 "틀렸다"고 말하지 말고, 여러 선택지를 제안하며 노력을 인정하는 어조로 전달하세요.
+
+아래 순서로 검토하세요.
+
+1. 05 기능 상세 정의: 각 기능에 Trigger·Input·Processing·Output·예외 상황이 빠짐없이 있는지, 애매한 부분
+2. 06 UX/UI 설계: 사용자 Flow가 실제로 업무를 개선하는지, Dashboard만으로 끝나지 않는지
+3. 07 기술 설계: Architecture 구성요소가 필요 이상으로 복잡하지 않은지, AI를 쓴다면 역할이 명확한지
+4. 08 데이터 설계: 필요한 데이터와 관계가 빠짐없이 정의됐는지
+
+마지막에 "핵심 요약 (3~5줄)"을 추가하세요. 사용자는 전체를 여기서 읽지만, 다음 단계에는 이 요약만 복사해서 붙여넣어도 됩니다.
+
+---
+
+# 이 사람이 작성한 05~08 내용
+
+${serializeDesignFields()}
+
+---
+
+# 참고: 고민거리 배경
+
+${draftContextText()}`;
+}
+
+function withExampleFields(fields, fn){
+  const saved = state.fields;
+  state.fields = fields;
+  try{ return fn(); } finally { state.fields = saved; }
+}
+const htmlTable = (head, rows) => '<table class="dtable"><thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+
+  rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+
+/* ---------- 예시: ddugi (지금 이 도구) ---------- */
+// 사실: 만든 과정(대화 기록)과 현재 기능. 현재 업무 흐름과 문제 칸은 만든 계기를 바탕으로 추정해 채움
+// 말투: 평소 대화하는 캐주얼한 어투로 (ddugi 프로젝트라 존댓말 안 씀)
+const AXWB_FIELDS = {
+  s1_name: 'ddugi: AI 업무효율화 진단 봇',
+  s1_cat: '① 업무관리형', s1_catsub: ['업무관리','진행현황'],
+  s1_target: ['공통 (업무관리 등)'],
+  s1_worktype: ['기타'], s1_worktype_other: '개인 AI 역량개발 (고민거리 정의, AI 진단, 역량 관리)',
+  s1_purpose: 'AI 업무효율화 고민거리를 정의하고 수행하면서 AI 역량도 키우고 싶어서. 그 과정이랑 결과를 한 군데서 관리하려고 만듦.',
+  s1_goal: '고민거리 정의하는 방식이 매번 안 달라지고, AI 필요 없는 고민거리는 만들기 전에 걸러지고, 지금 내 레벨이랑 다음에 뭘 키울지 알 수 있으면 성공.',
+  s1_hypo: '고민거리 정의서 양식 웹으로 만들고, 입력하면 AI가 진단해주는 도구 만들고 싶었음.',
+  s2_flow: '1) 고민거리 아이디어 생김 2) 문서 양식에 정의 3) AI 적용 방법 고민 4) 고민거리 수행 5) 결과 보고 6) 역량 확인',
+  s2_freq: ['비정기'],
+  s2_slow: 'AI 적용 방법 검토하는 단계 (AI가 진짜 필요한지 기준이 없어서 매번 감으로 판단함)',
+  s2_problems: {
+    '정보 탐색': {_on:true, '내용':'비슷한 기존 고민거리(BoB)나 참고할 사례가 없어서 맨땅에 헤딩함'},
+    '데이터 취합': {_on:true, '내용':'고민거리 진행이랑 역량 현황이 여기저기 흩어져 있어서 모으기 귀찮음'},
+    '판단/분석': {_on:true, '내용':'AI가 필요한 고민거리인지, 레벨이 몇인지 그때그때 다르게 판단하게 됨'},
+    '기타': {_on:true, '내용':'AI 붙이는 게 목적이 돼버리는 고민거리(AI 슬롭)가 자꾸 생김'}
+  },
+  s2_core: 'AI가 진짜 필요한지 검증 안 하고 일단 AI부터 붙이게 되고, 고민거리랑 역량 기록이 다 흩어져 있음.',
+  s3_tool: {
+    'Office (Excel 등)': {_on:true, '정확히 어떤 것인지':'고민거리 정의서 양식(문서), Excel'},
+    '생성형 AI': {_on:true, '정확히 어떤 것인지':'ChatGPT/Claude (프롬프트 복사-붙여넣기 방식)'}
+  },
+  s8_input: '고민거리 정의: 현재 업무, 문제, 해결 방향 가설 (화면에 직접 입력, 텍스트) / AI 검증·구조화 결과 (AI 답변 복붙, 텍스트) / 경험한 AI 역량, 5-Level 체크 (화면 체크, 체크 목록) / Gate 결과물, 실사용 기록·Before/After (13 효과 확인에 입력, 텍스트·링크)',
+  s8_dtype: '혼합',
+  s8_decision: 'AI 검증 결과 보고 내가 문제를 다시 정의함. 역량 레벨은 결과물 보고 AI가 1차 판정하고, 최종은 내가 확인함.',
+  s8_decider: '나 (고민거리 작성 + 레벨 최종 확인)',
+  s8_output: '고민거리 정의서 .md (문서, 고민거리 수행·보고용) / 나의 AI 역량 레벨과 다음 목표 (레벨 카드, 학습 계획) / 진척 현황판 (표)',
+  // 04~13: 이 도구를 만드는 과정을 04~13 양식에 맞춰 정리한 것
+  s16_bob: 'ddugi (이 고민거리 자체가 도구·플랫폼형 고민거리의 BoB 후보)',
+  s16_purpose: '참고할 사례가 없어서 처음부터 설계했는데, 다음에 비슷한 도구 만들 때 이걸 참고하면 시행착오 줄일 수 있음.',
+  s16_arch: 'Frontend(단일 HTML, SECTIONS 배열 하나로 화면·프롬프트·내보내기 다 만듦) + Backend는 상황 봐서 (초반은 로컬저장만으로도 됨)',
+  s16_tech: 'HTML/CSS/JS 위주로 먼저, 필요해지면 Python 붙이기',
+  s16_ui: '메뉴(00~3-3)를 접고 펼치는 방식, 필수 항목만 *로 표시, 내가 쓴 거랑 AI가 쓴 거 뱃지로 구분',
+  s16_solution: '참고할 BoB가 없어서 처음부터 설계함. 섹션 배열 하나로 화면·프롬프트·데이터 다 만드는 구조, 사람 먼저 → AI 검증 → 재정의 → AI 구조화 흐름은 다음에도 재사용 가능함.',
+  s9_1: ['입력','결과','이력'],
+  s9_2: '1) 고민거리 정의 입력 (01~02) 2) AI 검증 요청 복사 (3-1) 3) 재정의 (3-2) 4) AI 구조화 요청 복사 (3-3)',
+  s10_1: ['Frontend','Automation'],
+  s14_1: '아직 실사용 전이라 정량 결과는 없음. 도구 자체는 고민거리 정의부터 검증·구조화까지 한 흐름으로 쓸 수 있게 됨.',
+  s14_3: '한 번에 다 해주는 프롬프트로 만들면 AI 슬롭 된다는 거 깨달음.',
+  s14_4: '사람이 먼저 문제 정의하고, AI는 검증·구조화만 하게 흐름 나눔.',
+  s14_5: '섹션(SECTIONS) 하나로 화면·프롬프트·내보내기 같이 만드는 구조, 이건 다음 프로젝트에도 그대로 쓸 수 있음.',
+  s14_6: '실제로 내 업무 하나 넣어서 끝까지 써보는 것',
+  s16_reuse: ['Architecture','Prompt','Workflow']
+};
+function axwbDiagHtml(){
+  return '<h3>가설 바뀐 과정 (문제 정의 1단계 → 4단계)</h3>'+
+    '<p>처음 가설(1-8)은 "입력하면 AI가 진단해주는 도구"였음. 만들다 보니까 <b>한 번에 다 해주는 프롬프트는 AI 슬롭 만든다</b>는 걸 깨달아서, 사람이 먼저 생각하는 흐름으로 바꿈.</p>'+
+    htmlTable(['단계','문제 정의'], [
+      ['1단계','"고민거리 정의서 양식 웹으로 만들자."'],
+      ['2단계','"입력하면 AI가 고민거리 진단해주는 도구 만들자." (프롬프트 한 번에 판단까지 다)'],
+      ['3단계','"사람이 먼저 문제랑 가설 쓰고, AI가 검증하고, 사람이 다시 정의하고, 그 다음에 AI가 구조화하자."'],
+      ['4단계','"AI 역량은 체크 개수가 아니라 결과물로 인정하자 (AI 1차 판정 + 최종은 내가 확인), 고민거리랑 역량 성장을 같이 관리하자."']]) +
+    '<h3>지금 흐름</h3>'+
+    '<p class="intro-flow">01~02 사실과 가설 (사람) → 3-1 AI 검증 → 3-2 문제 재정의 (사람) → 3-3 AI 구조화 → 04~13 수행 기록·Gate</p>'+
+    '<h3>규칙, AI, 사람 역할</h3>'+
+    htmlTable(['구분','맡는 일'], [
+      ['규칙 (시스템)','레벨 계산, 저장'],
+      ['AI','고민거리 검증, 고민거리 구조화. 앱이 직접 부르는 거 아니고 내가 복사해서 넣고 결과 확인한 다음 붙여넣음'],
+      ['사람 (나)','문제 정의랑 재정의, 레벨 최종 판단']]);
+}
+function axwbS15Html(){
+  return htmlTable(['레벨','5-Level 체크 항목','ddugi에서 경험한 것'], [
+      ['L2','Prompt 설계 (Role·Goal·Constraint·Few-shot)','검증, 구조화 프롬프트 설계'],
+      ['L2','Context 설계','작성한 업무 .md, 재정의한 문제, 앞 단계 검증 결과를 프롬프트에 붙임'],
+      ['L2','출력 형식 지정','검증·구조화 결과 출력 형식 고정해서 매번 같은 틀로 받음'],
+      ['L2','결과 검증 기준 설정','과대 주장 걸러내는 기준, AI 슬롭 판단 기준'],
+      ['L3','HTML/CSS·JS·DOM','단일 HTML 파일, 데이터를 문자열로 만들어서 화면에 렌더링']]);
+}
+function axwbS17Html(){
+  return '<h3>레벨 판단: <span class="rm-status rm-review">L5 후보</span></h3>'+
+    htmlTable(['AX 역량','상태','근거'], [
+      ['Problem Definition (문제 정의)','충족','AI부터 붙이는 고민거리, 흩어진 역량 기록을 문제로 잡음'],
+      ['AI Suitability (AI 적합 지점)','충족','계산·저장은 규칙, 검증·구조화만 AI로 나눔'],
+      ['Process Redesign (업무 재설계)','충족','양식 작성 → 사람 먼저 → AI 검증 → 사람 재정의 흐름으로 재설계'],
+      ['Human-AI Boundary (역할 경계)','충족','AI 결과는 "AI 작성"으로 구분, 최종 판단은 내가 함'],
+      ['Measurement (효과 측정)','아직','실사용 전이라 측정할 기록이 없음'],
+      ['Scalability (표준화·확산)','아직','아직 나 혼자 씀']]);
+}
+function axwbTakeawayHtml(){
+  return '<h3>이 예시에서 볼 점</h3>'+
+    '<ul>'+
+      '<li><b>처음 가설 틀려도 괜찮음.</b> 이 고민거리의 성과는 도구 자체가 아니라 "AI가 다 해주는 도구"에서 "사람이 먼저 생각하는 흐름"으로 가설이 바뀐 거임.</li>'+
+      '<li><b>AI를 앱 안에 안 넣어도 AX임.</b> 이 도구는 LLM을 직접 부르지도 않는데, 고민거리 정의하고 검증하는 방식 자체를 바꿈.</li>'+
+    '</ul>';
+}
+
+// 작성 예시 탭: 지금은 ddugi(이 도구) 하나만
+const EXAMPLES = {
+  axwb: {
+    tab: 'ddugi', title: '작성 예시: ddugi', fields: AXWB_FIELDS, fullMenu: true, status: 'now',
+    lead: '<span class="rm-status rm-review">L5 후보</span> 지금 보고 있는 ddugi 자체를 고민거리로 정의한 예시임. 만들면서 가설이 어떻게 바뀌었는지 그대로 볼 수 있음.',
+    sectionOverride:{ diag: axwbDiagHtml, s15: axwbS15Html, s17: axwbS17Html },
+    takeaway: axwbTakeawayHtml
+  }
+};
+
+// 카테고리 값('① 업무관리형' 등)에서 번호를 떼고 성격 이름만 뽑음
+const exTrait = cat => String(cat||'').replace(/^[①-⑩]\s*/, '') || '(미분류)';
+const EX_STATUS_LABEL = {plan:'계획 고민거리', now:'지금 고민거리', done:'완료 고민거리'};
+function exMetaHtml(ex){
+  const statusHtml = '<span class="rm-status rm-'+(ex.status||'now')+'">'+esc(EX_STATUS_LABEL[ex.status]||EX_STATUS_LABEL.now)+'</span>';
+  const trait = withExampleFields(ex.fields, ()=>exTrait(getV('s1_cat','')));
+  return '<div class="ex-meta">'+statusHtml+'<span class="rm-status rm-cat">'+esc(trait)+'</span></div>';
+}
+let exampleTab = 'axwb';
+// 메뉴 한 칸을 접고 펼치는 상자. note가 있으면 제목 옆에 옅게 붙임 (예: "없음")
+function exDetails(num, title, bodyHtml, opts){
+  opts = opts || {};
+  return '<details class="ex-sec"'+(opts.open?' open':'')+'><summary><span class="exn">'+esc(num)+'</span>'+esc(title)+
+    (opts.note ? '<span class="ex-note">'+esc(opts.note)+'</span>' : '')+'</summary><div class="ex-secbody">'+bodyHtml+'</div></details>';
+}
+// 완료된 예시(Workloop·ddugi): 01~13 메뉴 순서 그대로, 각 메뉴에 실제 값을 대입해서 접고 펼쳐보게 정리
+const EXAMPLE_MENU_IDS = ['s1','s3','verify','redefine','diag','s16','s7','s9','s10','s11','s12','s13','s14','s15','s17'];
+function exampleMenuBlocks(ex){
+  const ov = ex.sectionOverride || {};
+  return EXAMPLE_MENU_IDS.map(id=>{
+    const sec = SECTIONS.find(x=>x.id===id);
+    if(ov[id]) return exDetails(sec.num, sec.title, ov[id](), {open: id==='s1'});
+    if(sec.special){
+      return exDetails(sec.num, sec.title, '<div class="hint">이 예시가 만들어질 때는 이 도구가 없어서, 이 단계 기록은 따로 없어요.</div>', {note:'없음'});
+    }
+    const has = withExampleFields(ex.fields, ()=>sectionFilled(sec));
+    if(!has) return exDetails(sec.num, sec.title, '<div class="hint">이 예시에서는 아직 정리하지 않았어요.</div>', {note:'없음'});
+    // 작성 예시에는 실제 작성자·담당자 이름을 보여주지 않음
+    const fields = sec.fields.filter(f=>!(f.type==='row' && f.children.some(c=>c.id==='s1_owner')));
+    const body = withExampleFields(ex.fields, ()=>fields.map(renderField).join(''));
+    return exDetails(sec.num, sec.title, body, {open: id==='s1'});
+  }).join('');
+}
+// 맨 아래 "다음 →"는 다음 메뉴(step)로 가는 버튼이라, 다음 예시로 넘어가는 버튼은 눈에 띄게 따로 둠
+function nextExampleBarHtml(){
+  const keys = Object.keys(EXAMPLES);
+  if(keys.length<2) return '';
+  const next = keys[(keys.indexOf(exampleTab)+1) % keys.length];
+  return '<div class="ex-nextbar"><button type="button" data-action="ex-tab" data-target="'+next+'">다음 예시 보기: '+esc(EXAMPLES[next].tab)+' →</button></div>';
+}
+function renderExampleSection(){
+  const ex = EXAMPLES[exampleTab];
+  const exTabLabel = e => { const cat = withExampleFields(e.fields, ()=>getV('s1_cat','')); return e.tab+(cat ? ' ('+exTrait(cat)+')' : ''); };
+  const tabs = '<div class="extabs" role="tablist">'+Object.keys(EXAMPLES).map(k=>
+    '<button type="button" role="tab" class="extab'+(k===exampleTab?' on':'')+'" aria-selected="'+(k===exampleTab)+'" data-action="ex-tab" data-target="'+k+'">'+esc(exTabLabel(EXAMPLES[k]))+'</button>').join('')+'</div>';
+  const md = withExampleFields(ex.fields, buildDiagMarkdown);
+  const introFrame = '<div class="frame intro"><h2>'+esc(ex.title)+'</h2>'+
+      exMetaHtml(ex)+
+      '<p class="intro-lead">'+ex.lead+'</p>'+
+      '<p>원래 고민거리 설명을 ddugi 방식으로 나눴습니다. 메뉴 번호를 눌러 접고 펼치면서 보세요.</p>'+
+      '<div class="hint">이 페이지는 읽기 전용입니다. 여러분의 입력 내용에는 영향을 주지 않습니다.</div>'+
+      '<div class="exportbar"><button type="button" class="secondary" data-action="ex-all" data-target="open">전체 펼치기</button><button type="button" class="secondary" data-action="ex-all" data-target="close">전체 접기</button></div>'+
+    '</div>';
+  if(ex.fullMenu){
+    return tabs + introFrame + exampleMenuBlocks(ex) +
+      exDetails('▤','이 입력으로 만들어지는 업무 .md',
+        '<div class="hint">3-1 검증과 3-3 구조화 요청에서는 이 내용 앞뒤에 각각의 프롬프트가 붙습니다. 담당자 이름은 들어가지 않습니다.</div>'+
+        '<textarea class="exportbox" readonly>'+esc(md)+'</textarea>') +
+      '<div class="frame intro">'+ex.takeaway()+'</div>'+
+      nextExampleBarHtml();
+  }
+  const forms = withExampleFields(ex.fields, ()=>
+    exDetails('01', SECTIONS.find(x=>x.id==='s1').title, SECTIONS.find(x=>x.id==='s1').fields.map(renderField).join(''), {open:true})+
+    exDetails('02', SECTIONS.find(x=>x.id==='s3').title, SECTIONS.find(x=>x.id==='s3').fields.map(renderField).join(''))
+  );
+  return tabs + introFrame + forms +
+    exDetails('▤','이 입력으로 만들어지는 업무 .md',
+      '<div class="hint">3-1 검증과 3-3 구조화 요청에서는 이 내용 앞뒤에 각각의 프롬프트가 붙습니다. 담당자 이름은 들어가지 않습니다.</div>'+
+      '<textarea class="exportbox" readonly>'+esc(md)+'</textarea>') +
+    ex.result() +
+    nextExampleBarHtml();
+}
+
+/* ============== 확장 계획 (BACKLOG.md 요약) ============== */
+// 상태: plan = 계획, review = 검토 중, decide = 결정 필요
+const ROADMAP = [
+  {group:'개인 성장', desc:'로그인이 생긴 뒤, 고민거리 하나가 아니라 한 사람의 1년 성장을 보여줍니다.', items:[
+    ['개인 Dashboard','올해 역량개발 진척도, 목표 고민거리 수 / 완료 / 진행, 나의 역량 프로필을 첫 화면에','plan'],
+    ['한 사람이 여러 고민거리','지금은 브라우저 하나에 고민거리 하나. 로그인 후 내 고민거리 목록으로 관리','plan'],
+    ['1년 커리큘럼과 권장 Roadmap','Q1 AI 기본기 → Q2 Agent 구축 → Q3 Application화 → Q4 실사용·고도화. 강제가 아닌 권장, 개인이 조정','plan'],
+    ['나의 역량 프로필과 성장 경로','여러 고민거리의 학습 포인트를 누적해 역량별 막대로. 어떤 문제를 골라 무엇을 익히고 무엇을 확장했는지','plan']
+  ]},
+  {group:'팀 지식 자산', desc:'고민거리가 쌓일수록 다음 사람이 덜 헤매게 만드는 기능입니다.', items:[
+    ['BoB Library','우수 고민거리를 태그(대상, 업무 유형, 역량, 난이도)로 찾고 설계서, Architecture, 시행착오까지 참고. 정답 템플릿이 아닌 참고 사례','plan'],
+    ['역량 트리','역량 관계 그림에 고민거리와 BoB를 배치. 역량을 누르면 추천 사례','plan'],
+    ['같은 업무 비교','대상과 업무 유형이 같은 고민거리끼리 업무를 어떻게 쪼개고 판단하는지 나란히 보기 (master 전용 — 팀원끼리 비교돼서 관리자 공유 비밀번호로도 못 봄)','plan'],
+    ['업무 SOP 만들기','같은 업무의 고민거리를 모아 서로 빠진 단계와 판단 기준을 채워 표준 절차 초안 생성 (AI 활용)','plan'],
+    ['팀 역량 현황','역량별 경험자 분포. 예: "RAG 경험자는 많고 Backend는 부족" (master 전용 — 개인 평가로 오해·악용될 수 있어 관리자 공유 비밀번호로도 못 봄)','plan']
+  ]},
+  {group:'고민거리 설계 고도화', desc:'진단 이후의 설계와 검증을 더 구체적으로 돕습니다.', items:[
+    ['3개 문서로 분리','A 고민거리 정의서 / B 구현 설계서 / C 결과 및 회고를 화면 단위로 나누기','plan'],
+    ['해결책 정의','진단 결과를 역할, 기능, Input/Output, AI와 사람의 역할, 해결책 형태로 정리하는 칸','plan'],
+    ['UX/UI 화면표와 Wireframe','화면별 목적, 기능, Input/Output과 간단한 스케치','plan'],
+    ['테스트 Case와 검증 지표','정상, 예외, AI 오답, 권한 없음 등 체크리스트와 미리 정하는 지표','plan'],
+    ['선택형 설계 안내','사례가 쌓이면 몇 가지 선택만으로 "이런 구조로 설계해보세요" 안내','plan']
+  ]},
+  {group:'시스템과 연동', desc:'회사 환경으로 옮기면서 붙일 기능입니다.', items:[
+    ['회사 서버로 이전','지금은 개인 PC에서 실행 중. 회사 환경으로 옮겨서 계속 개발','plan'],
+    ['사내 SSO 로그인','개인 기능의 전제. 관리자 비밀번호 방식도 SSO 권한으로 대체 검토','review'],
+    ['AI 직접 연동','복사해서 붙여넣는 대신 버튼 하나로 진단','plan'],
+    ['내 고민거리 불러오기','로그인 전까지 다른 PC나 브라우저에서도 내 고민거리를 찾는 방법 (방법 조사 중)','review'],
+    ['데이터 모델 확장','사용자 → 커리큘럼 → 고민거리, 고민거리와 역량은 N:M으로 연결','plan']
+  ]},
+  {group:'결정이 필요한 것', desc:'구현 전에 정해야 하는 기준입니다.', items:[
+    ['개념 학습과 실제 적용 구분','예: RAG를 개념만 익혔는지, 실제로 적용했는지 체크를 나눌지','decide']
+  ]},
+  {group:'완료된 것', desc:'결정하고 구현까지 끝난 항목입니다. 기록으로 남겨둡니다.', items:[
+    ['검증 Gate','예측·AI 모델 고민거리는 Rule Baseline → AI 필요성 → AI 성능(Baseline 대비 개선) 순서로 확인 (09-4에 구현)','done'],
+    ['레벨 판정 근거','스스로 체크가 아니라 고민거리 결과물(Gate 통과)로 레벨을 인정하는 방식으로 결정하고 구현함 (13 효과 확인: 결과물 제출 → AI 1차 판정 → 관리자 최종 확인)','done'],
+    ['구현 난이도별 범위','01에 구현 난이도 선택을 추가하고, 해당 없는 메뉴(05, 08 등)에 안내 문구만 붙임. 메뉴를 강제로 막지는 않음 (가벼운 버전)','done']
+  ]}
+];
+const ROADMAP_STATUS = {plan:'계획', review:'검토 중', decide:'결정 필요', done:'완료'};
+function renderRoadmapSection(){
+  return '<div class="frame intro"><h2>확장 계획</h2>'+
+      '<p class="intro-lead">지금 ddugi는 고민거리를 정의하고 AI 진단을 받는 데 집중하고 있습니다. 앞으로 이렇게 넓혀갈 수 있습니다.</p>'+
+      '<div class="rm-legend">'+Object.keys(ROADMAP_STATUS).map(k=>'<span class="rm-status rm-'+k+'">'+ROADMAP_STATUS[k]+'</span>').join('')+'</div>'+
+    '</div>'+
+    ROADMAP.map(g=>'<div class="frame"><h2>'+esc(g.group)+'</h2><div class="fhint" style="margin-bottom:12px">'+esc(g.desc)+'</div>'+
+      '<div class="rm-grid">'+g.items.map(it=>
+        '<div class="rm-card"><div class="rm-head"><b>'+esc(it[0])+'</b><span class="rm-status rm-'+it[2]+'">'+ROADMAP_STATUS[it[2]]+'</span></div>'+
+        '<div class="rm-desc">'+esc(it[1])+'</div></div>').join('')+'</div></div>').join('')+
+    '<div class="hint">자세한 체크리스트와 결정 기록은 프로젝트의 BACKLOG.md에 있습니다.</div>';
+}
+
+let INTRO_HTML = DEFAULT_INTRO_HTML();
+let introEditing = false;
+function DEFAULT_INTRO_HTML(){
+  return '<div style="background:var(--panel);border:2px solid var(--blueprint-2);border-radius:var(--radius);padding:24px 22px;margin-bottom:24px;text-align:center;">'+
+    '<div style="font-size:48px;margin-bottom:8px;">🥔</div>'+
+    '<h2 style="margin:0 0 4px;font-size:22px;color:var(--blueprint);">지구 종말 방지 프로젝트</h2>'+
+    '<p style="font-size:14px;color:var(--ink-soft);margin:0 0 16px;">AI 데이터센터 증식으로 인한 자원 낭비, 그리고 쓸모없는 AI가 넘쳐나는 세상.</p>'+
+    '<p style="font-size:15px;color:var(--ink);margin:0 0 12px;line-height:1.7;">ddugi는 세상에서 만난 것들을 마음에 담고,<br>마음에 담긴 것들은 어느 순간 작은 존재가 되어 자라납니다.<br>그 존재들이 제대로 성장하려면, 먼저 <b>진짜 문제</b>를 알아야 합니다.</p>'+
+    '<blockquote style="margin:16px auto;max-width:400px;text-align:center;border-left:none;background:none;font-size:16px;font-weight:700;color:var(--blueprint);">"AI가 지구를 멸망시키기 전에,<br>ddugi가 먼저 물어봅니다.<br>그거 진짜 AI가 필요해?"</blockquote>'+
+    '<p style="font-size:13px;color:var(--ink-soft);margin:0;">AI를 쓰지 않기로 판단한 것도 능력입니다. 필요 없는 곳에 AI를 안 쓰는 것이 지구를 지키는 첫걸음.</p>'+
+  '</div>'+
+  '<h2>ddugi</h2>'+
+    '<p class="intro-lead">AI 업무효율화 고민거리를 정의하고, 진단하고, 수행 기록까지 남기는 작업대입니다.</p>'+
+    '<blockquote>AI부터 만들지 말고, 업무부터 다시 보자.</blockquote>'+
+    '<ul class="intro-principles intro-core"><li>AI에게 문제를 맡기기 전에, 사람이 문제를 정의한다.</li><li>AI를 적용하는 능력보다, AI가 필요한 문제를 정의하는 능력을 먼저 키운다.</li><li>AI를 붙이는 것이 AX가 아니라, 일을 바꾸는 것이 AX다.</li></ul>'+
+    '<p>ddugi는 AI 도입을 권하는 도구가 아닙니다. 지금 하는 업무를 사실대로 정리하면, 기존 시스템, 자동화, Excel/Spotfire, 일반 Application, AI 중에서 그 업무에 가장 맞는 방법을 찾도록 돕습니다.</p>'+
+    '<h3>AI 슬롭(AI Slop)을 막습니다</h3>'+
+    '<p><b>AI 슬롭</b>은 필요 없는 곳에 AI를 붙이거나, 검증하지 않은 AI 결과물이 쌓이는 것을 말합니다. 만들 때는 그럴듯해 보여도, 결국 사람이 다시 확인하고 고치고 유지보수해야 해서 <b>인력, 시간, 회사 비용</b>이 새어 나갑니다.</p>'+
+    htmlTable(['슬롭이 만드는 낭비','ddugi가 막는 방법'], [
+      ['<b>🥔 포테이토 낭비</b><br>Excel이나 자동화로 될 일을 AI로 만들고, 그걸 계속 유지보수','진단이 <b>기존 시스템 → 자동화 → Excel/Spotfire → 일반 Application</b>을 먼저 검토하고, 그래도 안 되는 부분에만 AI를 권합니다'],
+      ['<b>⏳ 돌뚜 소진</b><br>검증되지 않은 AI 결과를 사람이 다시 확인하고 수정','<b>사람의 최종 판단 지점</b>을 미리 정하고, 09 테스트 및 검증에서 AI 오답과 누락을 확인합니다'],
+      ['<b>🏚️ 방이 꽉 참</b><br>쓰이지 않는 시스템, 불필요한 LLM 사용과 서버','<b>AI 고민거리 인정 기준</b>: AI를 빼도 목적을 달성하면 AI 고민거리가 아닙니다. 13 효과 확인에서 실제 효과를 측정합니다'],
+      ['<b>👁️ 흐린 눈으로 심기</b><br>근거 없는 AI 추천을 그대로 사용','01~02에는 <b>사실만</b> 입력하고, 진단은 판단 근거를 함께 제시합니다']]) +
+    '<p>그래서 <b>"AI를 쓰지 않기로 판단한 것"도 AI 역량으로 인정</b>합니다. AI가 필요 없는 일을 알아보는 눈이 슬롭을 막는 첫걸음입니다.</p>'+
+    '<h3>ddugi가 표준화하는 것</h3>'+
+    '<p>결과물(Agent)이 아니라, <b>만들기 전에 생각하는 과정</b>을 표준화합니다.</p>'+
+    '<p class="intro-flow">업무의 목적과 문제를 정의하고 → 해결 방법과 AI의 역할을 진단하고 → 필요한 기능과 Input/Output을 설계하고 → 바이브 코딩 등으로 구현하고 → 실제 업무 Case로 검증한다.</p>'+
+    '<p><b>일반 Application을 만들 때도 AI 역량이 필요합니다.</b> 진단 결과가 "AI 없이 자동화나 일반 Application으로 충분"이어도, 요구사항을 AI가 이해하게 설명하고(Prompt), 바이브 코딩으로 화면과 기능을 만들고, AI가 만든 코드를 검증하고, 반복 작업을 Skill로 만드는 것은 모두 AI 역량입니다. 제품 안에 AI가 없는 것과 AI 역량을 쓰지 않는 것은 다릅니다.</p>'+
+    '<p>AI를 잘하는 사람은 코딩을 잘하는 사람이 아니라, <b>업무를 AI가 처리할 수 있는 구조로 분해할 줄 아는 사람</b>입니다. AI를 쓰는 사람(L1 AI User)에서 업무 자체를 재설계하는 사람(L5 AX Architect)까지 <b>나의 AI 역량 레벨</b>로 확인할 수 있습니다. <b>레벨은 기술 개수가 아닙니다.</b> 개발을 잘해도 문제를 잘못 정의하면 L5가 아니고, 개발을 못해도 업무를 재설계해 효과를 만들면 L5입니다.</p>'+
+    '<h3>ddugi 자체도 하나의 고민거리입니다</h3>'+
+    '<p>지금 보고 계신 이 도구도 이 방법으로 만들어지고 있는 <b>진짜 고민거리</b>입니다. 처음 가설은 "입력하면 AI가 다 해주는 도구"였는데, 만들면서 "사람이 먼저 생각하는 흐름"으로 바뀌었습니다. 그 변화 과정을 <b>작성 예시 → ddugi</b> 탭에서 그대로 볼 수 있습니다.</p>'+
+    '<h3>이렇게 사용합니다</h3>'+
+    '<ol>'+
+      '<li><b>(선택) AI로 후보 찾기 (00)</b> 다룰 문제가 아직 명확하지 않다면, 업무를 자유롭게 설명해서 AI에게 개선 후보 2~3개와 각 후보의 AI 적합성 판정을 먼저 받아볼 수 있습니다. "적합" 판정을 받은 후보만 다음 단계로 이어집니다.</li>'+
+      '<li><b>업무 정리 (01~02, 직접)</b> 바꾸고 싶은 업무, 현재 프로세스, 문제, 개선 기준, 내가 생각하는 해결 방향을 AI에게 묻기 전에 먼저 적습니다.</li>'+
+      '<li><b>AI 검증 (3-1)</b> 검증 요청문을 AI에 넣어, 내 문제 정의와 가설을 AI가 검증하게 합니다.</li>'+
+      '<li><b>문제 재정의 (3-2, 직접)</b> 검증 결과를 보고 문제와 목표를 자기 말로 다시 씁니다.</li>'+
+      '<li><b>AI 고민거리 구조화 (3-3)</b> 다시 정의한 문제로 고민거리 구조와 이 고민거리로 기를 수 있는 역량을 받고, 학습 계획을 세웁니다.</li>'+
+      '<li><b>구현 설계와 결과·회고 (04~13)</b> <span class="tbd">준비 중</span> — 설계, 검증, 운영, 회고를 기록하는 기능이에요. 이 개인 프로젝트에서는 아직 안 열어뒀어요.</li>'+
+    '</ol>'+
+    '<h3>원칙</h3>'+
+    '<ul class="intro-principles"><li>문제 먼저</li><li>기존 기술 먼저</li><li>AI는 실질적인 가치가 있을 때만</li><li>최종 판단은 사람이</li></ul>';
+}
+function renderIntroSection(){
+  const editBtn = isMaster ? '<div class="exportbar"><button type="button" class="secondary" data-action="intro-edit" data-target="'+(introEditing?'off':'on')+'">'+(introEditing?'편집 닫기':'✎ 안내문 편집 (마스터)')+'</button></div>' : '';
+  const body = introEditing
+    ? taxBlockHtml('intro_html','시작하기(00) 안내문 — HTML', INTRO_HTML, 'HTML 태그 그대로 적으세요. 비워두고 저장하면 기본 안내문으로 돌아가요.')
+    : INTRO_HTML;
+  return '<div class="frame intro">'+editBtn+body+
+    (introEditing ? '' : '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">01 씨앗 심기부터 시작하기</button>'+
+      '<button type="button" class="secondary" data-action="goto" data-target="discover">00 씨앗 찾기부터 (아직 뭘 심을지 모르겠다면)</button>'+
+      '<button type="button" class="secondary" data-action="goto" data-target="example">먼저 온 포테이토 보기</button></div>')+
+  '</div>';
+}
+
+function renderDiscoverSection(){
+  return '<div class="frame"><h2>00 · AI로 후보 찾기</h2><div class="sub">선택 · 다룰 문제가 아직 명확하지 않을 때</div>'+
+    '<div class="hint">업무가 아직 뭐가 문제인지 잘 모르겠다면 여기서 시작하세요. 자유롭게 업무를 설명하면 AI가 개선 후보 2~3개를 찾아주고, 각 후보가 <b>정말 AI가 필요한지</b>까지 함께 판단합니다. 이미 다룰 문제가 명확하다면 이 단계는 건너뛰고 바로 01로 가도 됩니다.</div>'+
+    '<div class="field"><label>1. 지금 하시는 업무를 자유롭게 설명해주세요</label>'+
+      '<div class="fhint">정답을 쓰는 게 아니라, 있는 그대로 적으면 됩니다. 무슨 업무를 하는지, 뭐가 번거롭거나 아쉬운지.</div>'+
+      '<textarea data-bind="discover_input" style="min-height:140px" placeholder="예: 매주 여러 시스템에서 자료를 찾아 확인하고, 정리해서 관련 부서에 메일로 공유하고 있습니다. 매번 찾는 게 번거롭고 놓칠 때도 있습니다.">'+esc(getV('discover_input',''))+'</textarea>'+
+    '</div>'+
+    '<div class="field" style="margin-top:18px"><label>2. 후보 찾기 요청문</label><div class="fhint">복사해서 <b>AI</b>에 붙여넣으세요.</div></div>'+
+    '<textarea id="discoverOut" class="exportbox" readonly></textarea>'+
+    '<div class="exportbar"><button type="button" data-copy="discoverOut">요청문 복사</button><span class="copymsg" data-for="discoverOut"></span></div>'+
+    '<div class="field" style="margin-top:22px"><label>3. AI가 찾은 후보 붙여넣기 <span class="who ai">AI가 쓴 결과</span></label>'+
+      '<div class="hint">ddugi가 "부적합" 판정을 주거나 세게 말해도, 틀렸다는 게 아니라 원래 그렇게 말하는 캐릭터니 담아두지 마세요.</div>'+
+      '<div class="fhint">전체 답변은 AI 화면에서 직접 읽어보세요. 여기에는 <b>답변 맨 아래 "핵심 요약"만</b> 복사해서 붙여넣으면 충분해요.</div>'+
+      '<textarea data-bind="discover_result" style="min-height:220px" placeholder="AI 답변 맨 아래 핵심 요약을 여기에 붙여넣으세요">'+esc(getV('discover_result',''))+'</textarea>'+
+    '</div>'+
+    '<div class="field" style="margin-top:22px"><label>4. "적합" 후보 중 하나를 골라 옮겨 적으세요 <span class="who me">직접 작성</span></label>'+
+      '<div class="fhint">AI 문장을 그대로 복사하지 말고, 그 후보의 핵심 문제와 해결 방향을 자기 말로 정리하세요. 01의 1-6·1-8에 그대로 들어갑니다.</div>'+
+      '<textarea data-bind="discover_chosen" style="min-height:120px" placeholder="예: 자료 조회~공유까지 여러 시스템을 오가며 수작업으로 하고 있다. 한 화면에서 조회하고 자동으로 공유되면 좋겠다.">'+esc(getV('discover_chosen',''))+'</textarea>'+
+    '</div>'+
+    '<div class="exportbar"><button type="button" data-action="discover-carry">이 후보로 01 이어서 작성하기 →</button></div>'+
+  '</div>';
+}
+
+/* ============== 13 Gate: 결과물 → AI 1차 판정 → 관리자 최종 확인 ============== */
+const gateLevelNum = v => { const m = String(v||'').match(/^L(\d)/); return m ? +m[1] : 0; };
+const gateAiVerdict = t => { const m = String(t||'').match(/판정\s*[:：]\s*\**\s*(통과|보완 필요)/); return m ? m[1] : ''; };
+// 신청 레벨이 바뀌면 이전 확인 결과는 해당 없음
+function gateReviewNow(){ return gateReview && gateReview.level===getV('g_level','') ? gateReview : null; }
+function buildGatePrompt(){
+  const lv = gateLevelNum(getV('g_level','')), L = AI_LEVELS[lv-1];
+  const v = id => String(getV(id,'')).trim() || '(미작성)';
+  const done = getV('lp_done',[]);
+  return `# 역할
+당신은 AX AI 역량 레벨 판정 보조자입니다. 당신은 1차 판정만 하고, 최종 인정은 관리자가 합니다.
+
+# 판정 원칙
+- 체크한 항목 수가 아니라, 제출한 결과물이 신청 레벨의 Gate 질문을 충족하는지로 판단하세요.
+- 결과물에 없는 내용을 추측해서 채우지 마세요. 증거가 없으면 "증거 없음"이라고 쓰세요.
+- 계획, 예정, "할 수 있다"는 증거가 아닙니다. 실제로 한 것만 인정하세요.
+- 결과물이 말해주는 범위를 넘는 주장(과대 주장)은 짚어 주세요.
+- L5는 개발 역량 없이도 가능합니다. 기술 개수로 판단하지 마세요.
+
+# 레벨 기준
+${levelsPromptText()}
+
+# 신청 레벨
+${L ? 'L'+L.lv+' '+L.name+'\nGate 질문: '+L.gate+'\n체크 항목: '+L.items.join(', ') : '(선택 안 함)'}
+
+# 고민거리 정보 (작성자가 쓴 내용)
+- 고민거리 이름: ${v('s1_name')}
+- 핵심 문제: ${String(getV('re_core','')).trim() || v('s2_core')}
+- 해결 방향: ${String(getV('re_direction','')).trim() || v('s1_hypo')}
+- 작성자가 체크한 경험 역량: ${done.length ? done.join(', ') : '(없음)'}
+- 실제 사용: 사용자 ${v('s13_user')} / 빈도 ${v('s13_freq')} / 업무 ${v('s13_task')}
+- 실제 개선 결과: ${v('s14_1')}
+
+${mdField(SECTIONS.find(s=>s.id==='s12').fields.find(f=>f.id==='s12_3'))}# 제출한 결과물
+${v('g_evidence')}
+
+# 출력 형식
+첫 줄에 반드시 "판정: 통과" 또는 "판정: 보완 필요" 중 하나만 쓰세요.
+1. Gate 질문 충족 여부와 근거 (결과물의 어느 부분인지 인용)
+2. 체크 항목별 증거 표 (항목 | 증거 있음/없음 | 결과물 근거)
+3. 과대 주장 (있으면)
+4. 통과하려면 더 필요한 결과물
+5. 관리자가 직접 확인할 점 (화면, 파일, 사용 기록 등 실물 확인이 필요한 것)`;
+}
+function gateHtml(){
+  const lv = gateLevelNum(getV('g_level',''));
+  if(!lv) return '<div class="hint">신청할 레벨을 먼저 고르세요. 고르면 그 레벨의 Gate 질문과 판정 요청문이 나옵니다.</div>';
+  const L = AI_LEVELS[lv-1], ai = String(getV('g_ai_result','')).trim(), r = gateReviewNow();
+  const aiV = gateAiVerdict(ai);
+  const status = r ? '<b>관리자 확인: '+esc(r.decision)+'</b>'+(r.note ? ' · '+esc(r.note) : '')+(r.at ? ' <span>('+esc(new Date(r.at).toLocaleDateString('ko-KR'))+')</span>' : '')
+    : ai ? 'AI 1차 판정: <b>'+esc(aiV || '형식 확인 필요')+'</b> · 관리자 확인 대기'
+    : '결과물을 적고 AI 1차 판정을 받으세요';
+  return '<div class="lvcard"><div class="lvnow">Gate 질문 <b>'+esc(L.gate)+'</b></div>'+
+      '<div class="lvnext">L'+lv+' 체크 항목: '+L.items.map(esc).join(', ')+'</div>'+
+      '<div class="lvnext">상태: '+status+'</div></div>'+
+    '<div class="field"><label for="g_evidence">13-2. Gate 결과물 <span class="req">*</span> <span class="who me">직접 작성</span></label>'+
+      '<div class="fhint">실제로 한 것만 적으세요. 예: 누가 언제부터 쓰는지, 사용 횟수, 업무 방식 Before/After, 화면·파일·링크 위치</div>'+
+      '<textarea id="g_evidence" data-bind="g_evidence" style="min-height:140px">'+esc(getV('g_evidence',''))+'</textarea></div>'+
+    '<div class="field"><label>AI 1차 판정 요청문</label><div class="fhint">레벨 기준 + 고민거리 정보 + 결과물. 복사해서 <b>AI</b>에 붙여넣으세요.</div></div>'+
+    '<textarea id="gateOut" class="exportbox" readonly>'+esc(buildGatePrompt())+'</textarea>'+
+    '<div class="exportbar"><button type="button" data-copy="gateOut">판정 요청 복사</button><span class="copymsg" data-for="gateOut"></span></div>'+
+    '<div class="field" style="margin-top:22px"><label>13-3. AI 1차 판정 결과 붙여넣기 <span class="who ai">AI가 쓴 결과</span></label>'+
+      '<div class="fhint">붙여넣으면 관리자 현황판에 확인 요청으로 올라갑니다. 최종 인정은 관리자가 합니다.</div>'+
+      '<textarea data-bind="g_ai_result" style="min-height:180px" placeholder="첫 줄이 &quot;판정: 통과&quot; 또는 &quot;판정: 보완 필요&quot;인 결과">'+esc(getV('g_ai_result',''))+'</textarea></div>'+
+    '<div class="exportbar" style="margin-top:10px"><button type="button" class="secondary" data-action="gate-mail">Gate 결과물·AI 판정 메일로 보내기</button></div>'+
+    '<div class="fhint">받는 사람 주소는 비워서 열려요. 이메일 앱에서 담당자나 관리자 주소를 직접 넣어 보내세요. (다 옮겨 적기 어려우니, 지금까지 적은 내용을 메일 본문에 자동으로 채워줘요)</div>';
+}
+// 결과물을 다시 입력받지 않고, 지금까지 쓴 내용을 그대로 메일 본문에 채워서 보냄 (서버가 대신 보내는 게 아니라 내 메일 앱을 엶)
+function buildGateMailtoHref(){
+  const lv = gateLevelNum(getV('g_level','')), L = AI_LEVELS[lv-1];
+  const subject = 'ddugi Gate 결과물 - '+(getV('s1_name','')||'(고민거리 이름 없음)')+(L ? ' (L'+L.lv+' '+L.name+')' : '');
+  const body = [
+    '고민거리 이름: '+getV('s1_name',''),
+    '담당자: '+getV('s1_owner','')+' / '+getV('s1_dept',''),
+    '신청 레벨: '+getV('g_level',''),
+    '',
+    '[13-2. Gate 결과물]',
+    getV('g_evidence','') || '(미작성)',
+    '',
+    '[13-3. AI 1차 판정 결과]',
+    getV('g_ai_result','') || '(미작성)'
+  ].join('\n');
+  return 'mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+}
+async function postGateReview(docIdArg, level, decision){
+  const note = prompt(decision==='인정' ? '메모 (선택)' : '보완할 점을 적어주세요', '');
+  if(note===null) return;
+  const res = await fetch('/api/admin/gate/'+encodeURIComponent(docIdArg), {method:'POST',
+    headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({level, decision, note})});
+  if(!res.ok){ alert(await adminErrorText(res)); return; }
+  renderDashboard();
+}
+
+function renderVerifySection(){
+  const noHypo = !String(getV('s1_hypo','')).trim();
+  return '<div class="frame"><h2>3-1 · AI 검증 요청</h2><div class="sub">STEP 2 · AI가 내 생각을 검증</div>'+
+    '<div class="hint">01~02에 <b>직접 쓴</b> 문제 정의와 해결 방향 가설을 AI가 검증합니다. AI가 답을 대신 만드는 게 아니라, 문제와 해결책이 섞여 있지 않은지, AI가 정말 필요한지, <b>데이터가 말해주는 범위를 넘는 주장</b>은 없는지 짚어 줍니다. 복사해서 <b>AI</b>에 붙여넣으세요.</div>'+
+    (noHypo ? '<div class="hint warn">1-8 해결 방향 가설이 비어 있어요. 먼저 직접 적어야 AI가 검증할 대상이 생깁니다.</div>' : '')+
+    '<div class="field"><label>AI 검증 요청문</label><div class="fhint">AX 고민거리 검증 프롬프트 + 01~02에 쓴 내용</div></div>'+
+    '<textarea id="verifyOut" class="exportbox" readonly></textarea>'+
+    '<div class="exportbar"><button type="button" data-copy="verifyOut">검증 요청 복사</button><span class="copymsg" data-for="verifyOut"></span></div>'+
+    '<div class="field" style="margin-top:22px"><label>AI 검증 결과 붙여넣기 <span class="who ai">AI가 쓴 결과</span></label>'+
+      '<div class="hint">ddugi는 팩폭러라 말이 셀 수 있어요. 틀렸다는 게 아니라 원래 그렇게 말하는 캐릭터니 담아두지 마세요.</div>'+
+      '<div class="fhint">전체 답변은 AI 화면에서 직접 읽어보세요. 여기에는 <b>답변 맨 아래 "핵심 요약"만</b> 복사해서 붙여넣으면 충분해요. 다음 단계(3-2 문제 재정의)에서 함께 볼 수 있어요.</div>'+
+      '<textarea data-bind="verify_result" style="min-height:220px" placeholder="AI 답변 맨 아래 핵심 요약을 여기에 붙여넣으세요">'+esc(getV('verify_result',''))+'</textarea>'+
+    '</div>'+
+    '<div class="hint">다음: <b>3-2 문제 재정의</b>에서 이 결과를 보고 문제와 목표를 자기 말로 다시 쓰세요.</div>'+
+  '</div>';
+}
+// 처음부터 백지에 다시 쓰게 하면 부담이 크니, 원래 쓴 내용을 기본값으로 채워두고 다를 게 없으면 그대로 둬도 되게 함
+function prefillRedefineDefaults(){
+  if(!String(getV('re_core','')).trim()) setV('re_core', getV('s2_core',''));
+  if(!String(getV('re_goal','')).trim()) setV('re_goal', getV('s1_goal',''));
+  if(!String(getV('re_direction','')).trim()) setV('re_direction', getV('s1_hypo',''));
+}
+function redefRefHtml(){
+  const v = id => String(getV(id,'')).trim();
+  const cell = t => t ? esc(t).replace(/\n/g,'<br>') : '<span class="muted">(비어 있음)</span>';
+  const vr = v('verify_result');
+  return '<div class="field"><label>처음 쓴 문제 정의 <span class="who me">직접 작성</span></label>'+
+      htmlTable(['항목','처음 쓴 내용'], [
+        ['1-6 핵심 문제', cell(v('s2_core'))],
+        ['1-7 개선 기준', cell(v('s1_goal'))],
+        ['1-8 해결 방향 가설', cell(v('s1_hypo'))]]) +
+    '</div>'+
+    '<details class="promptedu"'+(vr ? ' open' : '')+'><summary><span class="pe-badge">참고</span><span class="pe-title">3-1 AI 검증 결과</span><span class="pe-hint">눌러서 펼치기</span></summary>'+
+      (vr ? '<div class="verify-view">'+esc(vr).replace(/\n/g,'<br>')+'</div>' : '<p>3-1에서 AI 검증 결과를 붙여넣으면 여기서 함께 볼 수 있어요.</p>')+
+    '</details>';
+}
+
+function renderDiagSection(){
+  const noRedef = !String(getV('re_core','')).trim();
+  return '<div class="frame"><h2>3-3 · AI 고민거리 구조화 요청</h2><div class="sub">STEP 4~5 · SYSTEM PROMPT + 업무 .md</div>'+
+    '<div class="hint">3-2에서 <b>다시 정의한 문제</b>와 01~02 업무 정보, 3-1 검증 결과를 판단 기준(System Prompt)과 묶었습니다. 복사해서 AI에 붙여넣으면 AI 필요성 / 기술 유형 / 고민거리 정의와 이 고민거리로 기를 수 있는 역량을 받을 수 있어요.</div>'+
+    (noRedef ? '<div class="hint warn">3-2 문제 재정의가 비어 있어요. AI 검증 결과를 보고 직접 다시 정의한 뒤 구조화를 요청하는 것을 권합니다.</div>' : '')+
+    renderLpTable(LP_DONE_FIELD) + aiLevelCardHtml(false) +
+    // 입문자(레벨 시작 전)에게는 처음부터 펼쳐서 보여줌
+    '<details class="promptedu"'+(aiLevel(getV('lp_done',[]))===0 ? ' open' : '')+'>'+
+      '<summary><span class="pe-badge">L1 학습</span><span class="pe-title">프롬프트란? 지금 복사할 진단 요청문으로 배워보세요</span><span class="pe-hint">눌러서 펼치기</span></summary>'+
+      '<p><b>프롬프트(Prompt)</b>는 AI에게 주는 지시문입니다. AI는 프롬프트에 적힌 만큼만 알기 때문에, 같은 AI라도 프롬프트를 어떻게 쓰느냐에 따라 결과가 크게 달라집니다.</p>'+
+      '<p>아래 진단 요청문도 하나의 프롬프트이고, 좋은 프롬프트의 4가지 요소로 이루어져 있습니다.</p>'+
+      htmlTable(['요소','요청문에서 찾을 곳','하는 일'], [
+        ['1. 역할 (Persona)','# 역할','AI가 어떤 관점과 태도로 답할지 정합니다. 여기서는 "AI를 무조건 추천하지 않는 업무효율화 진단가"'],
+        ['2. 맥락과 기준 (Context, Rules)','# 판단 원칙, # 기술 적합성 기준, # AI 고민거리 인정 기준, # 사전 점검 등','무엇을 기준으로 판단할지 알려줍니다. 이게 없으면 AI는 일반론으로 답하거나 AI를 과하게 추천합니다'],
+        ['3. 입력 (Input)','# 진단할 업무 정보','판단할 대상입니다. 01~02에 쓴 사실이 그대로 들어갑니다. 구체적일수록 결과가 정확합니다'],
+        ['4. 출력 형식 (Output Format)','# 출력 형식','답을 어떤 모양으로 받을지 정합니다. 형식을 정해 두면 사람마다 받은 결과를 같은 틀로 비교할 수 있습니다']]) +
+      '<p>1, 2, 4번은 매번 같고 3번(업무 정보)만 바뀝니다. 이렇게 늘 같은 앞뒤 부분을 <b>System Prompt</b>라고 부르고, 이것을 다시 쓸 수 있게 저장해 두면 <b>Skill</b>이 됩니다 (L2 AI Operator).</p>'+
+      '<p><b>직접 해보기:</b> 요청문을 붙여넣은 뒤 "비교표를 먼저 보여줘"처럼 한 줄을 더하거나 출력 형식을 바꿔서, 결과가 어떻게 달라지는지 확인해 보세요. 이것이 <b>L1 AI User의 프롬프트 작성</b>, 나아가 <b>L2의 Prompt 설계</b> 경험입니다.</p>'+
+      '<p>지금 하고 있는 것에는 이름이 있습니다. 3번(업무 정보)에 <b>무엇을 넣을지 고르고 정리하는 것을 Context Engineering</b>이라고 부릅니다 — 프롬프트 문구보다 어떤 정보를 맥락으로 주는지가 결과 품질을 더 크게 좌우한다고 알려져 있습니다. 그리고 <b>3-1 검증 → 3-2 재정의 → 3-3 구조화처럼 한 프롬프트의 결과를 다음 프롬프트의 입력으로 이어 쓰는 것을 Prompt Chaining</b>이라고 부릅니다 — 하나의 거대한 프롬프트로 한 번에 다 시키는 것보다, 작은 단계로 나눠 이어가는 쪽이 더 안정적인 결과를 만듭니다. 더 깊이 알고 싶다면: <a href="https://outcomeschool.com/blog/context-engineering" target="_blank" rel="noopener">Context Engineering이란?</a> · <a href="https://outcomeschool.com/blog/how-does-prompt-chaining-work" target="_blank" rel="noopener">Prompt Chaining은 어떻게 동작하나?</a></p>'+
+    '</details>'+
+    '<div class="field" style="margin-top:18px"><label>AI 고민거리 구조화 요청문</label><div class="fhint">나의 AI 역량 레벨도 함께 들어가서, AI가 지금 수준에 맞는 학습 포인트를 추천합니다.</div></div>'+
+    '<textarea id="diagOut" class="exportbox" readonly></textarea>'+
+    '<div class="exportbar">'+
+      '<button type="button" id="copyDiagBtn" data-copy="diagOut">구조화 요청 복사</button>'+
+      '<span class="copymsg" data-for="diagOut"></span>'+
+    '</div>'+
+    '<div class="field" style="margin-top:22px"><label>AI 구조화 결과 붙여넣기 <span class="who ai">AI가 쓴 결과</span></label>'+
+      '<div class="hint">ddugi는 팩폭러라 말이 셀 수 있어요. 틀렸다는 게 아니라 원래 그렇게 말하는 캐릭터니 담아두지 마세요.</div>'+
+      '<div class="fhint">AI가 준 진단 결과를 붙여넣어 두면 저장되고, 고민거리 정의서 내보내기에도 포함됩니다. 후속 설계의 기준이 됩니다.</div>'+
+      '<textarea data-bind="diag_result" style="min-height:220px" placeholder="AI 구조화 결과를 여기에 붙여넣으세요">'+esc(getV('diag_result',''))+'</textarea>'+
+    '</div>'+
+    lpRecommendHtml() + renderLpTable(LP_PLAN_FIELD) + aiLevelCardHtml(true) +
+  '</div>';
+}
+
+function renderExportSection(){
+  return '' +
+  '<div class="frame"><h2>▤ 고민거리 정의서 내보내기</h2><div class="sub">EXPORT — MARKDOWN</div>'+
+    '<div class="hint">작성한 내용을 원본 고민거리 정의서 양식에 맞춰 Markdown으로 생성합니다. 복사하거나 .md 파일로 저장해 제출용 문서에 붙여넣으세요.</div>'+
+    '<textarea id="exportOut" class="exportbox" readonly></textarea>'+
+    '<div class="exportbar">'+
+      '<button type="button" id="copyBtn" data-copy="exportOut">클립보드에 복사</button>'+
+      '<button type="button" id="dlBtn" class="secondary">.md 파일로 저장</button>'+
+      '<span id="saveMsg"></span>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============== event delegation ============== */
+function ensureArr(id, len){
+  let v = getV(id, null);
+  if(!Array.isArray(v)) v = len!=null ? new Array(len).fill('') : [];
+  return v;
+}
+
+document.addEventListener('input', function(e){
+  const t = e.target;
+  if(t.id==='taskListSearch'){ renderTaskListBody(); return; }
+  if(t.matches('[data-bind]')){
+    setV(t.getAttribute('data-bind'), t.value);
+    const g = document.getElementById('gateOut'); if(g) g.value = buildGatePrompt();
+    return;
+  }
+  if(t.matches('[data-ftable]')){
+    const id=t.getAttribute('data-ftable'), row=t.getAttribute('data-row'), col=t.getAttribute('data-col');
+    const v = getV(id, {});
+    v[row] = v[row]||{}; v[row][col]=t.value;
+    // 체크 안 해도 내용을 적으면 자동으로 체크됨 (체크박스로 수동 on/off도 그대로 가능)
+    const f = findField(id);
+    if(f && f.check && t.value.trim() && !v[row]._on){
+      v[row]._on = true;
+      const tr = t.closest('tr');
+      if(tr){ tr.classList.remove('off'); const cb = tr.querySelector('[data-ftcheck]'); if(cb) cb.checked = true; }
+    }
+    setV(id, v);
+    return;
+  }
+  if(t.matches('[data-dtable]')){
+    const id=t.getAttribute('data-dtable'), idx=+t.getAttribute('data-idx'), col=t.getAttribute('data-col');
+    const v = getV(id, [{}]);
+    v[idx] = v[idx]||{}; v[idx][col]=t.value;
+    setV(id, v);
+    return;
+  }
+  if(t.matches('[data-dlist]')){
+    const id=t.getAttribute('data-dlist'), idx=+t.getAttribute('data-idx');
+    const v = getV(id, ['']);
+    v[idx]=t.value;
+    setV(id, v);
+    return;
+  }
+  if(t.matches('[data-repeat]')){
+    const id=t.getAttribute('data-repeat'), idx=+t.getAttribute('data-idx'), sub=t.getAttribute('data-sub');
+    const v = getV(id, [{}]);
+    v[idx]=v[idx]||{}; v[idx][sub]=t.value;
+    setV(id, v);
+    return;
+  }
+});
+
+document.addEventListener('change', function(e){
+  const t = e.target;
+  if(t.id==='taskListStage' || t.id==='taskListSort'){ renderTaskListBody(); return; }
+  if(t.matches('[data-checklist]')){
+    const id=t.getAttribute('data-checklist'), opt=t.getAttribute('data-opt');
+    const v = getV(id, []).slice();
+    const i = v.indexOf(opt);
+    if(t.checked && i===-1) v.push(opt);
+    if(!t.checked && i>-1) v.splice(i,1);
+    setV(id, v);
+    if(id==='lp_done' || id==='lp_plan' || opt==='기타'){ renderSheet(); return; }
+    t.closest('.opt').classList.toggle('checked', t.checked);
+    return;
+  }
+  if(t.matches('[data-radio]')){
+    const id=t.getAttribute('data-radio'), opt=t.getAttribute('data-opt');
+    setV(id, opt);
+    if(id==='s1_cat' || id==='g_level'){ renderSheet(); return; }
+    t.closest('.opts').querySelectorAll('.opt').forEach(o=>o.classList.remove('checked'));
+    t.closest('.opt').classList.add('checked');
+    return;
+  }
+  if(t.matches('[data-ftcheck]')){
+    const id=t.getAttribute('data-ftcheck'), row=t.getAttribute('data-row');
+    const v = getV(id, {});
+    v[row] = v[row]||{}; v[row]._on = t.checked;
+    setV(id, v);
+    renderSheet();
+    return;
+  }
+  if(t.matches('[data-check17]')){
+    setV('ck_'+t.getAttribute('data-check17'), t.checked);
+    renderSheet();
+    return;
+  }
+});
+
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('[data-action]');
+  if(!btn) return;
+  const action = btn.getAttribute('data-action');
+  const target = btn.getAttribute('data-target');
+
+  if(action==='lp-refresh'){ renderSheet(); return; }
+  // 역량 체크 전체 선택/해제 (계획 표에서는 이미 경험한 항목 제외)
+  if(action==='lp-all' || action==='lp-none' || action==='lp-level'){
+    if(state.locked) return;
+    const [store, lvStr] = target.split('|');
+    const done = store==='lp_plan' ? getV('lp_done',[]) : [];
+    const pool = (lvStr ? AI_LEVELS[+lvStr-1].items : AI_LEVELS.reduce((a,L)=>a.concat(L.items), [])).filter(i=>done.indexOf(i)<0);
+    let cur = getV(store,[]).slice();
+    const allOn = pool.every(i=>cur.indexOf(i)>-1);
+    const turnOn = action==='lp-all' || (action==='lp-level' && !allOn);
+    if(action==='lp-none' && store==='lp_done' && cur.length && !confirm('경험해본 항목 체크를 모두 해제할까요?')) return;
+    cur = turnOn ? cur.concat(pool.filter(i=>cur.indexOf(i)<0)) : cur.filter(i=>pool.indexOf(i)<0);
+    setV(store, cur); renderSheet(); return;
+  }
+  if(action==='lp-add'){
+    const plan = getV('lp_plan',[]).slice(), done = getV('lp_done',[]);
+    target.split('|').forEach(i=>{ if(plan.indexOf(i)<0 && done.indexOf(i)<0) plan.push(i); });
+    setV('lp_plan', plan); renderSheet(); return;
+  }
+  if(action==='gate-mail'){ location.href = buildGateMailtoHref(); return; }
+  if(action==='acct-add'){
+    const idEl=document.getElementById('newAcctId'), nameEl=document.getElementById('newAcctName'), codeEl=document.getElementById('newAcctCode');
+    const msg = document.getElementById('acctMsg');
+    const id=idEl.value.trim(), name=nameEl.value.trim(), code=codeEl.value;
+    if(!id){ msg.textContent='사번을 입력하세요.'; return; }
+    if(code.length<6){ msg.textContent='비밀번호는 6자 이상이어야 해요.'; return; }
+    fetch('/api/master/accounts', {method:'POST', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({empId:id, name, code})})
+      .then(async r=>{
+        if(r.ok){ idEl.value=''; nameEl.value=''; codeEl.value=''; msg.textContent=''; renderAccounts(); }
+        else{ msg.textContent = await adminErrorText(r); }
+      }).catch(()=>{ msg.textContent = '서버에 연결할 수 없어요.'; });
+    return;
+  }
+  if(action==='acct-del'){
+    if(!confirm('사번 '+target+'의 관리자 권한을 없앨까요?')) return;
+    fetch('/api/master/accounts/'+encodeURIComponent(target), {method:'DELETE', headers: authHeaders()})
+      .then(async r=>{ if(r.ok) renderAccounts(); else alert(await adminErrorText(r)); })
+      .catch(()=>alert('서버에 연결할 수 없어요.'));
+    return;
+  }
+  if(action==='tax-save'){ saveTaxonomy(target); return; }
+  if(action==='intro-edit'){ if(!isMaster) return; introEditing = (target==='on'); renderSheet(); return; }
+  if(action==='discover-carry'){
+    const chosen = String(getV('discover_chosen','')).trim();
+    if(!chosen) return;
+    // 실제 값을 덮어쓰지 않고 placeholder(예: ...)로만 보여줌 — 1-7처럼 사용자가 입력하는 순간 사라짐
+    setV('s2_core_hint', '예: '+chosen);
+    setV('s1_hypo_hint', '예: '+chosen);
+    state.cur = 's1';
+    persist();
+    renderSheet();
+    document.getElementById('main').scrollTo(0,0);
+    return;
+  }
+  if(action==='data-candidates-parse'){
+    const raw = String(getV('s11_data_raw','')).trim();
+    if(!raw) return;
+    const items = raw.split('\n').map(s=>s.replace(/^[-*•\d.\)]+\s*/,'').trim()).filter(Boolean);
+    if(!items.length) return;
+    setV('s11_data_candidates', items);
+    renderSheet();
+    return;
+  }
+  if(action==='codetest-carry'){
+    const ai = String(getV('s12_ai_raw','')).trim();
+    if(!ai) return;
+    const preview = ai.length>300 ? ai.slice(0,300)+'…' : ai;
+    setV('s12_1_hint', '예: '+preview);
+    renderSheet();
+    return;
+  }
+  if(action==='tools-toggle'){ state.showAllTools = !state.showAllTools; persist(); renderSheet(); return; }
+  if(action==='gate-ok' || action==='gate-fix'){
+    const i = target.indexOf('|');
+    postGateReview(target.slice(0,i), target.slice(i+1), action==='gate-ok' ? '인정' : '보완 요청'); return;
+  }
+  if(action==='ex-all'){
+    document.querySelectorAll('#sheet details.ex-sec').forEach(d=>{ d.open = (target==='open'); });
+    return;
+  }
+  if(action==='ex-tab'){ exampleTab = target; renderSheet(); document.getElementById('main').scrollTo(0,0); return; }
+  if(action==='goto'){
+    if(!target) return;
+    if((target==='dashboard' || target==='tasklist' || target==='taxonomy') && !isAdmin) return;
+    if(target==='accounts' && !isMaster) return;
+    { const tsec = SECTIONS.find(s=>s.id===target); if(tsec && tsec.disabled) return; }
+    state.cur = target;
+    persist();
+    renderSheet();
+    document.getElementById('main').scrollTo(0,0);
+    closeSidebarMobile();
+    return;
+  }
+  if(action==='add-dtable'){
+    const f = findField(target);
+    const v = getV(target, []).slice();
+    const empty = {}; f.cols.forEach(c=>empty[c]='');
+    v.push(empty);
+    setV(target, v);
+    document.getElementById('fbody-'+target).innerHTML = renderDTableBody(f);
+    return;
+  }
+  if(action==='rm-dtable'){
+    const idx=+btn.getAttribute('data-idx');
+    const f = findField(target);
+    const v = getV(target, []).slice();
+    v.splice(idx,1);
+    setV(target, v);
+    document.getElementById('fbody-'+target).innerHTML = renderDTableBody(f);
+    return;
+  }
+  if(action==='add-dlist'){
+    const f = findField(target);
+    const v = getV(target, ['']).slice();
+    v.push('');
+    setV(target, v);
+    document.getElementById('fbody-'+target).innerHTML = renderDListBody(f);
+    return;
+  }
+  if(action==='rm-dlist'){
+    const idx=+btn.getAttribute('data-idx');
+    const f = findField(target);
+    const v = getV(target, ['']).slice();
+    v.splice(idx,1);
+    setV(target, v);
+    document.getElementById('fbody-'+target).innerHTML = renderDListBody(f);
+    return;
+  }
+  if(action==='add-repeat'){
+    const f = findField(target);
+    const v = getV(target, [{}]).slice();
+    v.push({});
+    setV(target, v);
+    document.getElementById('fbody-'+target).innerHTML = renderRepeatBody(f);
+    return;
+  }
+  if(action==='rm-repeat'){
+    const idx=+btn.getAttribute('data-idx');
+    const f = findField(target);
+    const v = getV(target, [{}]).slice();
+    v.splice(idx,1);
+    setV(target, v);
+    document.getElementById('fbody-'+target).innerHTML = renderRepeatBody(f);
+    return;
+  }
+});
+
+function findField(id){
+  for(const sec of SECTIONS){
+    if(!sec.fields) continue;
+    for(const f of sec.fields){
+      if(f.id===id) return f;
+      if(f.type==='row'){ const c=f.children.find(c=>c.id===id); if(c) return c; }
+    }
+  }
+  return null;
+}
+
+/* ============== export buttons (delegated, but need dynamic bind after render) ============== */
+document.addEventListener('click', function(e){
+  if(e.target.hasAttribute('data-copy')){
+    const ta = document.getElementById(e.target.getAttribute('data-copy'));
+    ta.select();
+    let ok=false;
+    try{ ok = document.execCommand('copy'); }catch(err){}
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).catch(()=>{});
+    }
+    const msg = document.querySelector('.copymsg[data-for="'+ta.id+'"]') || document.getElementById('saveMsg');
+    if(msg){ msg.textContent = ok || (navigator.clipboard) ? '복사됨' : '수동으로 선택 후 복사해주세요'; setTimeout(()=>{ if(msg) msg.textContent=''; },1800); }
+  }
+  if(e.target.id==='dlBtn'){
+    downloadMd();
+  }
+});
+
+function downloadMd(){
+  const md = document.getElementById('exportOut').value;
+  const filename = (getV('s1_name','고민거리 정의서').trim() || '고민거리 정의서') + '.md';
+  try{
+    const blob = new Blob([md], {type:'text/markdown'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){
+    const msg=document.getElementById('saveMsg');
+    if(msg) msg.textContent = '다운로드를 지원하지 않는 환경입니다. 내용을 복사해 저장해주세요.';
+  }
+}
+
+/* ============== sidebar mobile ============== */
+function closeSidebarMobile(){
+  if(window.innerWidth<=840) document.getElementById('sidebar').classList.remove('open');
+}
+document.getElementById('menuToggle').addEventListener('click', function(){
+  document.getElementById('sidebar').classList.toggle('open');
+});
+document.getElementById('sidebar').addEventListener('click', function(e){
+  if(e.target.id==='sidebar') closeSidebarMobile();
+});
+
+document.getElementById('resetBtn').addEventListener('click', function(){
+  if(confirm('작성한 모든 내용을 초기화할까요? 이 작업은 되돌릴 수 없습니다.')){
+    state = { fields:{}, cur:'intro', locked:false, completed:false };
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    renderSheet();
+    syncToDb();
+  }
+});
+
+/* ============== init ============== */
+function initExportBox(){
+  const box = document.getElementById('exportOut');
+  if(box) box.value = buildMarkdown();
+  const diag = document.getElementById('diagOut');
+  if(diag) diag.value = buildDiagPrompt();
+  const ver = document.getElementById('verifyOut');
+  if(ver) ver.value = buildVerifyPrompt();
+  const disc = document.getElementById('discoverOut');
+  if(disc) disc.value = buildDiscoverPrompt();
+}
+
+renderAdminSlot();
+renderSheet();
+loadRemote().then(renderSheet);
+loadTaxonomy();
+
+// 맨 위로: 본문 스크롤이 길어지면 표시
+(function(){
+  const main = document.getElementById('main'), btn = document.getElementById('toTop');
+  main.addEventListener('scroll', function(){ btn.classList.toggle('show', main.scrollTop > 400); }, {passive:true});
+  btn.addEventListener('click', function(){ main.scrollTo({top:0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}); });
+})();
+})();
+</script>
+</body>
+</html>
