@@ -324,6 +324,10 @@
   .conv-btn-prev:hover{ background:#bdbdbd; }
   .conv-btn-next{ background:#66bb6a; color:#fff; font-weight:600; }
   .conv-btn-next:hover{ background:#43a047; }
+  .conv-hint{ margin-top:8px; padding:10px 14px; border-radius:10px; background:#fff8e1; border:1.5px solid #ffe082; font-size:14px; color:#6d4c00; font-family:var(--serif); line-height:1.5; animation:convHintPop .3s ease; display:none; }
+  .conv-hint.show{ display:block; }
+  .conv-hint.severe{ background:#fce4ec; border-color:#ef9a9a; color:#b71c1c; }
+  @keyframes convHintPop{ from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
   .conv-btn-next:disabled{ background:#c8e6c9; color:#a5d6a7; cursor:not-allowed; }
   .conv-summary{ background:linear-gradient(135deg,#e8f5e9,#fff9c4); border:2px solid #81c784; border-radius:16px; padding:24px; }
   .conv-summary h3{ text-align:center; font-size:20px; margin-bottom:16px; color:#2e7d32; }
@@ -2719,6 +2723,40 @@ function renderConvVersionPick(){
     '</button>'+
   '</div></div>';
 }
+// ── 학생 입력 유효성 검사 (감자 스타일 가드레일) ──
+function validateConvInput(text, step){
+  if(!text || !text.trim()) return {ok:false, msg:'🥔 아무것도 안 적었어! 뭐라도 적어줘~ 감자가 외로워 ㅋㅋ'};
+  var t = text.trim();
+  // Too short (단, 이름/학과 등 step 0,1은 2자 이상 허용)
+  if(t.length < 2) return {ok:false, msg:'🥔 음... 조금만 더 알려줘! 감자도 궁금해 ㅋㅋ'};
+  if(step >= 2 && t.length < 3) return {ok:false, msg:'🥔 음... 조금만 더 알려줘! 감자도 궁금해 ㅋㅋ'};
+  // Profanity check (Korean + English common)
+  var profKr = /시발|씨발|개새끼|병신|지랄|꺼져|죽어|느금마|ㅅㅂ|ㅂㅅ|ㅈㄹ|ㅆㅂ|씹/i;
+  var profEn = /\b(fuck|shit|damn|bitch|ass|dick|crap|stfu|wtf)\b/i;
+  if(profKr.test(t) || profEn.test(t)) return {ok:false, msg:'🥔 오잉? 감자밭에서는 예쁜 말만 자라요 ㅋㅋ 다시 써볼래?'};
+  // Harmful content (self-harm, violence, bullying)
+  var harmful = /자살|자해|죽고\s*싶|죽을래|따돌림|왕따|때리|칼로|목을/;
+  if(harmful.test(t)) return {ok:false, msg:'🥔 힘든 일이 있어? 여기보다 전문가한테 얘기해보는 게 좋을 것 같아. 💚 (학교 상담센터 ☎ 1393)', severe:true};
+  // Personal info patterns
+  var phone = /01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}/;
+  var email = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+  var ssn = /\d{6}[-\s]?\d{7}/;  // 주민등록번호
+  if(phone.test(t) || email.test(t) || ssn.test(t)) return {ok:false, msg:'🥔 잠깐! 개인정보는 위험해. 전화번호나 이메일, 주민번호는 빼줘!'};
+  // XSS / SQL injection
+  var xss = /<script|<\/script|javascript:|on\w+\s*=|<iframe|<img\s+.*onerror/i;
+  var sql = /(\b(DROP|DELETE|INSERT|UPDATE|SELECT|UNION|ALTER)\b\s+(TABLE|FROM|INTO|SET))/i;
+  if(xss.test(t) || sql.test(t)) return {ok:false, msg:'🥔 으악! 이상한 코드가 들어있어... 일반 텍스트로 적어줘!'};
+  // Spam / keyboard mashing (같은 문자 10회 이상 반복, 단 ㅋ·ㅎ·ㅠ·ㅜ는 자연스러운 한국어라 제외)
+  var spamRepeat = t.replace(/[ㅋㅎㅠㅜ]/g,'');
+  if(spamRepeat.length > 3 && /(.)\1{9,}/.test(spamRepeat)) return {ok:false, msg:'🥔 키보드 위에서 잠든 거 아니지? ㅋㅋ 진짜 답을 적어줘~'};
+  // AI-generated paste detection (very long + formal markers)
+  if(t.length > 500){
+    var aiMarkers = /따라서|결론적으로|종합하면|요약하자면|첫째.*둘째.*셋째|In conclusion|Therefore|Furthermore/;
+    if(aiMarkers.test(t)) return {ok:false, msg:'🥔 혹시 AI한테 시켰어? ㅋㅋ 여기선 네 생각이 듣고 싶어!'};
+  }
+  if(t.length > 800) return {ok:false, msg:'🥔 와 엄청 길다! 핵심만 짧게 적어도 돼~ 감자는 간결한 게 좋아 ㅋㅋ'};
+  return {ok:true, msg:''};
+}
 function renderConvStep(){
   var qs = CONV_QUESTIONS[convVersion];
   if(convStep >= qs.length) return renderConvSummary();
@@ -2733,9 +2771,10 @@ function renderConvStep(){
       '<span class="conv-potato">🥔</span>'+
       '<div class="conv-question">'+esc(q.q)+'</div>'+
       '<textarea id="convInput" placeholder="'+esc(q.ph)+'">'+(convAnswers[convStep]||'')+'</textarea>'+
+      '<div id="convHint" class="conv-hint"></div>'+
     '</div>'+
     '<div class="conv-btns">'+
-      (convStep > 0 ? '<button type="button" class="conv-btn conv-btn-prev" data-action="conv-prev">← 이전</button>' : '<span></span>')+
+      (convStep > 0 ? '<button type="button" class="conv-btn conv-btn-prev" data-action="conv-prev">← 이전</button>' : '<button type="button" class="conv-btn conv-btn-prev" data-action="conv-restart">← 다시 선택</button>')+
       '<button type="button" class="conv-btn conv-btn-next" data-action="conv-next">다음 →</button>'+
     '</div>'+
   '</div>';
@@ -3454,6 +3493,17 @@ document.addEventListener('click', function(e){
   if(action==='conv-next'){
     var ci = document.getElementById('convInput');
     if(ci) convAnswers[convStep] = ci.value;
+    // 감자 가드레일: 입력 유효성 검사 (경고 1회, 두 번째 클릭은 통과)
+    var vr = validateConvInput(ci ? ci.value : '', convStep);
+    if(!vr.ok){
+      var hint = document.getElementById('convHint');
+      if(hint && !hint.classList.contains('show')){
+        hint.textContent = vr.msg; hint.className = 'conv-hint show' + (vr.severe ? ' severe' : '');
+        return;  // 첫 번째 클릭: 경고 표시 후 멈춤
+      }
+      // 두 번째 클릭: 경고를 본 상태 → 진행 허용 (단, 유해/개인정보는 계속 차단)
+      if(vr.severe) return;
+    }
     convStep++; renderSheet(); return;
   }
   if(action==='conv-prev'){
