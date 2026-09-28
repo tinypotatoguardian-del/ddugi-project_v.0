@@ -161,6 +161,35 @@ def init_db() -> None:
     for key, default in DEFAULT_TAXONOMY.items():
         if not db_fetchone(conn, "SELECT 1 FROM taxonomy WHERE key=?", (key,)):
             db_execute(conn, "INSERT INTO taxonomy (key, value) VALUES (?,?)", (key, json.dumps(default, ensure_ascii=False)))
+    # 감자밭 (feedback)
+    if USE_PG:
+        db_execute(conn,
+            """
+            CREATE TABLE IF NOT EXISTS feedback (
+                id SERIAL PRIMARY KEY,
+                nickname TEXT,
+                message TEXT NOT NULL,
+                status TEXT DEFAULT 'planted',
+                admin_note TEXT,
+                created_at TEXT,
+                reviewed_at TEXT
+            )
+            """
+        )
+    else:
+        db_execute(conn,
+            """
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nickname TEXT,
+                message TEXT NOT NULL,
+                status TEXT DEFAULT 'planted',
+                admin_note TEXT,
+                created_at TEXT,
+                reviewed_at TEXT
+            )
+            """
+        )
     conn.commit()
     if MASTER_EMP_ID == "master" and MASTER_CODE == "1234":
         print("[경고] 마스터 계정이 기본값(사번 master / 비밀번호 1234)입니다. 로그인 후 비밀번호를 바꾸세요.")
@@ -496,6 +525,77 @@ def put_taxonomy(key: str, body: TaxonomyIn, x_emp_id: str = Header(default=""),
     db_execute(conn,
         "INSERT INTO taxonomy (key, value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
         (key, json.dumps(body.value, ensure_ascii=False)),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+# ── 감자밭 (feedback) ──────────────────────────────────────────────
+
+
+class FeedbackIn(BaseModel):
+    nickname: str = ""
+    message: str
+
+
+class FeedbackUpdateIn(BaseModel):
+    status: str
+    admin_note: str = ""
+
+
+@app.post("/api/feedback")
+def create_feedback(body: FeedbackIn):
+    if not (body.message or "").strip():
+        raise HTTPException(status_code=400, detail="메시지를 입력하세요.")
+    conn = get_db()
+    now = datetime.datetime.utcnow().isoformat()
+    cur = db_execute(conn,
+        "INSERT INTO feedback (nickname, message, status, created_at) VALUES (?,?,?,?)",
+        (body.nickname.strip() or "익명 감자", body.message.strip(), "planted", now),
+    )
+    if USE_PG:
+        new_id = db_fetchone(conn, "SELECT lastval() AS id")["id"]
+    else:
+        new_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return {"ok": True, "id": new_id}
+
+
+@app.get("/api/feedback")
+def list_feedback():
+    conn = get_db()
+    rows = db_fetchall(conn,
+        "SELECT * FROM feedback WHERE status IN ('planted','growing') ORDER BY created_at DESC"
+    )
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/feedback/all")
+def list_all_feedback(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
+    require_role(x_emp_id, x_emp_code, {"admin", "master"})
+    conn = get_db()
+    rows = db_fetchall(conn, "SELECT * FROM feedback ORDER BY created_at DESC")
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@app.put("/api/feedback/{fb_id}")
+def update_feedback(fb_id: int, body: FeedbackUpdateIn, x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
+    require_role(x_emp_id, x_emp_code, {"admin", "master"})
+    if body.status not in ("planted", "growing", "harvested"):
+        raise HTTPException(status_code=400, detail="status는 planted/growing/harvested 중 하나여야 합니다.")
+    conn = get_db()
+    row = db_fetchone(conn, "SELECT * FROM feedback WHERE id=?", (fb_id,))
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="피드백을 찾을 수 없습니다.")
+    reviewed_at = datetime.datetime.utcnow().isoformat() if body.status == "harvested" else row["reviewed_at"]
+    db_execute(conn,
+        "UPDATE feedback SET status=?, admin_note=?, reviewed_at=? WHERE id=?",
+        (body.status, body.admin_note.strip(), reviewed_at, fb_id),
     )
     conn.commit()
     conn.close()

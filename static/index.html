@@ -782,6 +782,7 @@ const SECTIONS = [
   RD('g_level','13-1. 인정 신청 레벨', AI_LEVELS.map(L=>'L'+L.lv+' '+L.name)),
   {type:'gate'}
 ]},
+{id:'feedback', num:'🥔', title:'감자밭', special:'feedback'},
 {id:'export', num:'▤', title:'밖으로 심기', special:'export'},
 {id:'dashboard', num:'☰', title:'마음의 방 전경', special:'dashboard'},
 {id:'tasklist', num:'☷', title:'씨앗 목록', special:'tasklist'},
@@ -1343,6 +1344,9 @@ function renderSheet(){
     initExportBox();
   } else if(sec.special==='roadmap'){
     sheet.innerHTML = renderRoadmapSection();
+  } else if(sec.special==='feedback'){
+    sheet.innerHTML = renderFeedbackSection();
+    initFeedbackSection();
   } else if(sec.special==='example'){
     sheet.innerHTML = renderExampleSection() + navFootHtml(sec);
   } else if(sec.special==='intro'){
@@ -1787,7 +1791,7 @@ function updateRulerAndNav(){
     const st = sectionStatus(s);
     const stMark = st==='done' ? '<span class="sec-status st-done">완료</span>' : st==='partial' ? '<span class="sec-status st-partial">작성중</span>' : '<span class="dot"></span>';
     return (NAV_GROUPS[s.id] ? '<li class="navgroup">'+esc(NAV_GROUPS[s.id])+'</li>' : '')+
-      '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
+      '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
       '<span class="num">'+s.num+'</span>'+esc(s.title)+stMark+'</button></li>'+
       (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
   }).join('');
@@ -2637,6 +2641,131 @@ const ROADMAP = [
   ]}
 ];
 const ROADMAP_STATUS = {plan:'계획', review:'검토 중', decide:'결정 필요', done:'완료'};
+/* ============== 감자밭 (feedback) ============== */
+let feedbackCache = [];
+async function loadFeedback(admin){
+  try{
+    const url = admin ? '/api/feedback/all' : '/api/feedback';
+    const headers = admin ? {'x-emp-id':empId,'x-emp-code':empCode} : {};
+    const res = await fetch(url,{headers});
+    if(!res.ok) return [];
+    return await res.json();
+  }catch(e){ return []; }
+}
+function renderFeedbackSection(){
+  if(isAdmin) return renderFeedbackAdminSection();
+  return '<div class="frame intro"><h2>🥔 감자밭</h2>'+
+    '<p class="intro-lead">감자를 심어 의견을 남겨주세요. 감자밭에서 자라는 감자들을 클릭하면 메시지를 읽을 수 있어요.</p>'+
+    '<div id="fbPotatoGrid" style="display:flex;flex-wrap:wrap;gap:6px;min-height:60px;margin:16px 0;"></div>'+
+    '<div style="margin-top:20px;padding:16px;background:var(--panel);border:1.5px solid var(--blueprint-2);border-radius:var(--radius);">'+
+      '<h3 style="margin:0 0 10px;font-size:15px;">감자 심기 🌱</h3>'+
+      '<div class="field"><label>닉네임 (선택)</label><input type="text" id="fbNickname" placeholder="익명 감자" maxlength="20" style="max-width:200px;"></div>'+
+      '<div class="field"><label>메시지 *</label><textarea id="fbMessage" rows="3" placeholder="하고 싶은 말, 제안, 버그 제보 등 자유롭게 적어주세요." style="width:100%;"></textarea></div>'+
+      '<button type="button" id="fbSubmitBtn" class="addbtn" style="margin-top:8px;">감자 심기 🌱</button>'+
+    '</div>'+
+  '</div>';
+}
+function renderFeedbackAdminSection(){
+  return '<div class="frame"><h2>🥔 감자밭 관리</h2>'+
+    '<p class="fhint">모든 피드백을 확인하고 상태를 변경할 수 있습니다.</p>'+
+    '<div id="fbAdminTable"></div>'+
+  '</div>';
+}
+async function initFeedbackSection(){
+  if(isAdmin){
+    feedbackCache = await loadFeedback(true);
+    renderFeedbackAdminTable();
+  } else {
+    feedbackCache = await loadFeedback(false);
+    renderFeedbackPotatoGrid();
+    const btn = document.getElementById('fbSubmitBtn');
+    if(btn) btn.onclick = async function(){
+      const nick = (document.getElementById('fbNickname')||{}).value||'';
+      const msg = (document.getElementById('fbMessage')||{}).value||'';
+      if(!msg.trim()){ alert('메시지를 입력하세요.'); return; }
+      btn.disabled = true;
+      try{
+        const res = await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nickname:nick,message:msg})});
+        if(!res.ok){ const e=await res.json(); alert(e.detail||'오류'); return; }
+        document.getElementById('fbNickname').value='';
+        document.getElementById('fbMessage').value='';
+        feedbackCache = await loadFeedback(false);
+        renderFeedbackPotatoGrid();
+      }catch(e){ alert('전송 실패'); }
+      finally{ btn.disabled=false; }
+    };
+  }
+}
+function renderFeedbackPotatoGrid(){
+  const el = document.getElementById('fbPotatoGrid');
+  if(!el) return;
+  if(!feedbackCache.length){ el.innerHTML='<span style="color:var(--ink-soft);font-size:13px;">아직 심어진 감자가 없어요. 첫 감자를 심어보세요!</span>'; return; }
+  el.innerHTML = feedbackCache.map((fb,i)=>{
+    const emoji = fb.status==='growing' ? '🌱' : '🥔';
+    return '<button type="button" class="fb-potato" data-idx="'+i+'" title="'+(fb.nickname||'익명 감자')+'" style="width:48px;height:48px;font-size:28px;border:none;background:var(--panel);border-radius:var(--radius);cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;align-items:center;justify-content:center;">'+emoji+'</button>';
+  }).join('');
+  el.querySelectorAll('.fb-potato').forEach(btn=>{
+    btn.onmouseenter=function(){this.style.transform='scale(1.2)';this.style.boxShadow='0 2px 8px rgba(0,0,0,.15)';};
+    btn.onmouseleave=function(){this.style.transform='';this.style.boxShadow='';};
+    btn.onclick=function(){
+      const fb=feedbackCache[+this.dataset.idx];
+      const emoji = fb.status==='growing' ? '🌱' : '🥔';
+      showModal(
+        '<div style="text-align:center;font-size:48px;margin-bottom:8px;">'+emoji+'</div>'+
+        '<h2 style="margin:0 0 8px;font-size:16px;">'+esc(fb.nickname||'익명 감자')+'</h2>'+
+        '<p style="white-space:pre-wrap;line-height:1.6;margin:0 0 12px;">'+esc(fb.message)+'</p>'+
+        '<div style="font-size:11px;color:var(--ink-soft);">'+(fb.created_at||'').slice(0,10)+'</div>'+
+        (fb.admin_note ? '<div style="margin-top:10px;padding:8px;background:var(--panel);border-radius:var(--radius);font-size:12px;"><b>관리자 메모:</b> '+esc(fb.admin_note)+'</div>':'')+
+        '<button type="button" onclick="hideModal()" class="addbtn" style="margin-top:14px;width:100%;text-align:center;">닫기</button>'
+      );
+    };
+  });
+}
+function renderFeedbackAdminTable(){
+  const el = document.getElementById('fbAdminTable');
+  if(!el) return;
+  if(!feedbackCache.length){ el.innerHTML='<p style="color:var(--ink-soft);">피드백이 없습니다.</p>'; return; }
+  let html='<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+    '<thead><tr style="border-bottom:2px solid var(--blueprint-2);text-align:left;">'+
+    '<th style="padding:6px;">닉네임</th><th style="padding:6px;">메시지</th><th style="padding:6px;">상태</th><th style="padding:6px;">관리자 메모</th><th style="padding:6px;">날짜</th><th style="padding:6px;">액션</th></tr></thead><tbody>';
+  feedbackCache.forEach((fb,i)=>{
+    const harvested = fb.status==='harvested';
+    const td = harvested ? 'style="padding:6px;text-decoration:line-through;color:var(--ink-soft);"' : 'style="padding:6px;"';
+    const statusLabel = fb.status==='planted'?'🥔 심어짐':fb.status==='growing'?'🌱 검토 중':'🌾 수확 완료';
+    html+='<tr style="border-bottom:1px solid var(--blueprint-2);">'+
+      '<td '+td+'>'+esc(fb.nickname||'익명 감자')+'</td>'+
+      '<td '+td+' style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px;'+(harvested?'text-decoration:line-through;color:var(--ink-soft);':'')+'">'+esc(fb.message)+'</td>'+
+      '<td style="padding:6px;">'+statusLabel+'</td>'+
+      '<td style="padding:6px;font-size:12px;">'+esc(fb.admin_note||'')+'</td>'+
+      '<td style="padding:6px;font-size:11px;">'+(fb.created_at||'').slice(0,10)+'</td>'+
+      '<td style="padding:6px;white-space:nowrap;">'+
+        (fb.status!=='growing'?'<button type="button" class="addbtn fb-action" data-idx="'+i+'" data-act="growing" style="font-size:11px;margin:2px;">검토 중 🌱</button>':'')+
+        (fb.status!=='harvested'?'<button type="button" class="addbtn fb-action" data-idx="'+i+'" data-act="harvested" style="font-size:11px;margin:2px;">수확 완료 🌾</button>':'')+
+      '</td></tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+  el.querySelectorAll('.fb-action').forEach(btn=>{
+    btn.onclick=async function(){
+      const fb=feedbackCache[+this.dataset.idx];
+      const act=this.dataset.act;
+      let note=fb.admin_note||'';
+      if(act==='harvested'){
+        const input=prompt('관리자 메모 (선택):',note);
+        if(input===null) return;
+        note=input;
+      }
+      this.disabled=true;
+      try{
+        const res=await fetch('/api/feedback/'+fb.id,{method:'PUT',headers:{'Content-Type':'application/json','x-emp-id':empId,'x-emp-code':empCode},body:JSON.stringify({status:act,admin_note:note})});
+        if(!res.ok){ const e=await res.json(); alert(e.detail||'오류'); return; }
+        feedbackCache=await loadFeedback(true);
+        renderFeedbackAdminTable();
+      }catch(e){ alert('오류 발생'); }
+    };
+  });
+}
+
 function renderRoadmapSection(){
   return '<div class="frame intro"><h2>🌱 밭 넓히기</h2>'+
       '<p class="intro-lead">ddugi는 같이 키울 사람을 찾고 있습니다. 비슷한 고민을 하고 있거나, 함께 만들어보고 싶다면 <a href="https://www.threads.com/@tinypotato.guardian" target="_blank" style="color:var(--blueprint);font-weight:700;">@tinypotato.guardian</a>으로 연락해주세요.</p>'+
