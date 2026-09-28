@@ -2654,14 +2654,19 @@ async function loadFeedback(admin){
 }
 function renderFeedbackSection(){
   if(isAdmin) return renderFeedbackAdminSection();
-  return '<div class="frame intro"><h2>🥔 감자밭</h2>'+
-    '<p class="intro-lead">감자를 심어 의견을 남겨주세요. 감자밭에서 자라는 감자들을 클릭하면 메시지를 읽을 수 있어요.</p>'+
-    '<div id="fbPotatoGrid" style="display:flex;flex-wrap:wrap;gap:6px;min-height:60px;margin:16px 0;"></div>'+
-    '<div style="margin-top:20px;padding:16px;background:var(--panel);border:1.5px solid var(--blueprint-2);border-radius:var(--radius);">'+
-      '<h3 style="margin:0 0 10px;font-size:15px;">감자 심기 🌱</h3>'+
-      '<div class="field"><label>닉네임 (선택)</label><input type="text" id="fbNickname" placeholder="익명 감자" maxlength="20" style="max-width:200px;"></div>'+
-      '<div class="field"><label>메시지 *</label><textarea id="fbMessage" rows="3" placeholder="하고 싶은 말, 제안, 버그 제보 등 자유롭게 적어주세요." style="width:100%;"></textarea></div>'+
-      '<button type="button" id="fbSubmitBtn" class="addbtn" style="margin-top:8px;">감자 심기 🌱</button>'+
+  return '<div class="frame intro" style="background:linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 40%, #a5d6a7 70%, #81c784 100%);border:2px dashed #66bb6a;border-radius:var(--radius);padding:24px;position:relative;overflow:hidden;">'+
+    '<div style="position:absolute;top:0;left:0;right:0;bottom:0;opacity:.15;font-size:64px;line-height:1.2;word-break:break-all;pointer-events:none;overflow:hidden;">🌿🌱🥔🌾🌿🥔🌱🌾🥔🌿🌱🌾🥔🌿🌱🥔🌾🌿🌱🥔🌾🌿🌱🥔🌾🌿🌱🥔</div>'+
+    '<div style="position:relative;z-index:1;">'+
+    '<h2 style="text-align:center;font-size:28px;margin:0 0 4px;">🥔 감자밭 🥔</h2>'+
+    '<p style="text-align:center;color:#2e7d32;font-size:14px;margin:0 0 16px;">감자를 심어 의견을 남겨주세요. 자라는 감자를 클릭하면 메시지를 읽을 수 있어요.</p>'+
+    '<div style="text-align:center;font-size:12px;color:#4caf50;margin-bottom:12px;">~~ 🌿 여기는 ddugi의 감자밭입니다 🌿 ~~</div>'+
+    '<div id="fbPotatoGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:80px;margin:16px 0;padding:16px;background:rgba(255,255,255,.4);border-radius:12px;border:1px dashed #a5d6a7;"></div>'+
+    '<div style="margin-top:24px;padding:20px;background:rgba(255,255,255,.7);border:2px solid #81c784;border-radius:12px;">'+
+      '<h3 style="margin:0 0 12px;font-size:16px;color:#2e7d32;text-align:center;">🌱 감자 심기 🌱</h3>'+
+      '<div class="field"><label style="color:#2e7d32;">닉네임 (선택)</label><input type="text" id="fbNickname" placeholder="익명 감자" maxlength="20" style="max-width:200px;"></div>'+
+      '<div class="field"><label style="color:#2e7d32;">메시지 *</label><textarea id="fbMessage" rows="3" placeholder="하고 싶은 말, 제안, 버그 제보 등 자유롭게 적어주세요." style="width:100%;"></textarea></div>'+
+      '<button type="button" id="fbSubmitBtn" class="addbtn" style="margin-top:8px;width:100%;background:#66bb6a;color:#fff;border:none;padding:10px;border-radius:8px;font-size:15px;cursor:pointer;">감자 심기 🌱</button>'+
+    '</div>'+
     '</div>'+
   '</div>';
 }
