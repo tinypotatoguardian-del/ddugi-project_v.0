@@ -190,6 +190,31 @@ def init_db() -> None:
             )
             """
         )
+    # 방문 기록
+    if USE_PG:
+        db_execute(conn,
+            """
+            CREATE TABLE IF NOT EXISTS visits (
+                id SERIAL PRIMARY KEY,
+                ip TEXT,
+                user_agent TEXT,
+                path TEXT,
+                visited_at TEXT
+            )
+            """
+        )
+    else:
+        db_execute(conn,
+            """
+            CREATE TABLE IF NOT EXISTS visits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ip TEXT,
+                user_agent TEXT,
+                path TEXT,
+                visited_at TEXT
+            )
+            """
+        )
     conn.commit()
     if MASTER_EMP_ID == "master" and MASTER_CODE == "1234":
         print("[경고] 마스터 계정이 기본값(사번 master / 비밀번호 1234)입니다. 로그인 후 비밀번호를 바꾸세요.")
@@ -245,6 +270,33 @@ def require_role(emp_id: str, code: str, allowed: set) -> str:
 init_db()
 
 app = FastAPI(title="ddugi Project")
+
+
+@app.middleware("http")
+async def log_visit(request: Request, call_next):
+    """Log page visits to DB (skip API calls and static assets)."""
+    path = request.url.path
+    skip_prefixes = ("/api/",)
+    static_exts = (".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".map")
+    should_log = (
+        not any(path.startswith(p) for p in skip_prefixes)
+        and not any(path.endswith(ext) for ext in static_exts)
+        and (path == "/" or "." not in path.split("/")[-1])
+    )
+    if should_log:
+        try:
+            ip = request.client.host if request.client else "unknown"
+            ua = request.headers.get("user-agent", "")
+            now = datetime.datetime.utcnow().isoformat()
+            conn = get_db()
+            db_execute(conn, "INSERT INTO visits (ip, user_agent, path, visited_at) VALUES (?,?,?,?)",
+                       (ip, ua, path, now))
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass  # 방문 기록 실패가 요청을 막지 않도록
+    response = await call_next(request)
+    return response
 
 
 @app.middleware("http")
@@ -600,6 +652,52 @@ def update_feedback(fb_id: int, body: FeedbackUpdateIn, x_emp_id: str = Header(d
     conn.commit()
     conn.close()
     return {"ok": True}
+
+
+# ── 방문 기록 (visits) ──────────────────────────────────────────────
+
+
+@app.get("/api/visits/stats")
+def visit_stats(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
+    require_role(x_emp_id, x_emp_code, {"master"})
+    conn = get_db()
+    today = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    total = db_fetchone(conn, "SELECT COUNT(*) AS cnt FROM visits")
+    total_visits = total["cnt"] if total else 0
+    uniq = db_fetchone(conn, "SELECT COUNT(DISTINCT ip) AS cnt FROM visits")
+    unique_ips = uniq["cnt"] if uniq else 0
+    today_total = db_fetchone(conn, "SELECT COUNT(*) AS cnt FROM visits WHERE visited_at >= ?", (today,))
+    today_visits = today_total["cnt"] if today_total else 0
+    today_uniq = db_fetchone(conn, "SELECT COUNT(DISTINCT ip) AS cnt FROM visits WHERE visited_at >= ?", (today,))
+    today_unique = today_uniq["cnt"] if today_uniq else 0
+    recent_rows = db_fetchall(conn,
+        "SELECT ip, user_agent, path, visited_at FROM visits ORDER BY visited_at DESC LIMIT 50"
+    )
+    recent = [dict(r) for r in recent_rows]
+    # 날짜별 방문 수 (최근 30일)
+    thirty_days_ago = (datetime.datetime.utcnow() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+    if USE_PG:
+        by_date_rows = db_fetchall(conn,
+            "SELECT SUBSTRING(visited_at FROM 1 FOR 10) AS date, COUNT(*) AS cnt FROM visits "
+            "WHERE visited_at >= ? GROUP BY SUBSTRING(visited_at FROM 1 FOR 10) ORDER BY date",
+            (thirty_days_ago,)
+        )
+    else:
+        by_date_rows = db_fetchall(conn,
+            "SELECT SUBSTR(visited_at, 1, 10) AS date, COUNT(*) AS cnt FROM visits "
+            "WHERE visited_at >= ? GROUP BY SUBSTR(visited_at, 1, 10) ORDER BY date",
+            (thirty_days_ago,)
+        )
+    by_date = [dict(r) for r in by_date_rows]
+    conn.close()
+    return {
+        "total_visits": total_visits,
+        "unique_ips": unique_ips,
+        "today_visits": today_visits,
+        "today_unique": today_unique,
+        "recent": recent,
+        "by_date": by_date,
+    }
 
 
 # 정적 프론트엔드 서빙 (반드시 API 라우트들 다음에 mount)

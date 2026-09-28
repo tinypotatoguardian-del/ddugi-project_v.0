@@ -788,6 +788,7 @@ const SECTIONS = [
 {id:'tasklist', num:'☷', title:'씨앗 목록', special:'tasklist'},
 {id:'taxonomy', num:'⚙', title:'분류 관리', special:'taxonomy'},
 {id:'accounts', num:'⚿', title:'계정 관리', special:'accounts'},
+{id:'visits', num:'📊', title:'방문 기록', special:'visits'},
 {id:'roadmap', num:'+', title:'밭 넓히기', special:'roadmap'}
 ];
 const TOTAL_SECTIONS = SECTIONS.filter(s=>!s.special && !s.disabled).length;
@@ -978,7 +979,7 @@ document.addEventListener('keydown', function(e){
 function doAdminLogout(){
   isAdmin = false; isMaster = false; empId = ''; empCode = ''; role = '';
   try{ localStorage.removeItem(EMPID_KEY); localStorage.removeItem(EMPCODE_KEY); localStorage.removeItem(ROLE_KEY); }catch(e){}
-  if(['dashboard','tasklist','accounts','taxonomy'].indexOf(state.cur)>-1){ state.cur='s1'; persist(); }
+  if(['dashboard','tasklist','accounts','taxonomy','visits'].indexOf(state.cur)>-1){ state.cur='s1'; persist(); }
   renderAdminSlot();
   renderSheet();
 }
@@ -1334,7 +1335,7 @@ function fieldHasValue(f){
 
 function renderSheet(){
   if((state.cur==='dashboard' || state.cur==='tasklist' || state.cur==='taxonomy') && !isAdmin) state.cur='s1';
-  if(state.cur==='accounts' && !isMaster) state.cur='s1';
+  if((state.cur==='accounts' || state.cur==='visits') && !isMaster) state.cur='s1';
   let sec = SECTIONS.find(s=>s.id===state.cur) || SECTIONS[0];
   if(sec.disabled && !isMaster){ sec = SECTIONS.find(s=>s.id==='s1'); state.cur = 's1'; }
   if(sec.id==='redefine') prefillRedefineDefaults();
@@ -1372,6 +1373,9 @@ function renderSheet(){
   } else if(sec.special==='taxonomy'){
     sheet.innerHTML = renderTaxonomySection();
     renderTaxonomy();
+  } else if(sec.special==='visits'){
+    sheet.innerHTML = renderVisitsSection();
+    renderVisitsData();
   } else if(sec.special==='mydash'){
     sheet.innerHTML = renderMyDashSection() + navFootHtml(sec);
   } else {
@@ -1604,6 +1608,78 @@ async function renderAccounts(){
   }
 }
 
+/* ============== 방문 기록 (마스터 전용) ============== */
+function renderVisitsSection(){
+  return '<div class="frame"><h2>📊 방문 기록</h2><div class="sub">MASTER VIEW</div>'+
+    '<div class="hint">페이지 방문 기록이에요. 마스터만 볼 수 있어요.</div>'+
+    '<div class="exportbar"><button type="button" id="refreshVisits" class="secondary">새로고침</button></div>'+
+    '<div id="visitsCards" style="display:flex;gap:12px;flex-wrap:wrap;margin:14px 0"></div>'+
+    '<h3 style="margin:22px 0 8px">일별 방문 추이 (최근 30일)</h3>'+
+    '<div id="visitsChart" style="display:flex;align-items:flex-end;gap:2px;height:120px;margin-bottom:22px"></div>'+
+    '<h3 style="margin:0 0 8px">최근 방문 50건</h3>'+
+    '<div id="visitsBody">불러오는 중…</div>'+
+  '</div>';
+}
+async function renderVisitsData(){
+  const cards = document.getElementById('visitsCards');
+  const chart = document.getElementById('visitsChart');
+  const body = document.getElementById('visitsBody');
+  if(!body) return;
+  body.innerHTML = '<div class="hint">불러오는 중…</div>';
+  try{
+    const res = await fetch('/api/visits/stats', {headers: authHeaders()});
+    if(res.status===403 || res.status===429){
+      const text = await adminErrorText(res);
+      if(res.status===403){
+        doAdminLogout(); showModal(adminModalHtml());
+        document.getElementById('adminErr').textContent = '다시 로그인해주세요.';
+        return;
+      }
+      body.innerHTML = '<div class="hint">'+esc(text)+'</div>'; return;
+    }
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const d = await res.json();
+    // 카드
+    const card = (label,val) => '<div class="lvcard" style="flex:1;min-width:140px;margin:0"><div class="lvnow" style="font-size:13px">'+esc(label)+'</div><div style="font-size:28px;font-weight:700;color:var(--blueprint)">'+esc(String(val))+'</div></div>';
+    cards.innerHTML = card('전체 방문',d.total_visits)+card('순 방문자(IP)',d.unique_ips)+card('오늘 방문',d.today_visits)+card('오늘 순 방문자',d.today_unique);
+    // 바 차트
+    if(d.by_date && d.by_date.length){
+      const maxCnt = Math.max(1, ...d.by_date.map(r=>r.cnt));
+      chart.innerHTML = d.by_date.map(r=>{
+        const h = Math.max(4, Math.round(110*r.cnt/maxCnt));
+        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0" title="'+escAttr(r.date+': '+r.cnt+'건')+'">'+
+          '<div style="width:100%;max-width:24px;height:'+h+'px;background:var(--blueprint-2);border-radius:3px 3px 0 0"></div>'+
+          '<div style="font-size:9px;color:var(--ink-soft);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+esc(r.date.slice(5))+'</div></div>';
+      }).join('');
+    } else {
+      chart.innerHTML = '<div class="hint">데이터가 없어요.</div>';
+    }
+    // 테이블
+    if(!d.recent || !d.recent.length){
+      body.innerHTML = '<div class="hint">아직 방문 기록이 없어요.</div>';
+    } else {
+      const parseUA = ua => {
+        if(!ua) return '-';
+        if(ua.indexOf('Chrome')>-1 && ua.indexOf('Edg')>-1) return 'Edge';
+        if(ua.indexOf('Chrome')>-1) return 'Chrome';
+        if(ua.indexOf('Firefox')>-1) return 'Firefox';
+        if(ua.indexOf('Safari')>-1) return 'Safari';
+        return ua.length>40 ? ua.slice(0,40)+'…' : ua;
+      };
+      const rows = d.recent.map(r=>{
+        const when = r.visited_at ? new Date(r.visited_at+'Z').toLocaleString('ko-KR') : '-';
+        return '<tr><td>'+esc(r.ip||'-')+'</td><td>'+esc(parseUA(r.user_agent))+'</td><td>'+esc(r.path||'/')+'</td><td>'+esc(when)+'</td></tr>';
+      }).join('');
+      body.innerHTML = '<table class="dtable"><thead><tr><th>IP</th><th>브라우저</th><th>경로</th><th>시간</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    }
+  }catch(e){
+    body.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
+  }
+}
+document.addEventListener('click', function(e){
+  if(e.target.id==='refreshVisits'){ renderVisitsData(); }
+});
+
 /* ============== 분류 관리 (관리자·마스터): 01·02의 카테고리·대상·업무 유형·도구 목록 ============== */
 function renderTaxonomySection(){
   return '<div class="frame"><h2>⚙ 분류 관리</h2><div class="sub">ADMIN VIEW</div>'+
@@ -1772,7 +1848,7 @@ function updateRulerAndNav(){
   let navHtml = '';
   // 그룹 전체가 미사용(disabled)이면 항목마다 회색 줄을 늘어놓지 않고, 그룹당 한 줄로 접어서 보여줌
   let skipDisabledGroup = false;
-  navHtml += SECTIONS.filter(s=>s.special!=='dashboard' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy').map(s=>{
+  navHtml += SECTIONS.filter(s=>s.special!=='dashboard' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy' && s.special!=='visits').map(s=>{
     const active = s.id===state.cur;
     const filled = !s.special && sectionFilled(s);
     if(s.disabled && !isMaster){
@@ -1802,7 +1878,7 @@ function updateRulerAndNav(){
       adminBtn(SECTIONS.find(s=>s.id==='tasklist')) + adminBtn(SECTIONS.find(s=>s.id==='dashboard')) + adminBtn(SECTIONS.find(s=>s.id==='taxonomy')) +
       '<li><button type="button" class="navbtn sub" data-admin-pw><span class="num">⚿</span>비밀번호 변경</button></li>';
     if(isMaster){
-      navHtml += '<li class="navgroup">마스터</li>'+ adminBtn(SECTIONS.find(s=>s.id==='accounts'));
+      navHtml += '<li class="navgroup">마스터</li>'+ adminBtn(SECTIONS.find(s=>s.id==='accounts')) + adminBtn(SECTIONS.find(s=>s.id==='visits'));
     }
   }
   nav.innerHTML = navHtml;
@@ -3226,6 +3302,7 @@ document.addEventListener('click', function(e){
     if(!target) return;
     if((target==='dashboard' || target==='tasklist' || target==='taxonomy') && !isAdmin) return;
     if(target==='accounts' && !isMaster) return;
+    if(target==='visits' && !isMaster) return;
     { const tsec = SECTIONS.find(s=>s.id===target); if(tsec && tsec.disabled && !isMaster) return; }
     state.cur = target;
     persist();
