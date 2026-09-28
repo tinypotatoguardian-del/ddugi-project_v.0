@@ -295,6 +295,50 @@
   .extab{ font-family:var(--serif); font-size:14px; padding:8px 14px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); color:var(--ink); cursor:pointer; }
   .extab:hover{ border-color:var(--blueprint-2); color:var(--blueprint-2); }
   .extab.on{ background:var(--blueprint); border-color:var(--blueprint); color:#fff; font-weight:600; }
+  /* === Onboarding meta-tabs === */
+  .onb-metatabs{ display:flex; gap:0; margin-bottom:18px; border-bottom:2px solid var(--line); }
+  .onb-metatab{ font-family:var(--serif); font-size:15px; padding:10px 18px; border:none; border-bottom:3px solid transparent; background:transparent; color:var(--ink-dim); cursor:pointer; transition:all .2s; white-space:nowrap; }
+  .onb-metatab:hover{ color:var(--ink); background:var(--panel); }
+  .onb-metatab.on{ color:#2e7d32; border-bottom-color:#4caf50; font-weight:700; }
+  /* === Conversational onboarding === */
+  .conv-container{ max-width:600px; margin:0 auto; }
+  .conv-version-pick{ text-align:center; padding:30px 20px; }
+  .conv-version-pick h2{ font-size:22px; margin-bottom:8px; }
+  .conv-version-pick p{ color:var(--ink-dim); margin-bottom:24px; }
+  .conv-version-btn{ display:block; width:100%; max-width:400px; margin:10px auto; padding:16px 20px; font-size:16px; font-family:var(--serif); border:2px solid #a5d6a7; border-radius:14px; background:linear-gradient(135deg,#e8f5e9,#f1f8e9); color:#2e7d32; cursor:pointer; transition:all .2s; text-align:left; }
+  .conv-version-btn:hover{ border-color:#66bb6a; background:linear-gradient(135deg,#c8e6c9,#dcedc8); transform:translateY(-1px); box-shadow:0 3px 12px rgba(76,175,80,.15); }
+  .conv-version-btn .cvb-emoji{ font-size:24px; margin-right:8px; }
+  .conv-version-btn .cvb-sub{ display:block; font-size:12px; color:#689f38; margin-top:4px; }
+  .conv-progress{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .conv-progress-bar{ flex:1; height:6px; background:#e0e0e0; border-radius:3px; overflow:hidden; }
+  .conv-progress-fill{ height:100%; background:linear-gradient(90deg,#66bb6a,#43a047); border-radius:3px; transition:width .3s; }
+  .conv-progress-text{ font-size:13px; color:var(--ink-dim); white-space:nowrap; }
+  .conv-card{ background:linear-gradient(135deg,#f1f8e9,#e8f5e9); border:2px solid #a5d6a7; border-radius:16px; padding:28px 24px; margin-bottom:16px; position:relative; }
+  .conv-potato{ font-size:48px; display:block; text-align:center; margin-bottom:12px; }
+  .conv-question{ font-size:17px; font-weight:600; color:#2e7d32; text-align:center; margin-bottom:18px; line-height:1.5; }
+  .conv-card textarea{ width:100%; min-height:80px; border:2px solid #c8e6c9; border-radius:10px; padding:12px; font-size:15px; font-family:var(--serif); resize:vertical; background:#fff; transition:border-color .2s; }
+  .conv-card textarea:focus{ border-color:#66bb6a; outline:none; box-shadow:0 0 0 3px rgba(102,187,106,.15); }
+  .conv-btns{ display:flex; gap:10px; justify-content:space-between; margin-top:8px; }
+  .conv-btn{ padding:10px 22px; font-size:15px; border-radius:10px; border:none; cursor:pointer; font-family:var(--serif); transition:all .2s; }
+  .conv-btn-prev{ background:#e0e0e0; color:#555; }
+  .conv-btn-prev:hover{ background:#bdbdbd; }
+  .conv-btn-next{ background:#66bb6a; color:#fff; font-weight:600; }
+  .conv-btn-next:hover{ background:#43a047; }
+  .conv-btn-next:disabled{ background:#c8e6c9; color:#a5d6a7; cursor:not-allowed; }
+  .conv-summary{ background:linear-gradient(135deg,#e8f5e9,#fff9c4); border:2px solid #81c784; border-radius:16px; padding:24px; }
+  .conv-summary h3{ text-align:center; font-size:20px; margin-bottom:16px; color:#2e7d32; }
+  .conv-summary-row{ display:flex; gap:10px; margin-bottom:10px; padding:10px 12px; background:rgba(255,255,255,.7); border-radius:8px; border:1px solid #c8e6c9; }
+  .conv-summary-label{ font-size:12px; color:#689f38; font-weight:600; min-width:100px; white-space:nowrap; }
+  .conv-summary-val{ font-size:14px; color:var(--ink); flex:1; }
+  .conv-fill-btn{ display:block; width:100%; margin-top:18px; padding:14px; font-size:16px; font-weight:700; border:none; border-radius:12px; background:linear-gradient(135deg,#43a047,#2e7d32); color:#fff; cursor:pointer; transition:all .2s; }
+  .conv-fill-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 16px rgba(46,125,50,.25); }
+  .conv-restart{ display:block; margin:10px auto 0; background:none; border:none; color:#689f38; font-size:13px; cursor:pointer; text-decoration:underline; }
+  /* === Direct plant tab === */
+  .direct-plant{ text-align:center; padding:40px 20px; }
+  .direct-plant .dp-emoji{ font-size:64px; display:block; margin-bottom:16px; }
+  .direct-plant p{ color:var(--ink-dim); margin-bottom:24px; font-size:15px; }
+  .direct-plant-btn{ display:inline-block; padding:14px 32px; font-size:16px; font-weight:700; border:none; border-radius:12px; background:linear-gradient(135deg,#43a047,#2e7d32); color:#fff; cursor:pointer; transition:all .2s; }
+  .direct-plant-btn:hover{ transform:translateY(-2px); box-shadow:0 4px 16px rgba(46,125,50,.25); }
   .cellist{ margin:0; padding-left:18px; }
   .cellist li{ margin-bottom:4px; }
   .staticval{ display:inline-block; font-weight:600; color:var(--blueprint); background:var(--blueprint-soft); border:1px solid var(--blueprint-2); border-radius:var(--radius); padding:6px 12px; }
@@ -2631,6 +2675,102 @@ function exMetaHtml(ex){
   return '<div class="ex-meta">'+statusHtml+'<span class="rm-status rm-cat">'+esc(trait)+'</span></div>';
 }
 let exampleTab = 'axwb';
+let onboardingMetaTab = 'conv'; // 'conv' | 'example' | 'direct'
+let convVersion = null; // null | 'student' | 'college'
+let convStep = 0;
+let convAnswers = ['','','','','',''];
+const CONV_QUESTIONS = {
+  student: [
+    {q:'🥔 안녕! 지금 학교에서 배우고 있는 것 중에 제일 재미있는 게 뭐야?', ph:'예: 과학, 수학, 미술, 코딩, 음악...'},
+    {q:'🥔 학교생활에서 귀찮거나 반복되는 게 있어?', ph:'예: 숙제 풀기, 단어 외우기, 수행평가 준비...'},
+    {q:'🥔 그걸 지금은 어떻게 하고 있어?', ph:'예: 손으로 적기, 인터넷 검색, 친구한테 물어보기...'},
+    {q:'🥔 AI 써본 적 있어? 있다면 뭘 해봤어?', ph:'예: ChatGPT로 숙제 함, 안 써봤음...'},
+    {q:'🥔 만약 AI가 도와준다면 뭘 해줬으면 좋겠어?', ph:'예: 수학 풀이 설명, 영어 단어 테스트...'},
+    {q:'🥔 그게 되면 너한테 뭐가 달라져?', ph:'예: 공부 시간 줄어들고, 더 재밌어지고...'}
+  ],
+  college: [
+    {q:'🥔 요즘 뭘 하고 있어? (학과/전공/활동)', ph:'예: 컴퓨터공학, 경영학, 동아리 활동...'},
+    {q:'🥔 공부나 생활에서 귀찮거나 반복되는 게 있어?', ph:'예: 리포트 쓰기, 자료 조사, 취업 준비...'},
+    {q:'🥔 그걸 지금은 어떻게 하고 있어?', ph:'예: 구글링, 노션 정리, 친구랑 분담...'},
+    {q:'🥔 AI 써본 적 있어? 어떻게 썼어?', ph:'예: ChatGPT로 레포트 초안, 코드 질문, 자소서...'},
+    {q:'🥔 AI가 도와준다면 뭘 해줬으면 좋겠어?', ph:'예: 논문 요약, 프로젝트 설계, 취업 면접 연습...'},
+    {q:'🥔 그게 되면 너한테 뭐가 달라져?', ph:'예: 시간 절약, 포트폴리오 완성, 실력 향상...'}
+  ]
+};
+const CONV_FIELD_MAP = [
+  {label:'소속 / 업무 영역', fields:['s1_dept','s1_workarea']},
+  {label:'씨앗 이름 / 핵심 문제', fields:['s1_name','s2_core']},
+  {label:'현재 도구/방식', fields:['s3_tool']},
+  {label:'AI 경험', fields:[]},
+  {label:'해결 방향 (가설)', fields:['s1_hypo']},
+  {label:'기대 효과 (개선 기준)', fields:['s1_goal']}
+];
+function renderConvVersionPick(){
+  return '<div class="conv-container"><div class="conv-version-pick">'+
+    '<h2>🌱 대화로 씨앗 심기</h2>'+
+    '<p>감자 친구가 질문할게요. 대답하다 보면 자연스럽게 씨앗이 만들어져요!</p>'+
+    '<button type="button" class="conv-version-btn" data-action="conv-pick" data-target="student">'+
+      '<span class="cvb-emoji">🎒</span> 중/고등학생이에요'+
+      '<span class="cvb-sub">학교 공부, 수행평가, 동아리 등으로 시작해요</span>'+
+    '</button>'+
+    '<button type="button" class="conv-version-btn" data-action="conv-pick" data-target="college">'+
+      '<span class="cvb-emoji">🎓</span> 대학생이에요'+
+      '<span class="cvb-sub">전공, 리포트, 프로젝트, 취업 준비 등으로 시작해요</span>'+
+    '</button>'+
+  '</div></div>';
+}
+function renderConvStep(){
+  var qs = CONV_QUESTIONS[convVersion];
+  if(convStep >= qs.length) return renderConvSummary();
+  var q = qs[convStep];
+  var pct = Math.round((convStep / qs.length)*100);
+  return '<div class="conv-container">'+
+    '<div class="conv-progress">'+
+      '<div class="conv-progress-bar"><div class="conv-progress-fill" style="width:'+pct+'%"></div></div>'+
+      '<span class="conv-progress-text">'+(convStep+1)+' / '+qs.length+'</span>'+
+    '</div>'+
+    '<div class="conv-card">'+
+      '<span class="conv-potato">🥔</span>'+
+      '<div class="conv-question">'+esc(q.q)+'</div>'+
+      '<textarea id="convInput" placeholder="'+esc(q.ph)+'">'+(convAnswers[convStep]||'')+'</textarea>'+
+    '</div>'+
+    '<div class="conv-btns">'+
+      (convStep > 0 ? '<button type="button" class="conv-btn conv-btn-prev" data-action="conv-prev">← 이전</button>' : '<span></span>')+
+      '<button type="button" class="conv-btn conv-btn-next" data-action="conv-next">다음 →</button>'+
+    '</div>'+
+  '</div>';
+}
+function renderConvSummary(){
+  var rows = '';
+  for(var i=0;i<6;i++){
+    rows += '<div class="conv-summary-row"><span class="conv-summary-label">'+esc(CONV_FIELD_MAP[i].label)+'</span><span class="conv-summary-val">'+esc(convAnswers[i]||'(미입력)')+'</span></div>';
+  }
+  return '<div class="conv-container"><div class="conv-summary">'+
+    '<h3>🌱 씨앗 요약</h3>'+
+    '<p style="text-align:center;color:#558b2f;margin-bottom:16px;">대화 내용을 바탕으로 씨앗 정의서를 채울 준비가 됐어요!</p>'+
+    rows+
+    '<button type="button" class="conv-fill-btn" data-action="conv-fill">🥔 씨앗 정의서에 자동 입력하기</button>'+
+    '<button type="button" class="conv-restart" data-action="conv-restart">처음부터 다시 하기</button>'+
+  '</div></div>';
+}
+function renderDirectPlant(){
+  return '<div class="direct-plant">'+
+    '<span class="dp-emoji">🌳</span>'+
+    '<h2>직접 심기</h2>'+
+    '<p>이미 어떤 씨앗을 심을지 알고 있다면,<br>바로 씨앗 정의서로 가서 시작하세요!</p>'+
+    '<button type="button" class="direct-plant-btn" data-action="goto" data-target="s1">씨앗 심기 시작 →</button>'+
+  '</div>';
+}
+function renderOnboardingMetaTabs(){
+  var tabs = [
+    {id:'conv', label:'🌱 대화로 시작하기'},
+    {id:'example', label:'🥔 작성 예시'},
+    {id:'direct', label:'🌳 직접 심기'}
+  ];
+  return '<div class="onb-metatabs" role="tablist">'+tabs.map(function(t){
+    return '<button type="button" role="tab" class="onb-metatab'+(t.id===onboardingMetaTab?' on':'')+'" aria-selected="'+(t.id===onboardingMetaTab)+'" data-action="onb-meta" data-target="'+t.id+'">'+t.label+'</button>';
+  }).join('')+'</div>';
+}
 // 메뉴 한 칸을 접고 펼치는 상자. note가 있으면 제목 옆에 옅게 붙임 (예: "없음")
 function exDetails(num, title, bodyHtml, opts){
   opts = opts || {};
@@ -2663,6 +2803,16 @@ function nextExampleBarHtml(){
   return '<div class="ex-nextbar"><button type="button" data-action="ex-tab" data-target="'+next+'">다음 예시 보기: '+esc(EXAMPLES[next].tab)+' →</button></div>';
 }
 function renderExampleSection(){
+  // Meta-tabs wrapper: conversational | example | direct
+  var metaTabs = renderOnboardingMetaTabs();
+  if(onboardingMetaTab === 'conv'){
+    if(!convVersion) return metaTabs + renderConvVersionPick();
+    return metaTabs + renderConvStep();
+  }
+  if(onboardingMetaTab === 'direct'){
+    return metaTabs + renderDirectPlant();
+  }
+  // Default: 'example' — original example content
   const ex = EXAMPLES[exampleTab];
   const exTabLabel = e => { const cat = withExampleFields(e.fields, ()=>getV('s1_cat','')); return e.tab+(cat ? ' ('+exTrait(cat)+')' : ''); };
   const tabs = '<div class="extabs" role="tablist">'+Object.keys(EXAMPLES).map(k=>
@@ -2676,7 +2826,7 @@ function renderExampleSection(){
       '<div class="exportbar"><button type="button" class="secondary" data-action="ex-all" data-target="open">전체 펼치기</button><button type="button" class="secondary" data-action="ex-all" data-target="close">전체 접기</button></div>'+
     '</div>';
   if(ex.fullMenu){
-    return tabs + introFrame + exampleMenuBlocks(ex) +
+    return metaTabs + tabs + introFrame + exampleMenuBlocks(ex) +
       exDetails('▤','이 입력으로 만들어지는 업무 .md',
         '<div class="hint">3-1 검증과 3-3 구조화 요청에서는 이 내용 앞뒤에 각각의 프롬프트가 붙습니다. 담당자 이름은 들어가지 않습니다.</div>'+
         '<textarea class="exportbox" readonly>'+esc(md)+'</textarea>') +
@@ -2687,7 +2837,7 @@ function renderExampleSection(){
     exDetails('01', SECTIONS.find(x=>x.id==='s1').title, SECTIONS.find(x=>x.id==='s1').fields.map(renderField).join(''), {open:true})+
     exDetails('02', SECTIONS.find(x=>x.id==='s3').title, SECTIONS.find(x=>x.id==='s3').fields.map(renderField).join(''))
   );
-  return tabs + introFrame + forms +
+  return metaTabs + tabs + introFrame + forms +
     exDetails('▤','이 입력으로 만들어지는 업무 .md',
       '<div class="hint">3-1 검증과 3-3 구조화 요청에서는 이 내용 앞뒤에 각각의 프롬프트가 붙습니다. 담당자 이름은 들어가지 않습니다.</div>'+
       '<textarea class="exportbox" readonly>'+esc(md)+'</textarea>') +
@@ -3299,6 +3449,28 @@ document.addEventListener('click', function(e){
     return;
   }
   if(action==='ex-tab'){ exampleTab = target; renderSheet(); document.getElementById('main').scrollTo(0,0); return; }
+  if(action==='onb-meta'){ onboardingMetaTab = target; renderSheet(); document.getElementById('main').scrollTo(0,0); return; }
+  if(action==='conv-pick'){ convVersion = target; convStep = 0; convAnswers = ['','','','','','']; renderSheet(); return; }
+  if(action==='conv-next'){
+    var ci = document.getElementById('convInput');
+    if(ci) convAnswers[convStep] = ci.value;
+    convStep++; renderSheet(); return;
+  }
+  if(action==='conv-prev'){
+    var ci2 = document.getElementById('convInput');
+    if(ci2) convAnswers[convStep] = ci2.value;
+    if(convStep > 0) convStep--;
+    renderSheet(); return;
+  }
+  if(action==='conv-fill'){
+    // Map answers to s1 fields
+    if(convAnswers[0]) { setV('s1_dept', convAnswers[0]); }
+    if(convAnswers[1]) { setV('s1_name', convAnswers[1]); setV('s2_core', convAnswers[1]); }
+    if(convAnswers[4]) { setV('s1_hypo', convAnswers[4]); }
+    if(convAnswers[5]) { setV('s1_goal', convAnswers[5]); }
+    state.cur = 's1'; renderSheet(); document.getElementById('main').scrollTo(0,0); return;
+  }
+  if(action==='conv-restart'){ convVersion = null; convStep = 0; convAnswers = ['','','','','','']; renderSheet(); return; }
   if(action==='goto'){
     if(!target) return;
     if((target==='dashboard' || target==='tasklist' || target==='taxonomy') && !isAdmin) return;
