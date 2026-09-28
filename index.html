@@ -2727,8 +2727,9 @@ function renderFeedbackPotatoGrid(){
         '<p style="white-space:pre-wrap;line-height:1.6;margin:0 0 12px;">'+esc(fb.message)+'</p>'+
         '<div style="font-size:11px;color:var(--ink-soft);">'+(fb.created_at||'').slice(0,10)+'</div>'+
         (fb.admin_note ? '<div style="margin-top:10px;padding:8px;background:var(--panel);border-radius:var(--radius);font-size:12px;"><b>관리자 메모:</b> '+esc(fb.admin_note)+'</div>':'')+
-        '<button type="button" onclick="hideModal()" class="addbtn" style="margin-top:14px;width:100%;text-align:center;">닫기</button>'
+        '<button type="button" id="fbCloseModal" class="addbtn" style="margin-top:14px;width:100%;text-align:center;">닫기</button>'
       );
+      const cb=document.getElementById('fbCloseModal'); if(cb) cb.onclick=hideModal;
     };
   });
 }
