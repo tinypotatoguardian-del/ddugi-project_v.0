@@ -421,7 +421,9 @@
 </style>
 </head>
 <body>
-<header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span></header>
+<header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span>
+<button type="button" onclick="showChangelog()" style="margin-left:auto;font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;">📋 업데이트 이력</button>
+</header>
 <div id="shell">
   <nav id="sidebar" aria-label="섹션 목록">
     <div class="brand">
@@ -951,6 +953,70 @@ async function flushDbQueue(){
   }catch(e){ /* stays saved locally regardless */ }
   dbWriting = false;
   if(dbWriteQueue) flushDbQueue();
+}
+
+function showChangelog(){
+  const log = [
+    {
+      date:'2026-09-29', tag:'학생용', title:'AI 레벨 커리큘럼 + 미션',
+      items:['LV.0~4 탭 3개(처음/중간/심화) 커리큘럼 추가','각 레벨마다 이번 미션 (시간+과제+완료기준)','LV.3 미션에서 씨앗 심기 바로 연결']
+    },
+    {
+      date:'2026-09-29', tag:'학생용', title:'마음의 방 입구 전면 개편',
+      items:['전문용어 전부 제거, 학생 눈높이로 재작성','❌/✅ 비교 카드로 핵심만 설명','첫 화면을 커리큘럼으로 변경']
+    },
+    {
+      date:'2026-09-29', tag:'신규', title:'프롬프트 모음',
+      items:['학생용 / 취준용 / 현직자용 탭 구조','상황별 프롬프트 복사 기능 (내용 채워가는 중)']
+    },
+    {
+      date:'2026-09-29', tag:'신규', title:'방명록',
+      items:['포스트잇 그리드 형태','6색 랜덤 색상 + 기울기 애니메이션']
+    },
+    {
+      date:'2026-09-29', tag:'개선', title:'감자밭',
+      items:['후기 → 기능 제안/버그/의견 위주로 문구 변경']
+    },
+    {
+      date:'2026-09-27', tag:'기반', title:'회사 버전 → ddugi 개인 버전 분리',
+      items:['씨앗/눈으로보기/가지뻗기 등 세계관 용어 전체 적용','FastAPI + SQLite/PostgreSQL 듀얼모드','Railway 배포 완료']
+    },
+    {
+      date:'2026-09-27', tag:'기반', title:'감자밭 피드백 시스템',
+      items:['🥔심어짐 → 🌱검토중 → 🌾수확 상태 흐름','관리자 전용 관리 테이블']
+    },
+    {
+      date:'2026-09-27', tag:'기반', title:'대화형 온보딩 탭 추가',
+      items:['중고등학생 / 대학생 버전 선택','단계별 대화 → 씨앗 정의서 자동 입력 연결']
+    },
+    {
+      date:'이전', tag:'기반', title:'회사 업무 자동화 도구 (원본)',
+      items:['AX 업무 고민거리 정의 → AI 검증 → 구조화 파이프라인','AI 역량 레벨 시스템 (L1~L5)','씨앗 정의서 내보내기 / 게이트 판정']
+    },
+  ];
+
+  const tagColor = {
+    '학생용':'background:var(--blueprint-soft);color:var(--blueprint)',
+    '신규':'background:#e8f5e9;color:#2e7d32',
+    '개선':'background:var(--amber-soft);color:var(--amber)',
+    '기반':'background:var(--line-soft);color:var(--ink-soft)',
+  };
+
+  const html = '<div style="max-height:70vh;overflow-y:auto;">'+
+    '<h2 style="margin:0 0 16px;font-size:17px;">📋 업데이트 이력</h2>'+
+    log.map(l=>'<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line-soft);">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'+
+        '<span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;'+( tagColor[l.tag]||'')+'">'+l.tag+'</span>'+
+        '<span style="font-size:14px;font-weight:700;color:var(--ink);">'+l.title+'</span>'+
+        '<span style="font-size:11px;color:var(--ink-soft);margin-left:auto;">'+l.date+'</span>'+
+      '</div>'+
+      '<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;">'+
+        l.items.map(i=>'<li style="font-size:12px;color:var(--ink-soft);line-height:1.6;">'+i+'</li>').join('')+
+      '</ul>'+
+    '</div>').join('')+
+  '</div>';
+
+  showModal(html);
 }
 
 function showModal(html){
