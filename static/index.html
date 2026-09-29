@@ -3386,36 +3386,44 @@ function renderCurriculumWrap(){
         learn:['유튜브 알고리즘, 번역기 — 이미 AI를 쓰고 있었다','ChatGPT가 뭔지 직접 들어가서 말 걸어보기','AI가 가끔 틀린다는 것 (환각)','AI에게 물어보기 vs 검색하기 차이'],
         terms:[['AI','사람처럼 생각하는 척 하는 컴퓨터 프로그램'],['ChatGPT','OpenAI가 만든 대화형 AI. 말 걸면 답해줌'],['환각','AI가 모르는 걸 아는 척 꾸며내는 것. 믿으면 안 됨']],
         cases:[{who:'고2 · 문과',what:'ChatGPT에 "수행평가 주제 추천해줘" 한 마디 넣었다가 답변이 너무 길어서 당황.',result:'AI가 틀릴 수 있다는 걸 직접 확인하고 나서야 믿고 쓰기 시작함'},{who:'대학교 1학년 · 경영학과',what:'"AI에 대해 알려줘" 했다가 위키피디아 같은 답변만 받음.',result:'질문을 어떻게 하느냐가 결과를 바꾼다는 걸 처음 느낀 계기'}],
-        next:'ChatGPT에 질문을 3번 이상 해봤고, AI가 틀릴 수 있다는 걸 안다',nextLv:'LV.1 →'},
+        next:'ChatGPT에 질문을 3번 이상 해봤고, AI가 틀릴 수 있다는 걸 안다',nextLv:'LV.1 →',
+        mission:{time:'5분',task:'ChatGPT(chat.openai.com)에 접속해서 지금 머릿속에 있는 고민 하나를 그냥 말해보기. "요즘 자소서 쓰는 게 너무 막막해" 같은 거 아무거나.',check:'AI가 뭔가 답했으면 성공. 틀려도 괜찮아, 그게 포인트야.'}},
       {lv:'LV.1',icon:'🔍',title:'도구로 쓰기',tag:'써봤지만 어색함',q:'"그냥 쓰긴 하는데, 내가 제대로 쓰는 건지 모르겠어"',
         learn:['AI한테 더 잘 물어보는 방법이 있다','"역할"을 주면 답변이 달라진다','같은 질문, 다르게 물어보고 비교하기','ChatGPT / Claude / Gemini 뭐가 다른지'],
         terms:[['프롬프트','AI에게 하는 말. 어떻게 말하느냐가 결과를 바꿈'],['역할 주기','"너는 국어 선생님이야" 처럼 AI에게 역할을 부여하는 것'],['토큰','AI가 읽는 글자 단위. 너무 길면 잊어버림']],
         cases:[{who:'고3 · 이과',what:'"수학 문제 풀어줘"라고 했더니 중간 과정이 틀렸음. 복붙했다가 선생님한테 걸림.',result:'"풀이 과정도 설명해줘"를 붙이기 시작함. 직접 확인하는 습관 생김'},{who:'대학교 2학년 · 영문과',what:'"전문가처럼 써줘"와 "영문과 교수처럼 써줘"의 결과가 완전히 다른 걸 발견.',result:'역할 부여 프롬프트로 에세이 퀄리티가 눈에 띄게 올라감'}],
-        next:'프롬프트 조금만 바꿔도 답이 달라진다는 걸 직접 느꼈다',nextLv:null}
+        next:'프롬프트 조금만 바꿔도 답이 달라진다는 걸 직접 느꼈다',nextLv:null,
+        mission:{time:'10분',task:'같은 질문을 3가지 방식으로 바꿔서 ChatGPT에 넣어보기.\n① "자소서 써줘"\n② "취업준비생 입장에서 자소서 첫 문장을 써줘"\n③ "너는 10년차 HR 담당자야. 합격하는 자소서 첫 문장의 특징을 알려줘"',check:'3개 결과가 다르면 성공. 어떻게 다른지 한 줄씩 메모해봐.'}}
+
     ],
     mid:[
       {lv:'LV.1',icon:'🔍',title:'프롬프트 제대로 쓰기',tag:'기초 탈출',q:'"그냥 쓰는 것 말고, 원하는 답을 뽑는 방법이 있어?"',
         learn:['역할+맥락+형식 세트로 주기','긴 문서 요약 / 퀴즈 생성 / 번역 품질 올리기','AI 답변 검증 체크리스트 만들기','이미지 생성 AI 기초 (Midjourney, DALL-E)'],
         terms:[['프롬프트 엔지니어링','AI에게 잘 부탁하는 기술. 말을 잘 구성할수록 결과가 좋음'],['컨텍스트','AI에게 알려주는 배경 정보. 많을수록 정확한 답이 나옴'],['시스템 프롬프트','AI의 기본 성격/역할을 미리 설정하는 지시문']],
         cases:[{who:'대학교 2학년 · 사회학과',what:'노션에 스터디 기록 쌓다가 "이 내용 기반으로 나한테 퀴즈 내줘"를 시도.',result:'AI 기반 복습 루틴 완성. 시험 전날 루틴이 됨'},{who:'고3 · 이과',what:'"풀이 과정도 단계별로, 내가 틀릴 수 있는 부분도 짚어줘"로 프롬프트 바꿈.',result:'수학 오답률이 줄었고, AI 검증 습관이 생김'}],
-        next:'같은 목적의 프롬프트를 3가지 버전으로 만들어서 비교해봤다',nextLv:'LV.2 →'},
+        next:'같은 목적의 프롬프트를 3가지 버전으로 만들어서 비교해봤다',nextLv:'LV.2 →',
+        mission:{time:'10분',task:'관심 있는 직무의 채용공고 하나를 복사해서 ChatGPT에 붙여넣고 이렇게 물어봐:\n"이 공고에서 가장 중요한 역량 3가지만 뽑아줘. 그리고 내가 자소서에서 꼭 언급해야 할 키워드도 알려줘."',check:'역량 3개 + 키워드가 나왔으면 성공. 내 자소서에 그 키워드가 있는지 확인해봐.'}},
       {lv:'LV.2',icon:'⚙️',title:'내 일에 연결하기',tag:'실전 활용',q:'"공부·취준·업무에 AI를 제대로 연결하고 싶어"',
         learn:['취준 활용 — 자소서 피드백, 직무 분석, 면접 준비','노션 + AI로 정보 정리 시스템 만들기','AI에게 "문제 먼저 정의"하게 시키는 연습','AI 없을 때 vs 있을 때 결과물 직접 비교'],
         terms:[['RAG','AI에게 내 문서를 먼저 읽히고 질문하는 방식'],['워크플로우','반복 작업을 순서대로 흐르게 만든 것'],['AX','회사/업무 전체를 AI로 바꾸는 것']],
         cases:[{who:'대학교 3학년 · 경영학과 · AX 직무 취준',what:'채용공고 10개를 AI에게 붙여넣고 공통 키워드를 뽑음.',result:'직무 분석 프레임워크 생김. 서류 합격률 올라감'},{who:'대학교 2학년 · 경제학과',what:'노션 페이지 내용 붙여넣고 AI가 퀴즈 내게 하는 루틴 만들었더니 개인 과외 느낌.',result:'시험 전날 루틴 완성. 친구들에게도 공유함'}],
-        next:'AI 없이 했을 때와 있을 때 결과물 차이를 직접 느꼈다',nextLv:null}
+        next:'AI 없이 했을 때와 있을 때 결과물 차이를 직접 느꼈다',nextLv:null,
+        mission:{time:'15분',task:'내 자소서 한 문단을 ChatGPT에 붙여넣고 이렇게 물어봐:\n"이 자소서에서 애매하거나 구체적이지 않은 부분을 짚어줘. 그리고 더 구체적으로 쓰려면 어떤 내용을 추가해야 할지 알려줘."\n→ 피드백 받고 실제로 한 줄만 고쳐보기.',check:'고치기 전/후 비교해서 뭐가 달라졌는지 느꼈으면 성공.'}}
     ],
     hard:[
       {lv:'LV.3',icon:'🛠️',title:'구조 설계',tag:'직접 만들기',q:'"그냥 쓰는 게 아니라, 직접 설계하고 만들어보고 싶어"',
         learn:['자동화 흐름 설계 (문제 → 입력 → 처리 → 출력)','노코드 자동화 — Make, n8n으로 실제 연결','AI 기획서 1페이지 작성 (ddugi 씨앗 정의서)','API 개념 — 서비스끼리 연결하는 창구'],
         terms:[['API','서비스끼리 말 걸 수 있는 창구. 코딩 없이도 연결 가능'],['노코드','코딩 없이 도구를 연결해서 자동화 만드는 것'],['트리거','자동화를 시작시키는 신호. 예: 이메일 오면 → 노션에 저장']],
         cases:[{who:'대학교 4학년 · 산업공학과',what:'Make로 구글 폼 → 노션 DB → 슬랙 알림 흐름 만들었는데 트리거 개념 몰라서 삽질 3일.',result:'자동화 설계 감각 생김. 포트폴리오에 "업무 효율화 경험"으로 녹임'},{who:'취업준비생 · 비전공자 · AX기획 지원',what:'코딩 하나도 모르는데 ddugi 도구로 문제 정의 연습 먼저 함.',result:'면접에서 "문제를 먼저 쪼개는 경험"을 말했더니 반응이 좋았음'}],
-        next:'내가 설계한 자동화가 실제로 한 번 이상 작동했다',nextLv:'LV.4 →'},
+        next:'내가 설계한 자동화가 실제로 한 번 이상 작동했다',nextLv:'LV.4 →',
+        mission:{time:'20분',task:'ddugi에서 직접 씨앗 하나 심어보기 🌱\n지금 반복적으로 하는 귀찮은 일 하나를 골라서 01~02 작성해봐.\n예: "매번 채용공고 찾아서 정리하는 게 너무 번거로워"',check:'씨앗 이름 + 핵심 문제 한 줄 썼으면 성공. AI가 필요한지 아닌지 판단은 그 다음이야.',link:true}},
       {lv:'LV.4',icon:'🧭',title:'진로 방향 잡기',tag:'커리어 연결',q:'"AI 시대에 나는 어디로 가야 하지?"',
         learn:['AI 관련 직무 지형도 — 기획 / 개발 / 데이터 / 운영','AI가 대체 못하는 능력 — 문제 정의, 판단, 관계','LV.2~3 결과물을 포트폴리오로 만드는 법','채용공고 5개 분석 → 공통 역량 뽑기'],
         terms:[['AX기획자','회사 업무를 AI로 어떻게 바꿀지 설계하는 사람'],['데이터 리터러시','숫자와 데이터를 읽고 해석하는 기초 능력'],['MLOps','AI 모델을 실제 서비스로 유지·관리하는 것']],
         cases:[{who:'졸업예정자 · 경영정보학과 · PM 지망',what:'"이걸로 뭘 할 수 있는 사람이에요?"라는 질문에 막혔음. LV.2~3 결과물 정리하면서 한 문장 완성.',result:'"문제를 보는 눈"을 어필하는 방향으로 전환'},{who:'대학교 3학년 · 컴퓨터공학과',what:'채용공고 20개 분석했더니 "AI를 만드는 사람"보다 "AI를 업무에 연결하는 사람"을 더 많이 뽑고 있다는 걸 발견.',result:'기술 스택 중심 → 문제 해결 경험 중심으로 이력서 재구성'}],
-        next:'특화 직무 심화 과정으로 → AX기획 / 개발 / 데이터 분석 중 선택',nextLv:null}
+        next:'특화 직무 심화 과정으로 → AX기획 / 개발 / 데이터 분석 중 선택',nextLv:null,
+        mission:{time:'20분',task:'관심 직무 채용공고 5개를 찾아서 ChatGPT에 붙여넣고 물어봐:\n"이 5개 공고에서 공통으로 요구하는 역량과 키워드를 뽑아줘. 그리고 AI 관련 역량이 포함됐다면 어떤 수준을 원하는지도 알려줘."\n→ 결과를 보고 내 현재 수준과 비교해봐.',check:'공통 역량 목록이 나오고, 내가 갖춘 것과 부족한 것을 구분했으면 성공.'}}
+
     ]
   };
 
@@ -3467,6 +3475,18 @@ function renderCurriculumWrap(){
           '<div style="color:var(--ink);">'+c.what+'</div>'+
           '<div style="margin-top:4px;font-size:11px;">→ <b style="color:var(--blueprint);">'+c.result+'</b></div></div>').join('')+
       '</div>'+
+      (l.mission ?
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--line);background:var(--blueprint-soft);">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
+          '<span style="font-size:13px;">🎯</span>'+
+          '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--blueprint);">이번 미션</span>'+
+          '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--blueprint);color:#fff;font-weight:600;">⏱ '+l.mission.time+'</span>'+
+        '</div>'+
+        '<div style="font-size:13px;color:var(--ink);line-height:1.8;white-space:pre-line;margin-bottom:10px;">'+l.mission.task+'</div>'+
+        '<div style="font-size:12px;color:var(--blueprint);font-weight:600;">✅ 완료 기준: '+l.mission.check+'</div>'+
+        (l.mission.link ? '<div style="margin-top:10px;"><button type="button" onclick="curricGoto(\'s1\')" style="font-size:12px;padding:7px 16px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;cursor:pointer;font-weight:600;">→ ddugi에서 씨앗 심으러 가기</button></div>' : '')+
+      '</div>'
+      : '')+
       '<div style="padding:12px 20px;background:var(--panel);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
         '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);">'+(l.nextLv?'다음 레벨 조건':'이후')+'</span>'+
         '<span style="font-size:12px;color:var(--ink);flex:1;">'+l.next+'</span>'+
@@ -3474,6 +3494,10 @@ function renderCurriculumWrap(){
       '</div></div>';
   }
 
+  window.curricGoto = function(target){
+    if(typeof goto === 'function') goto(target);
+    else { state.cur = target; renderSheet(); }
+  };
   window.curricTab2 = function(id){
     window._curriculumTab=id; window._curriculumIdx=0;
     const el=document.getElementById('curricWrap2'); if(el) el.innerHTML=buildC();
