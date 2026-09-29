@@ -111,8 +111,8 @@
   .navgroup-items{ overflow:hidden; transition:max-height .25s ease; }
   .navgroup-items.collapsed{ max-height:0 !important; }
   .navbtn.sub{ padding-left:30px; }
-  .navbtn.dim{ opacity:.45; }
-  .navbtn.dim:hover{ opacity:.7; }
+  .navbtn.dim{ opacity:1; background:var(--line-soft); color:var(--ink-soft); }
+  .navbtn.dim:hover{ background:var(--blueprint-soft); }
   .navdivider{ margin:10px 20px; border:none; border-top:1px solid var(--line-soft); }
   #modalOverlay .field input{ background:var(--paper); }
   .sidefoot{ padding:14px 20px 18px; border-top:1px solid var(--line-soft); }
@@ -3112,15 +3112,76 @@ function renderFeedbackAdminTable(){
 }
 
 function renderRoadmapSection(){
+  const eduContent = [
+    {
+      cat:'🎓 무료 강의·코스', items:[
+        {name:'Google AI Essentials', url:'https://grow.google/certificates/ai-essentials/', desc:'구글이 만든 AI 입문 과정. 한국어 제공. 수료증 발급.', tag:'무료', level:'입문'},
+        {name:'Microsoft AI Skills', url:'https://learn.microsoft.com/ko-kr/ai/', desc:'마이크로소프트 공식 AI 학습 경로. 단계별 무료.', tag:'무료', level:'입문~중급'},
+        {name:'Coursera - AI for Everyone', url:'https://www.coursera.org/learn/ai-for-everyone', desc:'앤드류 응 교수의 비전공자용 AI 입문. 영어 강의+한국어 자막.', tag:'무료청강', level:'입문'},
+        {name:'edX - AI 과정', url:'https://www.edx.org/learn/artificial-intelligence', desc:'MIT·Harvard 등 대학 AI 강의. 청강 무료.', tag:'무료청강', level:'다양'},
+        {name:'부스트코스 AI 교육', url:'https://www.boostcourse.org/', desc:'네이버가 운영하는 한국어 AI 무료 강의 플랫폼.', tag:'무료', level:'입문~중급'},
+      ]
+    },
+    {
+      cat:'🛠️ 직접 써보기 (무료)', items:[
+        {name:'ChatGPT', url:'https://chat.openai.com', desc:'가장 유명한 AI. 무료로 시작 가능.', tag:'무료', level:'입문'},
+        {name:'Claude', url:'https://claude.ai', desc:'글쓰기·분석에 강한 AI. 무료 플랜 있음.', tag:'무료', level:'입문'},
+        {name:'Gemini', url:'https://gemini.google.com', desc:'구글 AI. 구글 계정으로 바로 사용 가능.', tag:'무료', level:'입문'},
+        {name:'Perplexity', url:'https://www.perplexity.ai', desc:'출처 보여주는 AI 검색 엔진. 무료.', tag:'무료', level:'입문'},
+        {name:'NotebookLM', url:'https://notebooklm.google.com', desc:'내 자료 업로드 후 AI와 대화. 완전 무료.', tag:'무료', level:'중급'},
+      ]
+    },
+    {
+      cat:'📚 읽을거리·뉴스레터', items:[
+        {name:'AI 타임스', url:'https://www.aitimes.com', desc:'한국 AI 뉴스 전문 매체.', tag:'한국어', level:'전체'},
+        {name:'DeepL Blog', url:'https://www.deepl.com/ko/blog', desc:'AI 번역·글쓰기 관련 콘텐츠.', tag:'한국어', level:'전체'},
+        {name:'MIT Technology Review', url:'https://www.technologyreview.com', desc:'MIT AI 기술 동향 영문 매체.', tag:'영어', level:'중급'},
+        {name:'Import AI (Jack Clark)', url:'https://jack-clark.net', desc:'Anthropic 공동창업자의 주간 AI 뉴스레터.', tag:'영어', level:'중급'},
+      ]
+    },
+    {
+      cat:'🎯 프롬프트 연습', items:[
+        {name:'Learn Prompting', url:'https://learnprompting.org/ko', desc:'프롬프트 엔지니어링 무료 교재. 한국어 제공.', tag:'무료·한국어', level:'입문~중급'},
+        {name:'Prompt Engineering Guide', url:'https://www.promptingguide.ai/kr', desc:'다양한 프롬프트 기법 정리. 한국어 버전.', tag:'무료·한국어', level:'중급'},
+        {name:'FlowGPT', url:'https://flowgpt.com', desc:'다른 사람들이 공유한 프롬프트 모음. 아이디어 얻기 좋음.', tag:'무료', level:'입문'},
+      ]
+    },
+  ];
+
+  const tagColor = {'무료':'#2e7d32','무료청강':'#1565c0','한국어':'#6a1b9a','영어':'#bf360c','무료·한국어':'#2e7d32'};
+
   return '<div class="frame intro"><h2>🌱 밭 넓히기</h2>'+
-      '<p class="intro-lead">ddugi는 같이 키울 사람을 찾고 있습니다. 비슷한 고민을 하고 있거나, 함께 만들어보고 싶다면 <a href="https://www.threads.com/@tinypotato.guardian" target="_blank" style="color:var(--blueprint);font-weight:700;">@tinypotato.guardian</a>으로 연락해주세요.</p>'+
-      '<div class="rm-legend">'+Object.keys(ROADMAP_STATUS).map(k=>'<span class="rm-status rm-'+k+'">'+ROADMAP_STATUS[k]+'</span>').join('')+'</div>'+
-    '</div>'+
-    ROADMAP.map(g=>'<div class="frame"><h2>'+esc(g.group)+'</h2><div class="fhint" style="margin-bottom:12px">'+esc(g.desc)+'</div>'+
-      '<div class="rm-grid">'+g.items.map(it=>
-        '<div class="rm-card"><div class="rm-head"><b>'+esc(it[0])+'</b><span class="rm-status rm-'+it[2]+'">'+ROADMAP_STATUS[it[2]]+'</span></div>'+
-        '<div class="rm-desc">'+esc(it[1])+'</div></div>').join('')+'</div></div>').join('')+
-    '<div class="hint">관심 있으시면 Threads로 연락해주세요! 🥔</div>';
+    '<p class="intro-lead">ddugi는 같이 키울 사람을 찾고 있습니다. <a href="https://www.threads.com/@tinypotato.guardian" target="_blank" style="color:var(--blueprint);font-weight:700;">@tinypotato.guardian</a>으로 연락해주세요.</p>'+
+    '<div class="rm-legend">'+Object.keys(ROADMAP_STATUS).map(k=>'<span class="rm-status rm-'+k+'">'+ROADMAP_STATUS[k]+'</span>').join('')+'</div>'+
+  '</div>'+
+  ROADMAP.map(g=>'<div class="frame"><h2>'+esc(g.group)+'</h2><div class="fhint" style="margin-bottom:12px">'+esc(g.desc)+'</div>'+
+    '<div class="rm-grid">'+g.items.map(it=>
+      '<div class="rm-card"><div class="rm-head"><b>'+esc(it[0])+'</b><span class="rm-status rm-'+it[2]+'">'+ROADMAP_STATUS[it[2]]+'</span></div>'+
+      '<div class="rm-desc">'+esc(it[1])+'</div></div>').join('')+'</div></div>').join('')+
+  '<div class="frame"><h2>🤖 AI 교육 콘텐츠 모음</h2>'+
+    '<p class="fhint" style="margin-bottom:20px;">무료로 AI를 배울 수 있는 곳들이에요. 단계별로 골라서 시작해보세요!</p>'+
+    eduContent.map(cat=>
+      '<div style="margin-bottom:24px;">'+
+        '<h3 style="font-size:14px;font-weight:700;color:var(--ink);margin:0 0 10px;">'+cat.cat+'</h3>'+
+        '<div style="display:flex;flex-direction:column;gap:8px;">'+
+          cat.items.map(item=>
+            '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);">'+
+              '<div style="flex:1;">'+
+                '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">'+
+                  '<a href="'+item.url+'" target="_blank" rel="noopener" style="font-size:13px;font-weight:700;color:var(--blueprint);text-decoration:none;">'+esc(item.name)+'</a>'+
+                  '<span style="font-size:10px;padding:1px 6px;border-radius:5px;background:'+(tagColor[item.tag]||'#555')+';color:#fff;font-weight:600;">'+esc(item.tag)+'</span>'+
+                  '<span style="font-size:10px;padding:1px 6px;border-radius:5px;background:var(--blueprint-soft);color:var(--blueprint);">'+esc(item.level)+'</span>'+
+                '</div>'+
+                '<div style="font-size:12px;color:var(--ink-soft);">'+esc(item.desc)+'</div>'+
+              '</div>'+
+              '<a href="'+item.url+'" target="_blank" rel="noopener" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--line);color:var(--blueprint);text-decoration:none;white-space:nowrap;flex-shrink:0;">바로가기 →</a>'+
+            '</div>'
+          ).join('')+
+        '</div>'+
+      '</div>'
+    ).join('')+
+  '</div>'+
+  '<div class="hint">더 좋은 자료 알고 있으면 Threads로 알려주세요! 🥔</div>';
 }
 
 let INTRO_HTML = DEFAULT_INTRO_HTML();
