@@ -431,7 +431,12 @@
 </head>
 <body>
 <header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span>
-<button type="button" onclick="showChangelog()" style="margin-left:auto;font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;">📋 업데이트 이력</button>
+<div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+  <span id="userBadge" style="font-size:12px;color:var(--ink-soft);display:none;"></span>
+  <button type="button" id="loginBtn" onclick="openAuthModal('login')" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;">로그인</button>
+  <button type="button" id="logoutBtn" onclick="userLogout()" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;display:none;">로그아웃</button>
+  <button type="button" onclick="showChangelog()" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;">📋 업데이트 이력</button>
+</div>
 </header>
 <div id="shell">
   <nav id="sidebar" aria-label="섹션 목록">
@@ -969,6 +974,120 @@ async function flushDbQueue(){
   }catch(e){ /* stays saved locally regardless */ }
   dbWriting = false;
   if(dbWriteQueue) flushDbQueue();
+}
+
+/* ============== 유저 인증 (이메일 로그인) ============== */
+let currentUser = null; // {token, userId, email, nickname, plan}
+
+function _authHeaders(){
+  const t = localStorage.getItem('ddugi_token');
+  return t ? {'Authorization':'Bearer '+t,'Content-Type':'application/json'} : {'Content-Type':'application/json'};
+}
+
+function updateAuthUI(){
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const badge = document.getElementById('userBadge');
+  if(currentUser){
+    if(loginBtn) loginBtn.style.display='none';
+    if(logoutBtn) logoutBtn.style.display='';
+    if(badge){
+      badge.style.display='';
+      const planLabel = currentUser.plan==='pro' ? '🌟 Pro' : currentUser.plan==='team' ? '🏢 Team' : '';
+      badge.textContent = '👤 '+(currentUser.nickname||currentUser.email.split('@')[0])+(planLabel?' · '+planLabel:'');
+    }
+  } else {
+    if(loginBtn) loginBtn.style.display='';
+    if(logoutBtn) logoutBtn.style.display='none';
+    if(badge) badge.style.display='none';
+  }
+}
+
+async function tryAutoLogin(){
+  const token = localStorage.getItem('ddugi_token');
+  if(!token) return;
+  try{
+    const res = await fetch('/api/user/me', {headers:{'Authorization':'Bearer '+token}});
+    if(!res.ok){ localStorage.removeItem('ddugi_token'); return; }
+    const d = await res.json();
+    currentUser = {token, ...d};
+    updateAuthUI();
+    await syncSeedToServer(); // 로그인 성공하면 현재 씨앗을 서버에 동기화
+  }catch(e){ localStorage.removeItem('ddugi_token'); }
+}
+
+async function syncSeedToServer(){
+  if(!currentUser) return;
+  const docId = state.docId || localStorage.getItem('ddugi_doc_id');
+  if(!docId || !state.fields || !Object.keys(state.fields).length) return;
+  try{
+    await fetch('/api/user/submissions/'+docId, {
+      method:'PUT',
+      headers:_authHeaders(),
+      body: JSON.stringify({
+        team:'', name: currentUser.nickname||'',
+        fields: state.fields, locked: state.locked?1:0,
+        completed: state.completed?1:0, status:'active',
+        filledCount: 0, totalSections: 0, recommendedType:''
+      })
+    });
+  }catch(e){}
+}
+
+function openAuthModal(mode){
+  // mode: 'login' | 'register'
+  const isLogin = mode==='login';
+  const html = '<div>'+
+    '<h2 style="margin:0 0 4px;font-size:17px;">'+(isLogin?'로그인':'회원가입')+'</h2>'+
+    '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">로그인하면 기기가 달라져도 씨앗이 유지돼요.</p>'+
+    '<div class="field"><label>이메일</label><input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"></div>'+
+    (!isLogin?'<div class="field"><label>닉네임 (선택)</label><input type="text" id="authNick" placeholder="익명 감자" maxlength="20"></div>':'')+
+    '<div class="field"><label>비밀번호 '+(isLogin?'':'(8자 이상)')+'</label><input type="password" id="authPw" placeholder="••••••••" autocomplete="'+(isLogin?'current-password':'new-password')+'"></div>'+
+    '<div id="authErr" style="font-size:12px;color:var(--danger);margin-bottom:8px;display:none;"></div>'+
+    '<button type="button" id="authSubmitBtn" style="width:100%;padding:10px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;">'+(isLogin?'로그인':'가입하기')+'</button>'+
+    '<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--ink-soft);">'+
+      (isLogin?'계정이 없나요? <button type="button" onclick="openAuthModal(\'register\')" style="background:none;border:none;color:var(--blueprint);cursor:pointer;font-size:12px;">회원가입</button>':
+               '이미 계정이 있나요? <button type="button" onclick="openAuthModal(\'login\')" style="background:none;border:none;color:var(--blueprint);cursor:pointer;font-size:12px;">로그인</button>')+
+    '</div>'+
+  '</div>';
+  showModal(html);
+  // 이벤트 바인딩
+  setTimeout(()=>{
+    const btn = document.getElementById('authSubmitBtn');
+    const emailEl = document.getElementById('authEmail');
+    const pwEl = document.getElementById('authPw');
+    if(emailEl) emailEl.focus();
+    async function doAuth(){
+      const email = (emailEl?.value||'').trim();
+      const pw = pwEl?.value||'';
+      const nick = document.getElementById('authNick')?.value||'';
+      const errEl = document.getElementById('authErr');
+      if(!email||!pw){ if(errEl){errEl.style.display='';errEl.textContent='이메일과 비밀번호를 입력해주세요.';} return; }
+      if(btn) btn.disabled=true;
+      try{
+        const url = isLogin ? '/api/user/login' : '/api/user/register';
+        const body = isLogin ? {email,password:pw} : {email,password:pw,nickname:nick};
+        const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const d = await res.json();
+        if(!res.ok){ if(errEl){errEl.style.display='';errEl.textContent=d.detail||'오류가 발생했어요.';} return; }
+        localStorage.setItem('ddugi_token', d.token);
+        currentUser = d;
+        updateAuthUI();
+        hideModal();
+        await syncSeedToServer();
+        showModal('<div style="text-align:center;padding:10px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">'+(isLogin?'돌아오셨군요!':'감자밭에 오신 걸 환영해요!')+'</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+(currentUser.nickname||currentUser.email.split(\'@\')[0])+'님의 씨앗이 기기 어디서나 유지돼요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
+      }catch(e){ if(errEl){errEl.style.display='';errEl.textContent='네트워크 오류. 다시 시도해주세요.';} }
+      finally{ if(btn) btn.disabled=false; }
+    }
+    if(btn) btn.onclick = doAuth;
+    [emailEl, pwEl, document.getElementById('authNick')].forEach(el=>{ if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') doAuth(); }); });
+  }, 50);
+}
+
+function userLogout(){
+  localStorage.removeItem('ddugi_token');
+  currentUser = null;
+  updateAuthUI();
 }
 
 function showChangelog(){
@@ -4812,6 +4931,7 @@ renderAdminSlot();
 renderSheet();
 loadRemote().then(renderSheet);
 loadTaxonomy();
+tryAutoLogin(); // 저장된 토큰으로 자동 로그인
 
 // 방문자 카운터 (공개 API)
 (async function loadVisitCounter(){

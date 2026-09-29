@@ -32,6 +32,37 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+# JWT
+JWT_SECRET = os.environ.get("JWT_SECRET", secrets.token_hex(32))
+JWT_ALGO = "HS256"
+JWT_EXPIRE_DAYS = 30
+
+try:
+    from jose import jwt as jose_jwt, JWTError
+    HAS_JOSE = True
+except ImportError:
+    HAS_JOSE = False
+
+def make_token(user_id: str, email: str, plan: str = "free") -> str:
+    if not HAS_JOSE:
+        return secrets.token_hex(32)
+    exp = datetime.datetime.utcnow() + datetime.timedelta(days=JWT_EXPIRE_DAYS)
+    return jose_jwt.encode({"sub": user_id, "email": email, "plan": plan, "exp": exp}, JWT_SECRET, algorithm=JWT_ALGO)
+
+def decode_token(token: str) -> dict:
+    if not HAS_JOSE:
+        raise HTTPException(status_code=401, detail="JWT 라이브러리 없음")
+    try:
+        return jose_jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="토큰이 유효하지 않거나 만료됐어요.")
+
+def get_current_user(authorization: str = "") -> dict:
+    """Authorization: Bearer <token> 헤더에서 유저 정보 추출"""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="로그인이 필요해요.")
+    return decode_token(authorization[7:])
+
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(APP_DIR, "data.db")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")  # PostgreSQL 연결 문자열 (없으면 SQLite)
@@ -139,6 +170,44 @@ def init_db() -> None:
         except Exception:
             if USE_PG:
                 conn.rollback()  # PG requires rollback after failed DDL
+    # ── 일반 유저 계정 (이메일 기반)
+    if USE_PG:
+        db_execute(conn, """
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                nickname TEXT,
+                plan TEXT DEFAULT 'free',
+                plan_expires_at TEXT,
+                created_at TEXT,
+                last_login_at TEXT
+            )
+        """)
+    else:
+        db_execute(conn, """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                nickname TEXT,
+                plan TEXT DEFAULT 'free',
+                plan_expires_at TEXT,
+                created_at TEXT,
+                last_login_at TEXT
+            )
+        """)
+    # submissions에 user_id 컬럼 추가 (마이그레이션)
+    try:
+        if USE_PG:
+            db_execute(conn, "ALTER TABLE submissions ADD COLUMN user_id TEXT")
+        else:
+            db_execute(conn, "ALTER TABLE submissions ADD COLUMN user_id TEXT")
+        if USE_PG:
+            conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
     # 마스터·관리자 계정 (사번 + 비밀번호 해시 + 역할)
     db_execute(conn,
         """
@@ -734,6 +803,155 @@ def visit_stats(x_emp_id: str = Header(default=""), x_emp_code: str = Header(def
         "by_date": by_date,
     }
 
+
+# ── 일반 유저 (이메일 기반 로그인) ──────────────────────────────────────────────
+
+class UserRegisterIn(BaseModel):
+    email: str
+    password: str
+    nickname: str = ""
+
+class UserLoginIn(BaseModel):
+    email: str
+    password: str
+
+def _user_by_email(conn, email: str):
+    return db_fetchone(conn, "SELECT * FROM users WHERE email=?", (email,)) if not USE_PG else \
+           db_fetchone(conn, "SELECT * FROM users WHERE email=%s", (email,))
+
+@app.post("/api/user/register")
+def user_register(body: UserRegisterIn):
+    email = body.email.strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="이메일 형식이 아니에요.")
+    if len(body.password) < 8:
+        raise HTTPException(status_code=400, detail="비밀번호는 8자 이상이어야 해요.")
+    conn = get_db()
+    if _user_by_email(conn, email):
+        raise HTTPException(status_code=409, detail="이미 가입된 이메일이에요.")
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    ph = hash_code(body.password)
+    nick = body.nickname.strip() or email.split("@")[0]
+    if USE_PG:
+        cur = db_execute(conn, "INSERT INTO users (email,password_hash,nickname,plan,created_at,last_login_at) VALUES (%s,%s,%s,'free',%s,%s) RETURNING id", (email,ph,nick,now,now))
+        uid = str(cur.fetchone()[0])
+        conn.commit()
+    else:
+        cur = db_execute(conn, "INSERT INTO users (email,password_hash,nickname,plan,created_at,last_login_at) VALUES (?,?,?,'free',?,?)", (email,ph,nick,now,now))
+        uid = str(cur.lastrowid)
+    token = make_token(uid, email, "free")
+    return {"token": token, "userId": uid, "email": email, "nickname": nick, "plan": "free"}
+
+@app.post("/api/user/login")
+def user_login(body: UserLoginIn):
+    email = body.email.strip().lower()
+    conn = get_db()
+    row = _user_by_email(conn, email)
+    if not row:
+        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 틀렸어요.")
+    # 비밀번호 검증
+    ph = row["password_hash"] if isinstance(row, dict) else row[2]
+    try:
+        salt_hex, digest_hex = ph.split("$")
+        salt = bytes.fromhex(salt_hex)
+        expected = hashlib.pbkdf2_hmac("sha256", body.password.encode(), salt, 200_000)
+        if not hmac.compare_digest(expected, bytes.fromhex(digest_hex)):
+            raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 틀렸어요.")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 틀렸어요.")
+    uid = str(row["id"] if isinstance(row, dict) else row[0])
+    plan = row["plan"] if isinstance(row, dict) else row[4]
+    nick = row["nickname"] if isinstance(row, dict) else row[3]
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    if USE_PG:
+        db_execute(conn, "UPDATE users SET last_login_at=%s WHERE id=%s", (now, uid))
+        conn.commit()
+    else:
+        db_execute(conn, "UPDATE users SET last_login_at=? WHERE id=?", (now, uid))
+    token = make_token(uid, email, plan or "free")
+    return {"token": token, "userId": uid, "email": email, "nickname": nick or email.split("@")[0], "plan": plan or "free"}
+
+@app.get("/api/user/me")
+def user_me(authorization: str = Header(default="")):
+    payload = get_current_user(authorization)
+    conn = get_db()
+    uid = payload["sub"]
+    row = db_fetchone(conn, "SELECT id,email,nickname,plan,plan_expires_at,created_at FROM users WHERE id=?", (uid,)) if not USE_PG else \
+          db_fetchone(conn, "SELECT id,email,nickname,plan,plan_expires_at,created_at FROM users WHERE id=%s", (uid,))
+    if not row:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없어요.")
+    return {"userId": str(row["id"]), "email": row["email"], "nickname": row["nickname"], "plan": row["plan"], "planExpiresAt": row["plan_expires_at"]}
+
+# 내 씨앗 목록 (로그인 유저용)
+@app.get("/api/user/submissions")
+def user_submissions(authorization: str = Header(default="")):
+    payload = get_current_user(authorization)
+    uid = payload["sub"]
+    conn = get_db()
+    if USE_PG:
+        rows = db_fetchall(conn, "SELECT * FROM submissions WHERE user_id=%s ORDER BY updated_at DESC", (uid,))
+    else:
+        rows = db_fetchall(conn, "SELECT * FROM submissions WHERE user_id=? ORDER BY updated_at DESC", (uid,))
+    return [row_to_summary(r) for r in rows]
+
+# 씨앗 저장 시 user_id 연결 (기존 PUT에 user_id 추가)
+# → 기존 /api/submissions/{doc_id} PUT에서 토큰 있으면 user_id 저장
+@app.put("/api/user/submissions/{doc_id}")
+def put_user_submission(doc_id: str, body: "SubmissionIn", authorization: str = Header(default="")):
+    """로그인 유저의 씨앗 저장 — user_id 자동 연결"""
+    payload = get_current_user(authorization)
+    uid = payload["sub"]
+    conn = get_db()
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    fields_json = json.dumps(body.fields, ensure_ascii=False)
+    if USE_PG:
+        db_execute(conn, """
+            INSERT INTO submissions (doc_id,team,name,fields,locked,completed,status,filled_count,total_sections,recommended_type,updated_at,user_id)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT(doc_id) DO UPDATE SET
+                team=EXCLUDED.team, name=EXCLUDED.name, fields=EXCLUDED.fields,
+                locked=EXCLUDED.locked, completed=EXCLUDED.completed, status=EXCLUDED.status,
+                filled_count=EXCLUDED.filled_count, total_sections=EXCLUDED.total_sections,
+                recommended_type=EXCLUDED.recommended_type, updated_at=EXCLUDED.updated_at,
+                user_id=EXCLUDED.user_id
+        """, (doc_id, body.team, body.name, fields_json, body.locked, body.completed, body.status,
+              body.filledCount, body.totalSections, body.recommendedType, now, uid))
+        conn.commit()
+    else:
+        db_execute(conn, """
+            INSERT INTO submissions (doc_id,team,name,fields,locked,completed,status,filled_count,total_sections,recommended_type,updated_at,user_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(doc_id) DO UPDATE SET
+                team=excluded.team, name=excluded.name, fields=excluded.fields,
+                locked=excluded.locked, completed=excluded.completed, status=excluded.status,
+                filled_count=excluded.filled_count, total_sections=excluded.total_sections,
+                recommended_type=excluded.recommended_type, updated_at=excluded.updated_at,
+                user_id=excluded.user_id
+        """, (doc_id, body.team, body.name, fields_json, body.locked, body.completed, body.status,
+              body.filledCount, body.totalSections, body.recommendedType, now, uid))
+    return {"ok": True}
+
+# 관리자: 유저 목록 + 씨앗 현황
+@app.get("/api/admin/users")
+def admin_users(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
+    require_role(x_emp_id, x_emp_code, {"admin", "master"})
+    conn = get_db()
+    users = db_fetchall(conn, "SELECT id,email,nickname,plan,plan_expires_at,created_at,last_login_at FROM users ORDER BY created_at DESC")
+    result = []
+    for u in users:
+        uid = str(u["id"])
+        if USE_PG:
+            seeds = db_fetchall(conn, "SELECT doc_id,status,filled_count,completed,updated_at FROM submissions WHERE user_id=%s", (uid,))
+        else:
+            seeds = db_fetchall(conn, "SELECT doc_id,status,filled_count,completed,updated_at FROM submissions WHERE user_id=?", (uid,))
+        result.append({
+            "id": uid, "email": u["email"], "nickname": u["nickname"],
+            "plan": u["plan"], "planExpiresAt": u["plan_expires_at"],
+            "createdAt": u["created_at"], "lastLoginAt": u["last_login_at"],
+            "seedCount": len(seeds),
+            "seeds": [{"docId": s["doc_id"], "status": s["status"], "filledCount": s["filled_count"], "completed": bool(s["completed"]), "updatedAt": s["updated_at"]} for s in seeds]
+        })
+    return result
 
 # ── 방명록 (guestbook) ──────────────────────────────────────────────
 class GuestbookIn(BaseModel):
