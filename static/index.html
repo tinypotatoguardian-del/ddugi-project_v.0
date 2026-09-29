@@ -1075,7 +1075,8 @@ function openAuthModal(mode){
         updateAuthUI();
         hideModal();
         await syncSeedToServer();
-        showModal('<div style="text-align:center;padding:10px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">'+(isLogin?'돌아오셨군요!':'감자밭에 오신 걸 환영해요!')+'</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+(currentUser.nickname||currentUser.email.split(\'@\')[0])+'님의 씨앗이 기기 어디서나 유지돼요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
+        const welcomeNick = currentUser.nickname || currentUser.email.split('@')[0];
+        showModal('<div style="text-align:center;padding:10px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">'+(isLogin?'돌아오셨군요!':'감자밭에 오신 걸 환영해요!')+'</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+welcomeNick+'님의 씨앗이 기기 어디서나 유지돼요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
       }catch(e){ if(errEl){errEl.style.display='';errEl.textContent='네트워크 오류. 다시 시도해주세요.';} }
       finally{ if(btn) btn.disabled=false; }
     }
