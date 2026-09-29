@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ddugi · AX Workbench</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --ink:#2E2A45;--ink-soft:#6B6489;--paper:#FAF7FF;--panel:#fff;
+    --line:#DCD3F0;--purple:#8B5CF6;--purple-soft:#F1EAFE;
+    --slate:#334155;--slate-soft:#f8fafc;--slate-line:#e2e8f0;
+  }
+  body{
+    font-family:'IBM Plex Sans KR',-apple-system,sans-serif;
+    background:var(--paper);color:var(--ink);
+    min-height:100dvh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:40px 20px;
+  }
+  .logo{font-size:44px;margin-bottom:10px;text-align:center;}
+  .headline{font-size:24px;font-weight:700;text-align:center;margin-bottom:8px;}
+  .sub{font-size:14px;color:var(--ink-soft);text-align:center;margin-bottom:48px;line-height:1.7;}
+  .cards{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:680px;width:100%;}
+  .card{
+    flex:1;min-width:240px;max-width:300px;
+    border:2px solid var(--line);border-radius:20px;
+    padding:32px 24px 28px;
+    transition:all .2s;background:var(--panel);
+    text-decoration:none;color:inherit;
+    display:flex;flex-direction:column;align-items:flex-start;
+  }
+  .card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.1);}
+  .card.ddugi{border-color:#ddd6fe;}
+  .card.ddugi:hover{border-color:var(--purple);background:var(--purple-soft);}
+  .card.axwb{border-color:var(--slate-line);}
+  .card.axwb:hover{border-color:var(--slate);background:var(--slate-soft);}
+  .card-icon{font-size:40px;margin-bottom:16px;}
+  .card-tag{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:12px;letter-spacing:.3px;}
+  .ddugi .card-tag{background:#ede9fe;color:var(--purple);border:1px solid #ddd6fe;}
+  .axwb .card-tag{background:var(--slate-soft);color:var(--slate);border:1px solid var(--slate-line);}
+  .card-title{font-size:18px;font-weight:700;margin-bottom:8px;}
+  .card-desc{font-size:13px;color:var(--ink-soft);line-height:1.75;margin-bottom:20px;flex:1;}
+  .card-list{display:flex;flex-direction:column;gap:5px;margin-bottom:24px;}
+  .card-list li{font-size:12px;color:var(--ink-soft);list-style:none;padding-left:16px;position:relative;}
+  .card-list li::before{content:"·";position:absolute;left:4px;}
+  .card-cta{
+    width:100%;padding:11px 0;border-radius:10px;
+    font-size:13px;font-weight:700;text-align:center;
+    border:none;cursor:pointer;font-family:inherit;transition:opacity .15s;
+  }
+  .ddugi .card-cta{background:var(--purple);color:#fff;}
+  .axwb .card-cta{background:var(--slate);color:#fff;}
+  .card-cta:hover{opacity:.85;}
+  .footer{margin-top:40px;font-size:12px;color:var(--ink-soft);text-align:center;line-height:2;}
+  .footer a{color:var(--purple);text-decoration:none;}
+  @media(max-width:560px){
+    .cards{flex-direction:column;align-items:stretch;}
+    .card{max-width:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="logo">🥔</div>
+<h1 class="headline">어떤 분이세요?</h1>
+<p class="sub">목적에 맞는 곳으로 안내해드릴게요.</p>
+<div class="cards">
+  <a class="card ddugi" href="/index.html" onclick="localStorage.setItem('ddugi_role','user')">
+    <div class="card-icon">🥔</div>
+    <div class="card-tag">학생 · 취준생 · 개인</div>
+    <div class="card-title">ddugi</div>
+    <div class="card-desc">AI를 처음 쓰는 사람부터 취준에 진지하게 쓰고 싶은 사람까지.<br>감자 세계관에서 같이 키워가요.</div>
+    <ul class="card-list">
+      <li>AI 기초 커리큘럼 (완전 처음 → 진로 연결)</li>
+      <li>취준 특화 프롬프트 모음</li>
+      <li>AI 도구 지도 (ChatGPT·Claude·Gemini 비교)</li>
+      <li>무료로 시작</li>
+    </ul>
+    <button class="card-cta">ddugi 시작하기 🌱</button>
+  </a>
+  <a class="card axwb" href="/axworkbench.html" onclick="localStorage.setItem('ddugi_role','enterprise')">
+    <div class="card-icon">🏢</div>
+    <div class="card-tag">기업 · 팀 · B2B</div>
+    <div class="card-title">AX Workbench</div>
+    <div class="card-desc">업무에 AI를 붙이기 전, 진짜 문제부터 정의합니다.<br>팀 단위 AX 과제 탐색·설계 도구.</div>
+    <ul class="card-list">
+      <li>AI 필요성 진단 (억지로 AI 붙이지 않기)</li>
+      <li>AX 과제 탐색·설계 파이프라인</li>
+      <li>팀 현황판 · 관리자 통합</li>
+      <li>B2B 계약 · 데모 문의</li>
+    </ul>
+    <button class="card-cta">AX Workbench 살펴보기 →</button>
+  </a>
+</div>
+<p class="footer">
+  <a href="https://threads.com/@tinypotato.guardian" target="_blank">@tinypotato.guardian</a>
+  &nbsp;·&nbsp;
+  <a href="/TERMS.md" target="_blank">이용약관</a>
+  &nbsp;·&nbsp;
+  <a href="/PRIVACY.md" target="_blank">개인정보처리방침</a>
+</p>
+</body>
+</html>

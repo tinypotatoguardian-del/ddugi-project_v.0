@@ -4971,7 +4971,28 @@ renderAdminSlot();
 renderSheet();
 loadRemote().then(renderSheet);
 loadTaxonomy();
-tryAutoLogin(); // 저장된 토큰으로 자동 로그인
+tryAutoLogin();
+
+// 첫 방문자는 select.html로 안내 (역할 미선택 상태, 관리자 제외)
+(function(){
+  const role = localStorage.getItem('ddugi_role');
+  const urlParams = new URLSearchParams(window.location.search);
+  // role 있거나, URL에 role 파라미터 있거나, 관리자 로그인 상태면 스킵
+  if(!role && !urlParams.get('role') && !isAdmin){
+    // 2초 후 유도 배너 표시 (바로 리디렉션하면 너무 강압적)
+    setTimeout(()=>{
+      const banner = document.createElement('div');
+      banner.id = 'roleBanner';
+      banner.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:100;background:var(--panel);border:1.5px solid var(--blueprint-2);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);font-size:13px;white-space:nowrap;';
+      banner.innerHTML = '<span>🥔 처음 오셨나요?</span>'+
+        '<a href="/select.html" style="color:var(--blueprint);font-weight:700;text-decoration:none;">나에게 맞는 버전 찾기 →</a>'+
+        '<button onclick="document.getElementById(\'roleBanner\').remove();localStorage.setItem(\'ddugi_role\',\'user\')" style="background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:14px;padding:0 2px;">✕</button>';
+      document.body.appendChild(banner);
+    }, 1500);
+  }
+  // URL 파라미터로 역할 받은 경우 저장
+  if(urlParams.get('role')) localStorage.setItem('ddugi_role', urlParams.get('role'));
+})();
 
 // 방문자 카운터 (공개 API)
 (async function loadVisitCounter(){

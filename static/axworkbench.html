@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AX Workbench — AI 업무효율화 설계 도구</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --ink:#0f172a;--ink-soft:#475569;--ink-muted:#94a3b8;
+    --paper:#f8fafc;--panel:#fff;--line:#e2e8f0;--line-soft:#f1f5f9;
+    --accent:#1e40af;--accent-soft:#eff6ff;--accent-light:#bfdbfe;
+    --ok:#15803d;--ok-soft:#f0fdf4;
+    --radius:10px;
+    --serif:'IBM Plex Sans KR',-apple-system,sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  body{font-family:var(--serif);background:var(--paper);color:var(--ink);line-height:1.6;}
+  a{color:var(--accent);text-decoration:none;}
+
+  /* nav */
+  nav{
+    position:sticky;top:0;z-index:10;
+    background:rgba(248,250,252,.9);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    padding:14px 40px;display:flex;align-items:center;gap:16px;
+  }
+  .nav-logo{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.2px;}
+  .nav-logo span{font-weight:400;color:var(--ink-soft);margin-left:6px;font-size:13px;}
+  .nav-links{margin-left:auto;display:flex;gap:24px;font-size:13px;color:var(--ink-soft);}
+  .nav-links a:hover{color:var(--ink);}
+  .nav-cta{
+    margin-left:16px;padding:7px 16px;border-radius:7px;
+    background:var(--accent);color:#fff;font-size:13px;font-weight:600;
+    border:none;cursor:pointer;font-family:inherit;
+  }
+  .nav-cta:hover{background:#1d3faa;}
+
+  /* hero */
+  .hero{
+    max-width:780px;margin:0 auto;padding:80px 24px 64px;text-align:center;
+  }
+  .hero-tag{
+    display:inline-block;font-size:12px;font-weight:600;
+    padding:4px 12px;border-radius:20px;
+    background:var(--accent-soft);color:var(--accent);
+    border:1px solid var(--accent-light);margin-bottom:20px;letter-spacing:.3px;
+  }
+  .hero h1{font-size:40px;font-weight:700;line-height:1.2;letter-spacing:-.5px;margin-bottom:16px;}
+  .hero h1 em{color:var(--accent);font-style:normal;}
+  .hero p{font-size:17px;color:var(--ink-soft);line-height:1.8;margin-bottom:32px;max-width:580px;margin-left:auto;margin-right:auto;}
+  .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+  .btn-primary{padding:13px 28px;border-radius:9px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+  .btn-primary:hover{background:#1d3faa;}
+  .btn-secondary{padding:13px 28px;border-radius:9px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* divider */
+  .divider{border:none;border-top:1px solid var(--line);margin:0 40px;}
+
+  /* section */
+  section{max-width:960px;margin:0 auto;padding:72px 24px;}
+  .section-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px;}
+  .section-title{font-size:28px;font-weight:700;letter-spacing:-.3px;margin-bottom:10px;}
+  .section-sub{font-size:15px;color:var(--ink-soft);margin-bottom:40px;line-height:1.7;}
+
+  /* problem */
+  .problem-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
+  .problem-card{
+    padding:18px 20px;border-radius:var(--radius);
+    border:1px solid var(--line);background:var(--panel);
+  }
+  .problem-card .p-icon{font-size:20px;margin-bottom:8px;}
+  .problem-card .p-title{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--ink);}
+  .problem-card .p-desc{font-size:12px;color:var(--ink-soft);line-height:1.6;}
+
+  /* how */
+  .steps{display:flex;flex-direction:column;gap:0;}
+  .step{display:flex;gap:24px;padding:24px 0;border-bottom:1px solid var(--line-soft);}
+  .step:last-child{border-bottom:none;}
+  .step-num{
+    width:36px;height:36px;border-radius:50%;
+    background:var(--accent-soft);color:var(--accent);
+    font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;margin-top:2px;
+  }
+  .step-content .s-title{font-size:15px;font-weight:700;margin-bottom:4px;}
+  .step-content .s-desc{font-size:13px;color:var(--ink-soft);line-height:1.7;}
+  .step-content .s-tag{
+    display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;
+    background:var(--ok-soft);color:var(--ok);border:1px solid #bbf7d0;
+    margin-top:6px;font-weight:600;
+  }
+
+  /* features */
+  .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+  .feature-card{
+    padding:22px 22px;border-radius:var(--radius);
+    border:1px solid var(--line);background:var(--panel);
+  }
+  .feature-card .f-icon{font-size:22px;margin-bottom:10px;}
+  .feature-card .f-title{font-size:14px;font-weight:700;margin-bottom:5px;}
+  .feature-card .f-desc{font-size:12px;color:var(--ink-soft);line-height:1.65;}
+
+  /* pricing */
+  .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
+  .pricing-card{
+    padding:28px 24px;border-radius:14px;
+    border:1.5px solid var(--line);background:var(--panel);
+  }
+  .pricing-card.featured{border-color:var(--accent);background:var(--accent-soft);}
+  .pricing-card .price-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-muted);margin-bottom:6px;}
+  .pricing-card .price-name{font-size:18px;font-weight:700;margin-bottom:4px;}
+  .pricing-card .price-amount{font-size:28px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+  .pricing-card .price-amount span{font-size:14px;font-weight:400;color:var(--ink-soft);}
+  .pricing-card .price-desc{font-size:12px;color:var(--ink-soft);margin-bottom:18px;line-height:1.6;}
+  .pricing-card ul{display:flex;flex-direction:column;gap:7px;margin-bottom:22px;}
+  .pricing-card ul li{font-size:12px;color:var(--ink-soft);list-style:none;padding-left:18px;position:relative;}
+  .pricing-card ul li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700;}
+  .price-btn{
+    width:100%;padding:10px;border-radius:8px;
+    font-size:13px;font-weight:600;text-align:center;
+    border:1.5px solid var(--accent);background:transparent;color:var(--accent);
+    cursor:pointer;font-family:inherit;transition:all .15s;
+  }
+  .pricing-card.featured .price-btn{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .price-btn:hover{background:var(--accent);color:#fff;}
+
+  /* cta */
+  .cta-section{
+    background:var(--ink);color:#fff;
+    padding:64px 24px;text-align:center;
+  }
+  .cta-section h2{font-size:28px;font-weight:700;margin-bottom:10px;}
+  .cta-section p{font-size:15px;color:#94a3b8;margin-bottom:28px;}
+  .cta-section .cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+  .cta-white{padding:12px 26px;border-radius:9px;background:#fff;color:var(--ink);font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+  .cta-ghost{padding:12px 26px;border-radius:9px;border:1.5px solid #475569;color:#cbd5e1;font-size:14px;font-weight:600;background:transparent;cursor:pointer;font-family:inherit;}
+  .cta-ghost:hover{border-color:#94a3b8;color:#fff;}
+
+  /* footer */
+  footer{
+    border-top:1px solid var(--line);padding:24px 40px;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .footer-logo{font-size:13px;font-weight:700;color:var(--ink-soft);}
+  .footer-links{margin-left:auto;display:flex;gap:20px;font-size:12px;color:var(--ink-muted);}
+  .footer-links a:hover{color:var(--ink-soft);}
+
+  @media(max-width:600px){
+    nav{padding:12px 20px;}
+    .nav-links{display:none;}
+    .hero h1{font-size:28px;}
+    section{padding:52px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- nav -->
+<nav>
+  <div class="nav-logo">AX Workbench <span>by ddugi</span></div>
+  <div class="nav-links">
+    <a href="#how">작동 방식</a>
+    <a href="#features">기능</a>
+    <a href="#pricing">요금</a>
+  </div>
+  <button class="nav-cta" onclick="window.open('https://threads.com/@tinypotato.guardian','_blank')">데모 문의</button>
+</nav>
+
+<!-- hero -->
+<div class="hero">
+  <div class="hero-tag">AX 업무효율화 설계 도구</div>
+  <h1>AI를 붙이기 전에,<br><em>진짜 문제</em>부터 정의합니다.</h1>
+  <p>AI 도입을 결정하기 전 업무를 구조화하고, AI가 실제로 필요한지 판단하고, 과제를 설계하는 팀 단위 워크벤치.</p>
+  <div class="hero-btns">
+    <button class="btn-primary" onclick="window.open('https://threads.com/@tinypotato.guardian','_blank')">데모 신청하기</button>
+    <button class="btn-secondary" onclick="window.location.href='/index.html'">ddugi 개인 버전 보기</button>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- problem -->
+<section>
+  <div class="section-tag">왜 필요한가</div>
+  <div class="section-title">AI 도입, 이런 문제 겪고 있지 않으신가요?</div>
+  <div class="section-sub">도구를 먼저 고르기 전에, 어떤 문제를 푸는지부터 정해야 합니다.</div>
+  <div class="problem-grid">
+    <div class="problem-card">
+      <div class="p-icon">🥔</div>
+      <div class="p-title">포테이토 낭비</div>
+      <div class="p-desc">자동화로 될 일을 AI로 만들고, 그걸 계속 유지보수하고 있다.</div>
+    </div>
+    <div class="problem-card">
+      <div class="p-icon">⏳</div>
+      <div class="p-title">시간 낭비</div>
+      <div class="p-desc">검증 안 된 AI 결과를 사람이 다시 확인하느라 오히려 일이 늘었다.</div>
+    </div>
+    <div class="problem-card">
+      <div class="p-icon">👁️</div>
+      <div class="p-title">흐린 눈으로 도입</div>
+      <div class="p-desc">근거 없는 AI 추천을 그대로 따랐다가 실제 효과를 측정할 수 없다.</div>
+    </div>
+    <div class="problem-card">
+      <div class="p-icon">🏚️</div>
+      <div class="p-title">비용 낭비</div>
+      <div class="p-desc">쓰이지 않는 AI 시스템, 불필요한 LLM 호출 비용이 계속 쌓인다.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- how -->
+<section id="how">
+  <div class="section-tag">작동 방식</div>
+  <div class="section-title">문제 정의부터 설계까지, 한 흐름으로</div>
+  <div class="section-sub">AI를 써야 하는 이유를 먼저 검증합니다. "적용할 수 있는가"보다 "적용해야 하는가"를 묻습니다.</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <div class="s-title">씨앗 심기 — 업무 현황 정리</div>
+        <div class="s-desc">현재 업무 프로세스, 문제, 개선 목표를 AI에게 묻기 전에 사람이 먼저 정리합니다. 추측이 아닌 사실만 입력합니다.</div>
+        <div class="s-tag">AI 없이 직접 작성</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <div class="s-title">흔들어보기 — AI 필요성 검증</div>
+        <div class="s-desc">작성한 내용을 AI가 검증합니다. 기존 시스템·자동화·엑셀로 해결 가능한지 먼저 검토하고, 그래도 안 되는 부분에만 AI를 권합니다.</div>
+        <div class="s-tag">AI 협업</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <div class="s-title">다시 심기 — 문제 재정의</div>
+        <div class="s-desc">검증 결과를 보고 문제와 목표를 자기 말로 다시 씁니다. AI가 대신 써주는 게 아니라, AI 피드백을 보고 사람이 직접 다듬습니다.</div>
+        <div class="s-tag">사람이 직접 작성</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <div class="s-title">뿌리 내리기 — AI 과제 구조화</div>
+        <div class="s-desc">재정의한 문제로 AI 역할, 사람 역할, 데이터 구조, 검증 방법, 최소 구현안을 설계합니다. AI Slop 위험도 자동으로 탐지합니다.</div>
+        <div class="s-tag">AI + 사람 협업</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- features -->
+<section id="features">
+  <div class="section-tag">핵심 기능</div>
+  <div class="section-title">팀 단위 AX 과제 관리</div>
+  <div class="section-sub">개인 작업부터 팀 전체 현황까지 한 곳에서.</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="f-icon">🔍</div>
+      <div class="f-title">AI 필요성 진단</div>
+      <div class="f-desc">기존 기술 먼저, AI는 마지막 수단. 억지로 AI를 붙이지 않도록 체계적으로 검토합니다.</div>
+    </div>
+    <div class="feature-card">
+      <div class="f-icon">📋</div>
+      <div class="f-title">과제 정의서 자동 생성</div>
+      <div class="f-desc">작성한 내용 기반으로 표준 과제 정의서를 자동으로 만들어 내보낼 수 있습니다.</div>
+    </div>
+    <div class="feature-card">
+      <div class="f-icon">👥</div>
+      <div class="f-title">팀 현황판</div>
+      <div class="f-desc">팀원별 과제 진행 상황, AI 역량 레벨, Gate 판정 현황을 한눈에 볼 수 있습니다.</div>
+    </div>
+    <div class="feature-card">
+      <div class="f-icon">⚠️</div>
+      <div class="f-title">AI Slop 탐지</div>
+      <div class="f-desc">단순 자동화를 AI로 포장하거나, 효과 측정이 없는 과제를 자동으로 감지하고 경고합니다.</div>
+    </div>
+    <div class="feature-card">
+      <div class="f-icon">📊</div>
+      <div class="f-title">AI 역량 레벨 시스템</div>
+      <div class="f-desc">L1 AI User부터 L5 AX Architect까지. 기술 개수가 아닌 문제 해결 수준으로 측정합니다.</div>
+    </div>
+    <div class="feature-card">
+      <div class="f-icon">🔒</div>
+      <div class="f-title">보안 및 접근 관리</div>
+      <div class="f-desc">사내 배포 가능. 팀별 접근 권한, 과제 잠금, 완료 확인 프로세스를 지원합니다.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- pricing -->
+<section id="pricing">
+  <div class="section-tag">요금</div>
+  <div class="section-title">팀 규모에 맞게</div>
+  <div class="section-sub">모든 플랜 연간 계약 기준. 월간 계약도 가능합니다.</div>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="price-label">스타터</div>
+      <div class="price-name">Team</div>
+      <div class="price-amount">월 49,000원 <span>/ 팀 5인</span></div>
+      <div class="price-desc">소규모 팀의 AX 과제 관리를 위한 플랜</div>
+      <ul>
+        <li>팀원 최대 5명</li>
+        <li>과제 무제한</li>
+        <li>팀 현황판</li>
+        <li>과제 정의서 내보내기</li>
+        <li>AI Slop 탐지</li>
+      </ul>
+      <button class="price-btn" onclick="window.open('https://threads.com/@tinypotato.guardian','_blank')">문의하기</button>
+    </div>
+    <div class="pricing-card featured">
+      <div class="price-label">추천</div>
+      <div class="price-name">Business</div>
+      <div class="price-amount">별도 견적 <span>/ 팀원 무제한</span></div>
+      <div class="price-desc">부서·본부 단위 AX 전환을 위한 플랜</div>
+      <ul>
+        <li>팀원 무제한</li>
+        <li>커스텀 온보딩</li>
+        <li>전담 지원</li>
+        <li>사내 배포 가능</li>
+        <li>세금계산서 발행</li>
+        <li>연간 계약 기본</li>
+      </ul>
+      <button class="price-btn" onclick="window.open('https://threads.com/@tinypotato.guardian','_blank')">데모 신청하기</button>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>"AI가 진짜 필요한지" 먼저 물어보세요.</h2>
+  <p>억지로 AI를 붙이는 것보다, 필요 없는 곳에 AI를 안 쓰는 것이 더 어려운 능력입니다.</p>
+  <div class="cta-btns">
+    <button class="cta-white" onclick="window.open('https://threads.com/@tinypotato.guardian','_blank')">데모 신청하기</button>
+    <button class="cta-ghost" onclick="window.location.href='/index.html'">개인 버전 무료로 써보기</button>
+  </div>
+</div>
+
+<!-- footer -->
+<footer>
+  <div class="footer-logo">AX Workbench — by ddugi</div>
+  <div class="footer-links">
+    <a href="/select.html">← 메인으로</a>
+    <a href="https://threads.com/@tinypotato.guardian" target="_blank">@tinypotato.guardian</a>
+    <a href="/TERMS.md" target="_blank">이용약관</a>
+    <a href="/PRIVACY.md" target="_blank">개인정보처리방침</a>
+  </div>
+</footer>
+
+</body>
+</html>
