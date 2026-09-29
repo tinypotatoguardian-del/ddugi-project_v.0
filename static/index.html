@@ -2086,11 +2086,22 @@ function updateRulerAndNav(){
   if(isAdmin){
     const adminBtn = s => '<li><button type="button" class="navbtn sub'+(state.cur===s.id?' active':'')+'" data-action="goto" data-target="'+s.id+'">'+
         '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="dot"></span></button></li>';
-    navHtml += '<hr class="navdivider"><li class="navgroup" style="cursor:default;">관리자 · 실무</li>'+
-      adminBtn(SECTIONS.find(s=>s.id==='tasklist')) + adminBtn(SECTIONS.find(s=>s.id==='dashboard')) + adminBtn(SECTIONS.find(s=>s.id==='taxonomy')) +
+    const adminCollapsed = window._navCollapsed && window._navCollapsed.has('__admin__');
+    const masterCollapsed = window._navCollapsed && window._navCollapsed.has('__master__');
+    const adminItems = adminBtn(SECTIONS.find(s=>s.id==='tasklist')) + adminBtn(SECTIONS.find(s=>s.id==='dashboard')) + adminBtn(SECTIONS.find(s=>s.id==='taxonomy')) +
       '<li><button type="button" class="navbtn sub" data-admin-pw><span class="num">⚿</span>비밀번호 변경</button></li>';
+    navHtml += '<hr class="navdivider">'+
+      '<li class="navgroup'+(adminCollapsed?' collapsed':'')+'" onclick="toggleNavGroup(\'__admin__\')">관리자 · 실무<span class="nav-arrow">▾</span></li>'+
+      '<div class="navgroup-items'+(adminCollapsed?' collapsed':'')+'" id="navgroup-__admin__" style="max-height:'+(adminCollapsed?'0':'300px')+'">'+
+        '<ul class="navlist">'+adminItems+'</ul>'+
+      '</div>';
     if(isMaster){
-      navHtml += '<li class="navgroup" style="cursor:default;">마스터</li>'+ adminBtn(SECTIONS.find(s=>s.id==='accounts')) + adminBtn(SECTIONS.find(s=>s.id==='visits'));
+      const masterItems = adminBtn(SECTIONS.find(s=>s.id==='accounts')) + adminBtn(SECTIONS.find(s=>s.id==='visits'));
+      navHtml +=
+        '<li class="navgroup'+(masterCollapsed?' collapsed':'')+'" onclick="toggleNavGroup(\'__master__\')">마스터<span class="nav-arrow">▾</span></li>'+
+        '<div class="navgroup-items'+(masterCollapsed?' collapsed':'')+'" id="navgroup-__master__" style="max-height:'+(masterCollapsed?'0':'200px')+'">'+
+          '<ul class="navlist">'+masterItems+'</ul>'+
+        '</div>';
     }
   }
   nav.innerHTML = navHtml;
