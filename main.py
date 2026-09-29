@@ -194,6 +194,29 @@ def init_db() -> None:
     if USE_PG:
         db_execute(conn,
             """
+            CREATE TABLE IF NOT EXISTS guestbook (
+                id SERIAL PRIMARY KEY,
+                nickname TEXT,
+                message TEXT NOT NULL,
+                created_at TEXT
+            )
+            """
+        )
+    else:
+        db_execute(conn,
+            """
+            CREATE TABLE IF NOT EXISTS guestbook (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nickname TEXT,
+                message TEXT NOT NULL,
+                created_at TEXT
+            )
+            """
+        )
+    # 방문 기록
+    if USE_PG:
+        db_execute(conn,
+            """
             CREATE TABLE IF NOT EXISTS visits (
                 id SERIAL PRIMARY KEY,
                 ip TEXT,
@@ -699,6 +722,31 @@ def visit_stats(x_emp_id: str = Header(default=""), x_emp_code: str = Header(def
         "by_date": by_date,
     }
 
+
+# ── 방명록 (guestbook) ──────────────────────────────────────────────
+class GuestbookIn(BaseModel):
+    nickname: str = ""
+    message: str
+
+@app.post("/api/guestbook")
+def create_guestbook(body: GuestbookIn):
+    v = validate_text(body.message)
+    if not v["ok"]: raise HTTPException(status_code=400, detail=v["msg"])
+    now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_conn()
+    if USE_PG:
+        db_execute(conn, "INSERT INTO guestbook (nickname, message, created_at) VALUES (%s,%s,%s)",
+                   (body.nickname.strip() or "익명", body.message.strip(), now))
+    else:
+        db_execute(conn, "INSERT INTO guestbook (nickname, message, created_at) VALUES (?,?,?)",
+                   (body.nickname.strip() or "익명", body.message.strip(), now))
+    return {"ok": True}
+
+@app.get("/api/guestbook")
+def list_guestbook():
+    conn = get_conn()
+    rows = db_fetchall(conn, "SELECT * FROM guestbook ORDER BY created_at DESC")
+    return [dict(r) for r in rows]
 
 # 정적 프론트엔드 서빙 (반드시 API 라우트들 다음에 mount)
 app.mount("/", StaticFiles(directory=os.path.join(APP_DIR, "static"), html=True), name="static")

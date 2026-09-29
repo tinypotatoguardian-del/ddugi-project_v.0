@@ -833,6 +833,7 @@ const SECTIONS = [
   {type:'gate'}
 ]},
 {id:'feedback', num:'🥔', title:'감자밭', special:'feedback'},
+{id:'guestbook', num:'📝', title:'방명록', special:'guestbook'},
 {id:'export', num:'▤', title:'밖으로 심기', special:'export'},
 {id:'dashboard', num:'☰', title:'마음의 방 전경', special:'dashboard'},
 {id:'tasklist', num:'☷', title:'씨앗 목록', special:'tasklist'},
@@ -1396,8 +1397,11 @@ function renderSheet(){
   } else if(sec.special==='roadmap'){
     sheet.innerHTML = renderRoadmapSection();
   } else if(sec.special==='feedback'){
-    sheet.innerHTML = renderFeedbackSection();
+    sheet.innerHTML = renderFeedbackSection() + navFootHtml(sec);
     initFeedbackSection();
+  } else if(sec.special==='guestbook'){
+    sheet.innerHTML = renderGuestbookSection() + navFootHtml(sec);
+    initGuestbookSection();
   } else if(sec.special==='example'){
     sheet.innerHTML = renderExampleSection() + navFootHtml(sec);
   } else if(sec.special==='intro'){
@@ -2912,6 +2916,86 @@ const ROADMAP = [
   ]}
 ];
 const ROADMAP_STATUS = {plan:'계획', review:'검토 중', decide:'결정 필요', done:'완료'};
+/* ============== 방명록 (guestbook) ============== */
+let guestbookCache = [];
+const STICKY_COLORS = [
+  {bg:'#fff9c4',border:'#f9a825'},  // 노랑
+  {bg:'#f8bbd0',border:'#e91e63'},  // 핑크
+  {bg:'#c8e6c9',border:'#43a047'},  // 초록
+  {bg:'#bbdefb',border:'#1e88e5'},  // 파랑
+  {bg:'#e1bee7',border:'#8e24aa'},  // 보라
+  {bg:'#ffe0b2',border:'#ef6c00'},  // 주황
+];
+function renderGuestbookSection(){
+  return '<div class="frame" style="background:var(--paper);">'+
+    '<h2 style="text-align:center;font-size:24px;margin-bottom:4px;">📝 방명록</h2>'+
+    '<p style="text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:20px;">다녀간 흔적을 남겨주세요 👀 포스트잇으로 붙여드릴게요!</p>'+
+    '<div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:24px;">'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">'+
+        '<div style="flex:0 0 140px;"><label style="font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;">닉네임 (선택)</label>'+
+        '<input type="text" id="gbNickname" placeholder="익명" maxlength="15" style="width:100%;"></div>'+
+        '<div style="flex:1;min-width:200px;"><label style="font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;">한 마디 *</label>'+
+        '<input type="text" id="gbMessage" placeholder="여기 좋네요! / 잘 쓸게요 / 응원해요 🥔" maxlength="50" style="width:100%;"></div>'+
+        '<button type="button" id="gbSubmitBtn" style="padding:9px 18px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">붙이기 📌</button>'+
+      '</div>'+
+    '</div>'+
+    '<div id="gbGrid" style="display:flex;flex-wrap:wrap;gap:14px;min-height:200px;"></div>'+
+  '</div>';
+}
+async function initGuestbookSection(){
+  try{
+    const res = await fetch('/api/guestbook');
+    guestbookCache = res.ok ? await res.json() : [];
+  }catch(e){ guestbookCache=[]; }
+  renderGuestbookGrid();
+  const btn = document.getElementById('gbSubmitBtn');
+  if(btn) btn.onclick = async function(){
+    const nick = (document.getElementById('gbNickname')||{}).value||'';
+    const msg = (document.getElementById('gbMessage')||{}).value||'';
+    if(!msg.trim()){ alert('한 마디 적어주세요!'); return; }
+    btn.disabled=true;
+    try{
+      const res = await fetch('/api/guestbook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nickname:nick,message:msg})});
+      if(!res.ok){ const e=await res.json(); alert(e.detail||'오류'); return; }
+      document.getElementById('gbNickname').value='';
+      document.getElementById('gbMessage').value='';
+      const r2 = await fetch('/api/guestbook');
+      guestbookCache = r2.ok ? await r2.json() : guestbookCache;
+      renderGuestbookGrid();
+    }catch(e){ alert('전송 실패'); }
+    finally{ btn.disabled=false; }
+  };
+}
+function renderGuestbookGrid(){
+  const el = document.getElementById('gbGrid');
+  if(!el) return;
+  if(!guestbookCache.length){
+    el.innerHTML='<p style="color:var(--ink-soft);font-size:13px;">아직 아무도 안 왔어요. 첫 포스트잇을 붙여주세요!</p>';
+    return;
+  }
+  el.innerHTML = guestbookCache.map((g,i)=>{
+    const c = STICKY_COLORS[i % STICKY_COLORS.length];
+    const date = g.created_at ? g.created_at.slice(0,10) : '';
+    const rot = [-2,-1,0,1,2][i%5];
+    return '<div style="'+
+      'background:'+c.bg+';border-top:4px solid '+c.border+';border-radius:4px;'+
+      'padding:14px 14px 20px;width:140px;min-height:120px;'+
+      'box-shadow:2px 3px 8px rgba(0,0,0,.12);'+
+      'transform:rotate('+rot+'deg);'+
+      'display:flex;flex-direction:column;justify-content:space-between;'+
+      'word-break:break-all;transition:transform .15s;cursor:default;" '+
+      'onmouseenter="this.style.transform=\'rotate(0deg) scale(1.05)\'" '+
+      'onmouseleave="this.style.transform=\'rotate('+rot+'deg)\'"'+
+    '>'+
+      '<div style="font-size:13px;color:#333;line-height:1.5;font-weight:500;">'+esc(g.message)+'</div>'+
+      '<div style="margin-top:8px;font-size:11px;color:#666;display:flex;justify-content:space-between;">'+
+        '<span style="font-weight:600;">— '+esc(g.nickname||'익명')+'</span>'+
+        '<span style="opacity:.7;">'+date+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
 /* ============== 감자밭 (feedback) ============== */
 let feedbackCache = [];
 async function loadFeedback(admin){
@@ -2929,15 +3013,15 @@ function renderFeedbackSection(){
     '<div style="position:absolute;top:0;left:0;right:0;bottom:0;opacity:.08;font-size:80px;line-height:1.1;word-break:break-all;pointer-events:none;overflow:hidden;">🌿🌱🌾🌿🌱🌾🌿🌱🌾🌿🌱🌾🌿🌱🌾🌿🌱🌾🌿🌱🌾🌿🌱🌾</div>'+
     '<div style="position:relative;z-index:1;padding:24px 24px 0;">'+
     '<h2 style="text-align:center;font-size:28px;margin:0 0 4px;">🥔 감자밭 🥔</h2>'+
-    '<p style="text-align:center;color:#2e7d32;font-size:14px;margin:0 0 8px;">감자를 심어 의견을 남겨주세요. 자라는 감자를 클릭하면 메시지를 읽을 수 있어요.</p>'+
-    '<div style="text-align:center;font-size:12px;color:#4caf50;margin-bottom:16px;">~~ 🌿 여기는 ddugi의 감자밭입니다 🌿 ~~</div>'+
+    '<p style="text-align:center;color:#2e7d32;font-size:14px;margin:0 0 8px;">쓰다가 불편한 거, 있으면 좋겠는 기능, 버그, 뭐든 심어두세요.</p>'+
+    '<div style="text-align:center;font-size:12px;color:#4caf50;margin-bottom:16px;">심어진 감자는 확인하고 반영 여부를 알려드려요 🌿</div>'+
     '</div>'+
     '<div id="fbPotatoGrid" style="position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:flex-end;min-height:300px;padding:24px 24px 40px;"></div>'+
     '<div style="position:relative;z-index:1;padding:0 24px 24px;">'+
     '<div style="padding:20px;background:rgba(255,255,255,.5);border:2px solid #81c784;border-radius:12px;">'+
       '<h3 style="margin:0 0 12px;font-size:16px;color:#2e7d32;text-align:center;">🌱 감자 심기 🌱</h3>'+
       '<div class="field"><label style="color:#2e7d32;">닉네임 (선택)</label><input type="text" id="fbNickname" placeholder="익명 감자" maxlength="20" style="max-width:200px;"></div>'+
-      '<div class="field"><label style="color:#2e7d32;">메시지 *</label><textarea id="fbMessage" rows="3" placeholder="하고 싶은 말, 제안, 버그 제보 등 자유롭게 적어주세요." style="width:100%;"></textarea></div>'+
+      '<div class="field"><label style="color:#2e7d32;">메시지 *</label><textarea id="fbMessage" rows="3" placeholder="예: 이 버튼이 안 눌려요 / 이런 기능 있으면 좋겠어요 / 잘 쓰고 있어요 👍" style="width:100%;"></textarea></div>'+
       '<button type="button" id="fbSubmitBtn" class="addbtn" style="margin-top:8px;width:100%;background:#66bb6a;color:#fff;border:none;padding:10px;border-radius:8px;font-size:15px;cursor:pointer;">감자 심기 🌱</button>'+
     '</div>'+
     '</div>'+
