@@ -99,8 +99,17 @@
   .sec-status{ margin-left:auto; font-size:11px; font-weight:600; white-space:nowrap; padding:1px 6px; border-radius:var(--radius); }
   .sec-status.st-partial{ color:var(--blueprint-2); background:var(--blueprint-soft); }
   .sec-status.st-done{ color:var(--ok); background:var(--ok-soft); }
-  .navgroup{ padding:14px 20px 4px; font-size:12.5px; font-weight:700; color:var(--blueprint); letter-spacing:.01em; }
+  .navgroup{
+    padding:12px 20px 4px;
+    font-size:12.5px; font-weight:700; color:var(--blueprint); letter-spacing:.01em;
+    cursor:pointer; display:flex; align-items:center; gap:6px; user-select:none;
+  }
+  .navgroup:hover{ color:var(--blueprint-2); }
   .navgroup:first-child{ padding-top:6px; }
+  .navgroup .nav-arrow{ font-size:10px; margin-left:auto; transition:transform .2s; }
+  .navgroup.collapsed .nav-arrow{ transform:rotate(-90deg); }
+  .navgroup-items{ overflow:hidden; transition:max-height .25s ease; }
+  .navgroup-items.collapsed{ max-height:0 !important; }
   .navbtn.sub{ padding-left:30px; }
   .navbtn.dim{ opacity:.45; }
   .navbtn.dim:hover{ opacity:.7; }
@@ -1963,6 +1972,29 @@ function navFootHtml(sec){
   '</div>';
 }
 
+function toggleNavGroup(groupId){
+  if(!window._navCollapsed) window._navCollapsed = new Set();
+  const el = document.getElementById('navgroup-'+groupId);
+  const headers = document.querySelectorAll('.navgroup');
+  let header = null;
+  headers.forEach(h => { if(h.onclick && h.getAttribute('onclick') && h.getAttribute('onclick').includes(groupId)) header = h; });
+
+  if(window._navCollapsed.has(groupId)){
+    window._navCollapsed.delete(groupId);
+    if(el){ el.classList.remove('collapsed'); el.style.maxHeight = (el.scrollHeight + 100)+'px'; }
+    // header 찾기
+    document.querySelectorAll('.navgroup').forEach(h => {
+      if(h.textContent.trim() && h.onclick){ const oc = h.getAttribute('onclick')||''; if(oc.includes("'"+groupId+"'")) h.classList.remove('collapsed'); }
+    });
+  } else {
+    window._navCollapsed.add(groupId);
+    if(el){ el.classList.add('collapsed'); el.style.maxHeight = '0'; }
+    document.querySelectorAll('.navgroup').forEach(h => {
+      const oc = h.getAttribute('onclick')||''; if(oc.includes("'"+groupId+"'")) h.classList.add('collapsed');
+    });
+  }
+}
+
 function updateRulerAndNav(){
   const relevant = SECTIONS.filter(s=>!s.special && !s.disabled);
   const total = relevant.length;
@@ -1973,39 +2005,86 @@ function updateRulerAndNav(){
 
   const nav = document.getElementById('navlist');
   let navHtml = '';
-  // 그룹 전체가 미사용(disabled)이면 항목마다 회색 줄을 늘어놓지 않고, 그룹당 한 줄로 접어서 보여줌
-  let skipDisabledGroup = false;
-  navHtml += SECTIONS.filter(s=>s.special!=='dashboard' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy' && s.special!=='visits').map(s=>{
+
+  // 그룹별로 섹션을 묶어서 접기/펼치기 처리
+  // NAV_COLLAPSED: 기본으로 접혀있는 그룹 ID 목록
+  const NAV_COLLAPSED_DEFAULT = new Set(['s16', 's12']); // B, C 그룹은 기본 접힘
+  if(!window._navCollapsed) window._navCollapsed = new Set(NAV_COLLAPSED_DEFAULT);
+
+  let currentGroupId = null;
+  let currentGroupItems = [];
+  let pendingSections = [];
+
+  // 상단 고정 메뉴 (그룹 없는 것들) 먼저
+  const topSections = SECTIONS.filter(s =>
+    !s.special && !s.disabled ? false :
+    (s.special && !NAV_GROUPS[s.id] && s.special!=='dashboard' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy' && s.special!=='visits')
+  );
+
+  function renderNavItem(s){
     const active = s.id===state.cur;
     const filled = !s.special && sectionFilled(s);
-    if(s.disabled && !isMaster){
+    if(s.disabled && !isAdmin){
       if(NAV_GROUPS[s.id]){
-        skipDisabledGroup = true;
         const m = NAV_GROUPS[s.id].match(/^([A-Z])\.\s*(.+)$/);
         return '<li><button type="button" class="navbtn sub" disabled>'+
           '<span class="num">'+esc(m?m[1]:'')+'</span>'+esc(m?m[2]:NAV_GROUPS[s.id])+'<span class="ex-note" style="margin-left:auto">사용 안 함</span></button></li>';
       }
-      if(skipDisabledGroup) return '';
       return '<li><button type="button" class="navbtn sub" disabled>'+
         '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="ex-note" style="margin-left:auto">'+esc(s.disabledNote||'준비 중')+'</span></button></li>';
     }
-    skipDisabledGroup = false;
     const dim = isSectionLocked(s);
     const st = sectionStatus(s);
     const stMark = st==='done' ? '<span class="sec-status st-done">완료</span>' : st==='partial' ? '<span class="sec-status st-partial">작성중</span>' : '<span class="dot"></span>';
-    return (NAV_GROUPS[s.id] ? '<li class="navgroup">'+esc(NAV_GROUPS[s.id])+'</li>' : '')+
-      '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
+    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook';
+    return '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(isTop?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
       '<span class="num">'+s.num+'</span>'+esc(s.title)+stMark+'</button></li>'+
       (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
-  }).join('');
+  }
+
+  // 그룹 구조로 HTML 생성
+  let groups = []; // [{groupId, groupLabel, items:[s,...]}]
+  let noGroupItems = [];
+  let curGroup = null;
+
+  SECTIONS.filter(s=>s.special!=='dashboard'&&s.special!=='tasklist'&&s.special!=='accounts'&&s.special!=='taxonomy'&&s.special!=='visits').forEach(s=>{
+    if(NAV_GROUPS[s.id]){
+      // 새 그룹 시작
+      curGroup = {groupId:s.id, groupLabel:NAV_GROUPS[s.id], items:[s]};
+      groups.push(curGroup);
+    } else if(curGroup){
+      curGroup.items.push(s);
+    } else {
+      noGroupItems.push(s);
+    }
+  });
+
+  // 그룹 없는 상단 섹션 먼저
+  navHtml += noGroupItems.map(renderNavItem).join('');
+
+  // 그룹별 렌더
+  groups.forEach(g => {
+    const collapsed = window._navCollapsed.has(g.groupId);
+    const itemsHtml = g.items.map(renderNavItem).join('');
+    // 그룹 헤더 높이 계산 (펼칠 때 max-height 충분히)
+    const estHeight = g.items.length * 40 + 100;
+    navHtml +=
+      '<li class="navgroup'+(collapsed?' collapsed':'')+'" onclick="toggleNavGroup(\''+g.groupId+'\')">'+
+        esc(g.groupLabel)+'<span class="nav-arrow">▾</span>'+
+      '</li>'+
+      '<div class="navgroup-items'+(collapsed?' collapsed':'')+'" id="navgroup-'+g.groupId+'" style="max-height:'+(collapsed?'0':estHeight+'px')+'">'+
+        '<ul class="navlist">'+itemsHtml+'</ul>'+
+      '</div>';
+  });
+
   if(isAdmin){
     const adminBtn = s => '<li><button type="button" class="navbtn sub'+(state.cur===s.id?' active':'')+'" data-action="goto" data-target="'+s.id+'">'+
         '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="dot"></span></button></li>';
-    navHtml += '<hr class="navdivider"><li class="navgroup">관리자 · 실무</li>'+
+    navHtml += '<hr class="navdivider"><li class="navgroup" style="cursor:default;">관리자 · 실무</li>'+
       adminBtn(SECTIONS.find(s=>s.id==='tasklist')) + adminBtn(SECTIONS.find(s=>s.id==='dashboard')) + adminBtn(SECTIONS.find(s=>s.id==='taxonomy')) +
       '<li><button type="button" class="navbtn sub" data-admin-pw><span class="num">⚿</span>비밀번호 변경</button></li>';
     if(isMaster){
-      navHtml += '<li class="navgroup">마스터</li>'+ adminBtn(SECTIONS.find(s=>s.id==='accounts')) + adminBtn(SECTIONS.find(s=>s.id==='visits'));
+      navHtml += '<li class="navgroup" style="cursor:default;">마스터</li>'+ adminBtn(SECTIONS.find(s=>s.id==='accounts')) + adminBtn(SECTIONS.find(s=>s.id==='visits'));
     }
   }
   nav.innerHTML = navHtml;
