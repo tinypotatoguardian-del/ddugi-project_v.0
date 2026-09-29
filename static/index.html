@@ -443,6 +443,12 @@
       <div id="adminSlot"></div>
       <button id="resetBtn" type="button">전체 초기화</button>
       <button type="button" data-action="goto" data-target="roadmap" id="roadmapBtn">밭 넓히기</button>
+      <div id="visitCounter" style="margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--line-soft);display:flex;gap:12px;align-items:center;opacity:.55;transition:opacity .2s;" onmouseenter="this.style.opacity='.95'" onmouseleave="this.style.opacity='.55'">
+        <span style="font-size:10px;color:var(--ink-soft);">👣</span>
+        <span style="font-size:11px;color:var(--ink-soft);">오늘 <b id="vcToday" style="color:var(--ink);">—</b></span>
+        <span style="font-size:10px;color:var(--placeholder);">·</span>
+        <span style="font-size:11px;color:var(--ink-soft);">전체 <b id="vcTotal" style="color:var(--ink);">—</b></span>
+      </div>
     </div>
   </nav>
 
@@ -4795,6 +4801,20 @@ renderAdminSlot();
 renderSheet();
 loadRemote().then(renderSheet);
 loadTaxonomy();
+
+// 방문자 카운터 (공개 API)
+(async function loadVisitCounter(){
+  try{
+    const res = await fetch('/api/visits/public');
+    if(!res.ok) return;
+    const d = await res.json();
+    const fmtNum = n => n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n);
+    const t = document.getElementById('vcToday');
+    const v = document.getElementById('vcTotal');
+    if(t) t.textContent = fmtNum(d.today);
+    if(v) v.textContent = fmtNum(d.total);
+  }catch(e){}
+})();
 
 // 맨 위로: 본문 스크롤이 길어지면 표시
 (function(){

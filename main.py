@@ -680,6 +680,18 @@ def update_feedback(fb_id: int, body: FeedbackUpdateIn, x_emp_id: str = Header(d
 # ── 방문 기록 (visits) ──────────────────────────────────────────────
 
 
+@app.get("/api/visits/public")
+def visit_stats_public():
+    """인증 없이 오늘·전체 방문 수만 반환 (UI 카운터용)"""
+    conn = get_db()
+    today = datetime.datetime.now(KST).strftime("%Y-%m-%d")
+    total = db_fetchone(conn, "SELECT COUNT(*) AS cnt FROM visits")
+    today_row = db_fetchone(conn, "SELECT COUNT(*) AS cnt FROM visits WHERE visited_at >= ?", (today,))
+    return {
+        "today": today_row["cnt"] if today_row else 0,
+        "total": total["cnt"] if total else 0,
+    }
+
 @app.get("/api/visits/stats")
 def visit_stats(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
     require_role(x_emp_id, x_emp_code, {"master"})
