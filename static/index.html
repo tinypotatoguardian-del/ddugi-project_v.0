@@ -686,6 +686,7 @@ const LP_PLAN_FIELD = {type:'lptable', store:'lp_plan', label:'이번 씨앗에�
 const SECTIONS = [
 /* ---------- 상단 고정 메뉴 ---------- */
 {id:'curriculum', num:'📚', title:'AI 레벨 커리큘럼', special:'curriculum'},
+{id:'ai-tools', num:'🗺️', title:'AI 도구 가이드', special:'aitools'},
 {id:'mydash', num:'☆', title:'나의 마음의 방', special:'mydash'},
 {id:'intro', num:'', title:'마음의 방 입구', special:'intro'},
 {id:'example', num:'EX', title:'먼저 온 포테이토', special:'example'},
@@ -1474,6 +1475,8 @@ function renderSheet(){
     sheet.innerHTML = renderIntroSection() + navFootHtml(sec);
   } else if(sec.special==='curriculum'){
     sheet.innerHTML = renderCurriculumSection() + navFootHtml(sec);
+  } else if(sec.special==='aitools'){
+    sheet.innerHTML = renderAIToolsSection() + navFootHtml(sec);
   } else if(sec.special==='promptkit'){
     sheet.innerHTML = renderPromptKitSection() + navFootHtml(sec);
   } else if(sec.special==='discover'){
@@ -3196,6 +3199,491 @@ function DEFAULT_INTRO_HTML(){
 
   '<ul class="intro-principles"><li>문제를 먼저 정리한다</li><li>간단한 방법부터 시도한다</li><li>AI가 정말 필요할 때 쓴다</li><li>결과는 내가 직접 확인한다</li></ul>';
 }
+
+// ============================================================
+// AI 도구 가이드
+// ============================================================
+
+// ============================================================
+// AI 도구 가이드 섹션
+// ============================================================
+
+// ── 1. 데이터 ──────────────────────────────────────────────
+const AI_TOOLS_DATA = {
+  // 생성형 AI란?
+  intro: {
+    title: '생성형 AI가 뭔가요?',
+    body: '생성형 AI(Generative AI)는 텍스트·이미지·음악 등을 새로 만들어내는 AI예요.\n\n사람이 말을 걸면 → AI가 글을 읽고 → 가장 자연스러운 대답을 만들어냅니다.\n마치 엄청난 양의 책을 읽은 사람이 질문에 답해주는 것과 비슷해요.\n\n단, AI는 학습한 데이터 기반으로 답하기 때문에 틀릴 수 있고, "안다고 생각하는 것"을 자신있게 틀리게 말하기도 해요. 이걸 환각(Hallucination)이라고 해요.',
+    terms: [
+      { word: 'LLM (대규모 언어 모델)', easy: '엄청 많은 글을 읽고 학습한 AI 두뇌', detail: 'Large Language Model. 수십억 개의 텍스트를 학습한 AI 모델. ChatGPT·Claude·Gemini 모두 LLM 기반이에요.' },
+      { word: '생성형 AI', easy: '새로운 것을 만들어내는 AI', detail: '기존 데이터를 바탕으로 텍스트·이미지·음악·코드 등을 새롭게 만드는 AI. 단순 검색과 달리 "창작"을 해요.' },
+      { word: '환각 (Hallucination)', easy: 'AI가 없는 걸 있다고 만들어내는 것', detail: 'AI가 모르는 내용을 확신하며 틀리게 말하는 현상. 유명인 이름·날짜·사실 등에서 자주 발생. 항상 중요한 내용은 직접 확인하세요.' },
+      { word: '프롬프트', easy: 'AI에게 하는 말·질문·명령', detail: 'AI에게 주는 입력 텍스트. 어떻게 물어보느냐에 따라 결과가 크게 달라져요.' },
+      { word: '모델', easy: 'AI의 두뇌 버전', detail: '같은 서비스라도 GPT-4o, GPT-4 mini처럼 성능·가격이 다른 버전이 있어요. 최신 모델이 보통 더 똑똑해요.' },
+      { word: '멀티모달', easy: '글+이미지+음성 다 처리하는 것', detail: '텍스트뿐 아니라 이미지·음성·영상을 함께 이해하고 생성하는 AI 기능.' },
+      { word: '토큰', easy: 'AI가 읽는 글자 단위', detail: 'AI는 단어를 쪼개서 처리해요. 대략 한국어 1글자 ≈ 1~2토큰. 토큰 수가 많으면 더 긴 내용을 처리할 수 있어요.' },
+      { word: '컨텍스트 윈도우', easy: 'AI가 한 번에 기억할 수 있는 양', detail: '대화에서 AI가 한 번에 참고할 수 있는 텍스트 길이. 길수록 긴 문서 처리에 유리해요.' },
+    ]
+  },
+
+  // 회사 → 제품 → 모델
+  companies: [
+    {
+      name: 'OpenAI', country: '🇺🇸 미국', founded: 2015,
+      summary: 'ChatGPT로 AI 시대를 연 선두 주자. 가장 널리 쓰이는 AI.',
+      color: '#10a37f',
+      products: [
+        {
+          name: 'ChatGPT', url: 'https://chat.openai.com', type: '대화형 AI',
+          free: true, paid: '플러스 $20/월',
+          best: '일상 대화·글쓰기·공부·코딩',
+          weak: '최신 정보 없을 수 있음 (무료 기준)',
+          models: [
+            { name: 'GPT-4o', desc: '현재 가장 강력. 글·이미지·음성 다 처리', tag: '최신' },
+            { name: 'GPT-4o mini', desc: '빠르고 가벼운 버전. 무료 사용자용', tag: '무료' },
+            { name: 'o3 / o4-mini', desc: '수학·코딩·논리 추론에 특화된 모델', tag: '추론' },
+          ]
+        },
+        {
+          name: 'Sora', url: 'https://sora.com', type: '영상 생성 AI',
+          free: false, paid: '플러스 이상',
+          best: '텍스트로 영상 만들기',
+          weak: '무료 사용 불가',
+          models: [{ name: 'Sora 2', desc: '텍스트 → 영상 생성', tag: '영상' }]
+        },
+        {
+          name: 'DALL-E', url: 'https://openai.com/dall-e', type: '이미지 생성 AI',
+          free: false, paid: 'ChatGPT Plus 포함',
+          best: '텍스트로 이미지 만들기',
+          weak: 'ChatGPT Plus 필요',
+          models: [{ name: 'DALL-E 3', desc: '텍스트 → 고품질 이미지', tag: '이미지' }]
+        },
+      ]
+    },
+    {
+      name: 'Anthropic', country: '🇺🇸 미국', founded: 2021,
+      summary: '안전한 AI를 목표로 만든 회사. 글쓰기·분석에 강한 Claude.',
+      color: '#D4904A',
+      products: [
+        {
+          name: 'Claude', url: 'https://claude.ai', type: '대화형 AI',
+          free: true, paid: 'Pro $20/월',
+          best: '긴 문서 분석·글쓰기·코딩',
+          weak: '이미지 생성 없음',
+          models: [
+            { name: 'Claude Opus 4', desc: '최고 성능. 복잡한 분석·추론에 강함', tag: '최신' },
+            { name: 'Claude Sonnet 4', desc: '속도와 성능 균형. 일반 사용에 적합', tag: '추천' },
+            { name: 'Claude Haiku', desc: '빠르고 가벼움. 간단한 작업용', tag: '무료' },
+          ]
+        },
+      ]
+    },
+    {
+      name: 'Google', country: '🇺🇸 미국', founded: 1998,
+      summary: '검색+AI 통합의 강자. 구글 서비스와 연동이 가장 잘 됨.',
+      color: '#4285F4',
+      products: [
+        {
+          name: 'Gemini', url: 'https://gemini.google.com', type: '대화형 AI',
+          free: true, paid: 'Advanced $20/월',
+          best: '구글 문서·검색 연동·긴 문서·영상',
+          weak: '창의적 글쓰기는 Claude보다 약간 부족',
+          models: [
+            { name: 'Gemini 2.0 Ultra', desc: '최고 성능. 긴 문서·이미지·영상 모두 처리', tag: '최신' },
+            { name: 'Gemini 2.0 Flash', desc: '빠르고 무료로 쓸 수 있는 버전', tag: '무료' },
+          ]
+        },
+        {
+          name: 'NotebookLM', url: 'https://notebooklm.google.com', type: '리서치·요약 AI',
+          free: true, paid: '-',
+          best: '논문·자료 업로드 후 질문, 팟캐스트 생성',
+          weak: '인터넷 검색은 못 함',
+          models: [{ name: 'Gemini 기반', desc: '내 문서를 학습시켜서 질문할 수 있음', tag: '추천' }]
+        },
+      ]
+    },
+    {
+      name: 'Microsoft', country: '🇺🇸 미국', founded: 1975,
+      summary: 'OpenAI에 투자해서 GPT 기반 AI를 윈도우·오피스에 넣음.',
+      color: '#0078D4',
+      products: [
+        {
+          name: 'Copilot', url: 'https://copilot.microsoft.com', type: '대화형 AI',
+          free: true, paid: 'Pro $20/월',
+          best: 'Word·Excel·PowerPoint 안에서 AI 활용',
+          weak: '독립적 사용보다 오피스 연동이 주목적',
+          models: [{ name: 'GPT-4o 기반', desc: 'OpenAI GPT-4o를 마이크로소프트 제품에 탑재', tag: '오피스연동' }]
+        },
+      ]
+    },
+    {
+      name: 'xAI (Elon Musk)', country: '🇺🇸 미국', founded: 2023,
+      summary: '일론 머스크가 만든 AI. X(구 트위터) 실시간 정보에 강함.',
+      color: '#000000',
+      products: [
+        {
+          name: 'Grok', url: 'https://x.ai', type: '대화형 AI',
+          free: true, paid: 'X Premium',
+          best: 'X(트위터) 실시간 정보·트렌드 검색',
+          weak: '한국어 성능은 상대적으로 약함',
+          models: [
+            { name: 'Grok 3', desc: '최신 버전. 실시간 웹 검색 포함', tag: '최신' },
+          ]
+        },
+      ]
+    },
+    {
+      name: 'Meta', country: '🇺🇸 미국', founded: 2004,
+      summary: '페이스북 모회사. AI 모델을 오픈소스로 공개해서 누구나 쓸 수 있게 함.',
+      color: '#0668E1',
+      products: [
+        {
+          name: 'Meta AI / Llama', url: 'https://ai.meta.com', type: '오픈소스 AI',
+          free: true, paid: '-',
+          best: '개발자가 직접 모델을 가져다 쓸 수 있음',
+          weak: '일반인이 직접 쓰기보단 개발자용',
+          models: [
+            { name: 'Llama 4', desc: '오픈소스 대형 언어 모델. 개발자가 무료로 사용 가능', tag: '오픈소스' },
+          ]
+        },
+      ]
+    },
+    {
+      name: 'Perplexity AI', country: '🇺🇸 미국', founded: 2022,
+      summary: '"AI 검색 엔진". 답변에 출처를 같이 보여줘서 신뢰도가 높음.',
+      color: '#20808D',
+      products: [
+        {
+          name: 'Perplexity', url: 'https://www.perplexity.ai', type: 'AI 검색 엔진',
+          free: true, paid: 'Pro $20/월',
+          best: '최신 정보 검색·출처 확인·리서치',
+          weak: '창작보다는 검색에 특화',
+          models: [{ name: 'Sonar', desc: '웹 검색 + AI 답변. 출처 링크 자동 포함', tag: '검색' }]
+        },
+      ]
+    },
+    {
+      name: 'DeepSeek', country: '🇨🇳 중국', founded: 2023,
+      summary: '중국 AI 스타트업. 저렴한 비용으로 GPT급 성능을 구현해 충격을 줌.',
+      color: '#4B6BF5',
+      products: [
+        {
+          name: 'DeepSeek', url: 'https://www.deepseek.com', type: '대화형 AI',
+          free: true, paid: '-',
+          best: '수학·코딩·추론. 무료로 고성능',
+          weak: '중국 서버 저장 → 개인정보 주의',
+          models: [
+            { name: 'DeepSeek-V3', desc: '일반 대화·코딩에 강한 최신 모델', tag: '최신' },
+            { name: 'DeepSeek-R1', desc: '수학·논리 추론 전용 모델', tag: '추론' },
+          ]
+        },
+      ]
+    },
+    {
+      name: 'Naver', country: '🇰🇷 한국', founded: 1999,
+      summary: '한국 대표 IT 기업. 한국어에 가장 최적화된 AI.',
+      color: '#03C75A',
+      products: [
+        {
+          name: 'HyperCLOVA X / CLOVA X', url: 'https://clova-x.naver.com', type: '대화형 AI',
+          free: true, paid: '-',
+          best: '한국어 특화·네이버 서비스 연동',
+          weak: '영어·글로벌 정보는 ChatGPT보다 약함',
+          models: [{ name: 'HCX-003', desc: '네이버의 최신 한국어 특화 LLM', tag: '한국어' }]
+        },
+      ]
+    },
+    {
+      name: 'Kakao', country: '🇰🇷 한국', founded: 2010,
+      summary: '카카오톡 만든 회사. 일상 서비스에 AI를 통합 중.',
+      color: '#FFCD00',
+      products: [
+        {
+          name: '카나나', url: 'https://kakao.com/ai', type: '대화형 AI (출시 예정)',
+          free: false, paid: '미정',
+          best: '카카오톡·카카오맵 등 서비스 연동 예정',
+          weak: '아직 서비스 준비 중',
+          models: [{ name: 'Kanana', desc: '카카오의 독자 LLM. 출시 후 카톡 내 활용 예정', tag: '준비중' }]
+        },
+      ]
+    },
+  ],
+
+  // 도구 선택 기준 비교표
+  comparison: [
+    { situation: '자소서·글쓰기', tools: ['ChatGPT', 'Claude'], reason: 'ChatGPT는 초안 빠르게, Claude는 퀄리티 높게' },
+    { situation: '공부·개념 이해', tools: ['ChatGPT', 'Gemini'], reason: '쉬운 설명 잘 해줌. Gemini는 유튜브 영상도 분석 가능' },
+    { situation: '최신 정보·뉴스', tools: ['Perplexity', 'Gemini', 'Grok'], reason: '실시간 웹 검색 + 출처 제공' },
+    { situation: '긴 문서 분석·논문', tools: ['NotebookLM', 'Claude', 'Gemini'], reason: '긴 문서 처리 능력 우수' },
+    { situation: '코딩·개발', tools: ['Claude', 'ChatGPT', 'DeepSeek'], reason: 'Claude가 코드 품질 높음. DeepSeek는 무료로 고성능' },
+    { situation: '이미지 만들기', tools: ['Gemini', 'DALL-E'], reason: 'Gemini는 무료 포함. DALL-E는 ChatGPT Plus 필요' },
+    { situation: '한국어 특화', tools: ['CLOVA X', 'ChatGPT', 'Claude'], reason: 'CLOVA X는 한국어 뉘앙스 강함' },
+    { situation: '수학·논리 문제', tools: ['DeepSeek-R1', 'GPT o3', 'Claude'], reason: '추론 특화 모델들' },
+  ],
+
+  // 연령/상황별 질문 카테고리
+  qCategories: {
+    elementary: {
+      label: '초등학생',
+      icon: '🎒',
+      allowed: [
+        { cat: '숙제·공부', icon: '📚', examples: ['이 개념 쉽게 설명해줘', '수학 문제 풀이 과정 알려줘', '독서 감상문 어떻게 써?'] },
+        { cat: '호기심·탐구', icon: '🔍', examples: ['공룡은 왜 멸종했어?', '무지개는 왜 생겨?', '우주는 얼마나 커?'] },
+        { cat: '창작·상상', icon: '🎨', examples: ['재밌는 이야기 만들어줘', '내 캐릭터 이름 지어줘', '시 써줘'] },
+      ],
+      blocked: [
+        { cat: '감정·인간관계 고민', msg: '선생님, 부모님, 상담 선생님과 이야기해요 💛' },
+        { cat: '진로·취업', msg: '아직 몰라도 괜찮아요! 지금은 좋아하는 게 뭔지 탐색하는 시간이에요 🌱' },
+        { cat: '뉴스·정치·사회', msg: '어른이 같이 읽어주는 게 좋아요. 부모님께 물어봐요!' },
+      ]
+    },
+    middle_high: {
+      label: '중고등학생',
+      icon: '📚',
+      allowed: [
+        { cat: '학습·수행평가', icon: '📝', examples: ['수행평가 주제 추천해줘', '논술 개요 잡아줘', '영어 에세이 피드백 해줘'] },
+        { cat: '진로 탐색', icon: '🧭', examples: ['이 직업은 어떤 일 해?', '내 성향에 맞는 직업 추천해줘', '어떤 학과를 가야 할지 모르겠어'] },
+        { cat: '디지털 리터러시', icon: '💻', examples: ['AI가 만든 글인지 어떻게 구별해?', '개인정보 어떻게 보호해?', '가짜뉴스 판별하는 법'] },
+        { cat: '창작·프로젝트', icon: '🎯', examples: ['발표 PPT 구성 도와줘', '동아리 기획서 써줘', '영상 스크립트 써줘'] },
+      ],
+      blocked: [
+        { cat: '감정·연애·인간관계 고민', msg: 'AI보다 믿을 수 있는 어른이나 친구와 이야기하는 게 더 좋아요. 학교 상담 선생님도 도움이 돼요 💙' },
+        { cat: '의학·정신건강 상담', msg: '의사나 전문 상담사에게 물어봐야 해요. AI는 의료 판단을 해줄 수 없어요.' },
+      ]
+    },
+    university: {
+      label: '대학생·취준생',
+      icon: '💼',
+      allowed: [
+        { cat: '자소서·취준', icon: '📄', examples: ['자소서 피드백 해줘', '이 직무 채용공고 분석해줘', '면접 예상 질문 뽑아줘', '경험을 자소서로 정리해줘'] },
+        { cat: '학업·리서치', icon: '🔬', examples: ['이 논문 요약해줘', '참고문헌 형식 맞춰줘', '발표 자료 구성 도와줘'] },
+        { cat: 'AI 활용·자동화', icon: '⚙️', examples: ['ChatGPT를 공부에 어떻게 활용해?', '반복 작업 자동화 방법', '프롬프트 잘 쓰는 법'] },
+        { cat: '진로·커리어', icon: '🧭', examples: ['이 직무가 AI로 대체될까?', 'AI 시대에 살아남는 역량이 뭐야?', 'AX 기획자가 되려면?'] },
+        { cat: '정보 검색·분석', icon: '📊', examples: ['이 회사 어떤 회사야?', '업계 트렌드 알려줘', '경쟁사 비교 정리해줘'] },
+      ],
+      blocked: [
+        { cat: '정서적 위기·자해·극단적 감정', msg: '도움이 필요하면 자살예방상담전화 1393 또는 정신건강위기상담전화 1577-0199로 연락하세요. AI는 이런 상황을 다룰 수 없어요 ❤️' },
+        { cat: '의료·법률 최종 판단', msg: 'AI는 참고용이에요. 최종 판단은 의사·변호사 등 전문가에게 받아야 해요.' },
+      ]
+    },
+    adult: {
+      label: '직장인·중년',
+      icon: '🏢',
+      allowed: [
+        { cat: '업무 보조', icon: '💼', examples: ['보고서 초안 잡아줘', '이메일 다듬어줘', '회의록 정리해줘', '엑셀 수식 알려줘'] },
+        { cat: '정보 검색·학습', icon: '📖', examples: ['이 기술 쉽게 설명해줘', '요즘 AI 트렌드가 뭐야?', '이 뉴스 요약해줘'] },
+        { cat: '자녀 교육', icon: '👨‍👧', examples: ['초등학생한테 AI 어떻게 설명해?', '아이 숙제 도와주는 법', 'AI 사용 교육 어떻게 해?'] },
+        { cat: '생활·취미', icon: '🌿', examples: ['여행 계획 짜줘', '레시피 추천해줘', '운동 루틴 만들어줘'] },
+      ],
+      blocked: [
+        { cat: '의료·법률·금융 최종 판단', msg: 'AI는 정보 제공만 해요. 진단·법적 조언·투자 결정은 전문가에게 꼭 받으세요.' },
+        { cat: '정서적 위기·심리 상담', msg: '힘드신 분은 정신건강위기상담전화 1577-0199를 이용하세요. AI는 상담사가 아니에요 ❤️' },
+      ]
+    }
+  }
+};
+
+// ── 2. 렌더 함수 ──────────────────────────────────────────
+function renderAIToolsSection(){
+  window._aiToolsTab = window._aiToolsTab || 'intro';
+
+  const tabs = [
+    { id:'intro',      label:'🧠 생성형 AI란?',    desc:'개념·용어 정리' },
+    { id:'companies',  label:'🏢 도구 지도',        desc:'회사·제품·모델' },
+    { id:'compare',    label:'📊 뭘 써야 해?',      desc:'상황별 선택 가이드' },
+    { id:'questions',  label:'❓ 이런 건 물어봐도 돼?', desc:'연령별 질문 카테고리' },
+  ];
+
+  function tabHtml(){
+    return '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">' +
+      tabs.map(t => {
+        const a = window._aiToolsTab === t.id;
+        return '<button type="button" onclick="aiToolsTab(\''+t.id+'\')" style="padding:9px 14px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
+          t.label+'<br><span style="font-size:11px;opacity:.65;">'+t.desc+'</span>'+
+        '</button>';
+      }).join('') + '</div>';
+  }
+
+  function bodyHtml(){
+    const tab = window._aiToolsTab || 'intro';
+    if(tab === 'intro') return renderAIIntro();
+    if(tab === 'companies') return renderAICompanies();
+    if(tab === 'compare') return renderAICompare();
+    if(tab === 'questions') return renderAIQuestions();
+    return '';
+  }
+
+  window.aiToolsTab = function(id){
+    window._aiToolsTab = id;
+    const el = document.getElementById('aiToolsBody');
+    if(el) el.innerHTML = bodyHtml();
+  };
+
+  return '<div class="frame">'+
+    '<h2>🗺️ AI 도구 가이드</h2>'+
+    '<div class="sub">생성형 AI가 뭔지, 어떤 도구가 있는지, 뭘 물어봐도 되는지</div>'+
+    '<p style="font-size:13px;color:var(--ink-soft);margin:8px 0 20px;">AI 도구는 매달 업데이트돼요. 여기 내용은 2026년 기준이에요.</p>'+
+    tabHtml()+
+    '<div id="aiToolsBody">'+bodyHtml()+'</div>'+
+  '</div>';
+}
+
+// ── 생성형 AI란? ──
+function renderAIIntro(){
+  const d = AI_TOOLS_DATA.intro;
+  return '<div>'+
+    '<div style="background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:12px;padding:18px 20px;margin-bottom:20px;">'+
+      '<h3 style="margin:0 0 10px;font-size:15px;color:var(--blueprint);">'+d.title+'</h3>'+
+      '<p style="font-size:13px;color:var(--ink);line-height:1.8;white-space:pre-line;margin:0;">'+d.body+'</p>'+
+    '</div>'+
+    '<h3 style="font-size:14px;font-weight:700;margin:0 0 12px;">📖 용어 사전</h3>'+
+    '<div style="display:flex;flex-direction:column;gap:8px;">'+
+      d.terms.map(t =>
+        '<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;">'+
+          '<div style="padding:12px 16px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">'+
+            '<div style="flex:1;">'+
+              '<div style="font-size:13px;font-weight:700;color:var(--ink);">'+t.word+'</div>'+
+              '<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">= '+t.easy+'</div>'+
+            '</div>'+
+            '<span style="font-size:11px;color:var(--blueprint);padding:2px 8px;border-radius:6px;border:1px solid var(--blueprint-2);white-space:nowrap;">자세히 ▾</span>'+
+          '</div>'+
+          '<div style="display:none;padding:0 16px 12px;font-size:12px;color:var(--ink-soft);line-height:1.7;border-top:1px solid var(--line-soft);">'+
+            '<div style="padding-top:10px;">'+t.detail+'</div>'+
+          '</div>'+
+        '</div>'
+      ).join('')+
+    '</div>'+
+  '</div>';
+}
+
+// ── 도구 지도 ──
+function renderAICompanies(){
+  const d = AI_TOOLS_DATA;
+  return '<div style="display:flex;flex-direction:column;gap:16px;">'+
+    d.companies.map(co =>
+      '<div style="border:2px solid var(--line);border-radius:12px;overflow:hidden;">'+
+        '<div style="padding:14px 18px;background:var(--panel);display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">'+
+          '<div style="width:36px;height:36px;border-radius:8px;background:'+co.color+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">'+co.name[0]+'</div>'+
+          '<div style="flex:1;">'+
+            '<div style="font-size:14px;font-weight:700;color:var(--ink);">'+co.name+' <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">'+co.country+'</span></div>'+
+            '<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">'+co.summary+'</div>'+
+          '</div>'+
+          '<span style="font-size:12px;color:var(--blueprint);white-space:nowrap;">제품 보기 ▾</span>'+
+        '</div>'+
+        '<div style="display:none;padding:12px 18px;display:flex;flex-direction:column;gap:10px;">'+
+          co.products.map(p =>
+            '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:10px;padding:12px 14px;">'+
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'+
+                '<span style="font-size:14px;font-weight:700;color:var(--ink);">'+p.name+'</span>'+
+                '<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:var(--blueprint-soft);color:var(--blueprint);">'+p.type+'</span>'+
+                (p.free ? '<span style="font-size:11px;padding:2px 7px;border-radius:6px;background:#e8f5e9;color:#2e7d32;">무료 있음</span>' : '')+
+              '</div>'+
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">'+
+                '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">✅ 잘 하는 것</b><br>'+p.best+'</div>'+
+                '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">⚠️ 약한 것</b><br>'+p.weak+'</div>'+
+              '</div>'+
+              '<div style="display:flex;flex-wrap:wrap;gap:6px;">'+
+                p.models.map(m =>
+                  '<div style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);">'+
+                    '<b>'+m.name+'</b> <span style="color:var(--ink-soft);">— '+m.desc+'</span> '+
+                    '<span style="background:var(--blueprint-soft);color:var(--blueprint);padding:1px 5px;border-radius:4px;font-size:10px;">'+m.tag+'</span>'+
+                  '</div>'
+                ).join('')+
+              '</div>'+
+              '<div style="margin-top:8px;">'+
+                '<a href="'+p.url+'" target="_blank" rel="noopener" style="font-size:11px;color:var(--blueprint);text-decoration:none;">🔗 바로 가기</a>'+
+              '</div>'+
+            '</div>'
+          ).join('')+
+        '</div>'+
+      '</div>'
+    ).join('')+
+  '</div>';
+}
+
+// ── 상황별 비교 ──
+function renderAICompare(){
+  return '<div>'+
+    '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">상황에 따라 더 잘 맞는 도구가 달라요. 참고용이고, 직접 써보고 결정하세요!</p>'+
+    '<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;">'+
+      '<div style="display:grid;grid-template-columns:1fr 1.2fr 1.5fr;background:var(--blueprint-soft);padding:10px 14px;font-size:11px;font-weight:700;color:var(--blueprint);">'+
+        '<div>이럴 때</div><div>추천 도구</div><div>이유</div>'+
+      '</div>'+
+      AI_TOOLS_DATA.comparison.map((r, i) =>
+        '<div style="display:grid;grid-template-columns:1fr 1.2fr 1.5fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--line-soft);background:'+(i%2===0?'var(--paper)':'var(--panel)')+';">'+
+          '<div style="font-weight:600;color:var(--ink);">'+r.situation+'</div>'+
+          '<div>'+r.tools.map(t => '<span style="background:var(--blueprint-soft);color:var(--blueprint);padding:1px 7px;border-radius:5px;margin-right:3px;font-size:11px;">'+t+'</span>').join('')+'</div>'+
+          '<div style="color:var(--ink-soft);">'+r.reason+'</div>'+
+        '</div>'
+      ).join('')+
+    '</div>'+
+    '<div style="margin-top:16px;padding:14px 16px;background:var(--amber-soft);border:1px solid var(--amber);border-radius:10px;font-size:12px;color:var(--ink);line-height:1.7;">'+
+      '💡 <b>정답은 없어요.</b> AI는 빠르게 발전하니까 지금 순위가 6개월 뒤엔 달라질 수 있어요. 무료로 여러 개 써보고 내 스타일에 맞는 걸 찾는 게 제일 좋아요!'+
+    '</div>'+
+  '</div>';
+}
+
+// ── 질문 카테고리 ──
+function renderAIQuestions(){
+  window._aiQAge = window._aiQAge || 'middle_high';
+  const ageGroups = [
+    { id:'elementary', label:'🎒 초등학생' },
+    { id:'middle_high', label:'📚 중고등학생' },
+    { id:'university', label:'💼 대학생·취준생' },
+    { id:'adult', label:'🏢 직장인·중년' },
+  ];
+
+  function ageTabHtml(){
+    return '<div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;">'+
+      ageGroups.map(g => {
+        const a = window._aiQAge === g.id;
+        return '<button type="button" onclick="aiQAge(\''+g.id+'\')" style="padding:7px 14px;border-radius:8px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-size:13px;font-weight:'+(a?700:400)+';cursor:pointer;">'+g.label+'</button>';
+      }).join('')+
+    '</div>';
+  }
+
+  function contentHtml(){
+    const cat = AI_TOOLS_DATA.qCategories[window._aiQAge];
+    return '<div>'+
+      '<div style="margin-bottom:20px;">'+
+        '<h3 style="font-size:14px;font-weight:700;color:var(--ok);margin:0 0 10px;">✅ 이런 건 물어봐도 돼요</h3>'+
+        '<div style="display:flex;flex-direction:column;gap:8px;">'+
+          cat.allowed.map(a =>
+            '<div style="border:1px solid var(--line);border-radius:10px;padding:12px 14px;">'+
+              '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;">'+a.icon+' '+a.cat+'</div>'+
+              '<div style="display:flex;flex-wrap:wrap;gap:5px;">'+
+                a.examples.map(e =>
+                  '<span style="font-size:11px;padding:3px 9px;border-radius:6px;background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok);">"'+e+'"</span>'
+                ).join('')+
+              '</div>'+
+            '</div>'
+          ).join('')+
+        '</div>'+
+      '</div>'+
+      '<div>'+
+        '<h3 style="font-size:14px;font-weight:700;color:var(--danger);margin:0 0 10px;">⚠️ 이건 AI한테 물어보지 마세요</h3>'+
+        '<div style="display:flex;flex-direction:column;gap:8px;">'+
+          cat.blocked.map(b =>
+            '<div style="border:1px solid var(--danger);border-radius:10px;padding:12px 14px;background:var(--accent2-soft);">'+
+              '<div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:4px;">🚫 '+b.cat+'</div>'+
+              '<div style="font-size:12px;color:var(--ink);line-height:1.6;">'+b.msg+'</div>'+
+            '</div>'
+          ).join('')+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  window.aiQAge = function(id){
+    window._aiQAge = id;
+    const el = document.getElementById('aiQBody');
+    if(el) el.innerHTML = ageTabHtml() + contentHtml();
+  };
+
+  return '<div id="aiQBody">'+ageTabHtml()+contentHtml()+'</div>';
+}
+
+
 function renderCurriculumSection(){
   window._curriculumTab = window._curriculumTab || 'easy';
   window._curriculumIdx = window._curriculumIdx || 0;
