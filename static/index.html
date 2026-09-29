@@ -864,7 +864,7 @@ const ROLE_KEY = 'ai_task_role_v1';
 
 /* ============== state ============== */
 const STORE_KEY = 'ai_task_def_v1';
-let state = { fields:{}, cur:'intro', locked:false, completed:false };
+let state = { fields:{}, cur:'curriculum', locked:false, completed:false };
 try{
   const raw = localStorage.getItem(STORE_KEY);
   if(raw) state = Object.assign(state, JSON.parse(raw));
