@@ -453,6 +453,8 @@
         <span style="font-size:11px;color:var(--ink-soft);">오늘 <b id="vcToday" style="color:var(--ink);">—</b></span>
         <span style="font-size:10px;color:var(--placeholder);">·</span>
         <span style="font-size:11px;color:var(--ink-soft);">전체 <b id="vcTotal" style="color:var(--ink);">—</b></span>
+        <span style="font-size:10px;color:var(--placeholder);">·</span>
+        <span style="font-size:11px;color:var(--ink-soft);">순방문 <b id="vcUniq" style="color:var(--ink);">—</b></span>
       </div>
     </div>
   </nav>
@@ -1075,7 +1077,8 @@ function openAuthModal(mode){
         updateAuthUI();
         hideModal();
         await syncSeedToServer();
-        showModal('<div style="text-align:center;padding:10px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">'+(isLogin?'돌아오셨군요!':'감자밭에 오신 걸 환영해요!')+'</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+(currentUser.nickname||currentUser.email.split(\'@\')[0])+'님의 씨앗이 기기 어디서나 유지돼요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
+        const welcomeNick = currentUser.nickname || currentUser.email.split('@')[0];
+        showModal('<div style="text-align:center;padding:10px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">'+(isLogin?'돌아오셨군요!':'감자밭에 오신 걸 환영해요!')+'</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+welcomeNick+'님의 씨앗이 기기 어디서나 유지돼요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
       }catch(e){ if(errEl){errEl.style.display='';errEl.textContent='네트워크 오류. 다시 시도해주세요.';} }
       finally{ if(btn) btn.disabled=false; }
     }
@@ -4971,7 +4974,28 @@ renderAdminSlot();
 renderSheet();
 loadRemote().then(renderSheet);
 loadTaxonomy();
-tryAutoLogin(); // 저장된 토큰으로 자동 로그인
+tryAutoLogin();
+
+// 첫 방문자는 select.html로 안내 (역할 미선택 상태, 관리자 제외)
+(function(){
+  const role = localStorage.getItem('ddugi_role');
+  const urlParams = new URLSearchParams(window.location.search);
+  // role 있거나, URL에 role 파라미터 있거나, 관리자 로그인 상태면 스킵
+  if(!role && !urlParams.get('role') && !isAdmin){
+    // 2초 후 유도 배너 표시 (바로 리디렉션하면 너무 강압적)
+    setTimeout(()=>{
+      const banner = document.createElement('div');
+      banner.id = 'roleBanner';
+      banner.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:100;background:var(--panel);border:1.5px solid var(--blueprint-2);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);font-size:13px;white-space:nowrap;';
+      banner.innerHTML = '<span>🥔 처음 오셨나요?</span>'+
+        '<a href="/select.html" style="color:var(--blueprint);font-weight:700;text-decoration:none;">나에게 맞는 버전 찾기 →</a>'+
+        '<button onclick="document.getElementById(\'roleBanner\').remove();localStorage.setItem(\'ddugi_role\',\'user\')" style="background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:14px;padding:0 2px;">✕</button>';
+      document.body.appendChild(banner);
+    }, 1500);
+  }
+  // URL 파라미터로 역할 받은 경우 저장
+  if(urlParams.get('role')) localStorage.setItem('ddugi_role', urlParams.get('role'));
+})();
 
 // 방문자 카운터 (공개 API)
 (async function loadVisitCounter(){
@@ -4982,8 +5006,10 @@ tryAutoLogin(); // 저장된 토큰으로 자동 로그인
     const fmtNum = n => n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n);
     const t = document.getElementById('vcToday');
     const v = document.getElementById('vcTotal');
+    const u = document.getElementById('vcUniq');
     if(t) t.textContent = fmtNum(d.today);
     if(v) v.textContent = fmtNum(d.total);
+    if(u) u.textContent = fmtNum(d.unique_total);
   }catch(e){}
 })();
 

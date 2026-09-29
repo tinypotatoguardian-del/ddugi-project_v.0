@@ -751,21 +751,25 @@ def update_feedback(fb_id: int, body: FeedbackUpdateIn, x_emp_id: str = Header(d
 
 @app.get("/api/visits/public")
 def visit_stats_public():
-    """인증 없이 오늘·전체 방문 수만 반환 (UI 카운터용)"""
+    """인증 없이 오늘·전체 방문 수 + 순방문자 수 반환 (UI 카운터용)"""
     conn = get_db()
     today = datetime.datetime.now(KST).strftime("%Y-%m-%d")
     total = db_fetchone(conn, "SELECT COUNT(*) AS cnt FROM visits")
     today_row = db_fetchone(conn, "SELECT COUNT(*) AS cnt FROM visits WHERE visited_at >= ?", (today,))
+    uniq = db_fetchone(conn, "SELECT COUNT(DISTINCT ip) AS cnt FROM visits")
+    today_uniq = db_fetchone(conn, "SELECT COUNT(DISTINCT ip) AS cnt FROM visits WHERE visited_at >= ?", (today,))
     return {
         "today": today_row["cnt"] if today_row else 0,
         "total": total["cnt"] if total else 0,
+        "unique_total": uniq["cnt"] if uniq else 0,
+        "unique_today": today_uniq["cnt"] if today_uniq else 0,
     }
 
 @app.get("/api/visits/stats")
 def visit_stats(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
     require_role(x_emp_id, x_emp_code, {"master"})
     conn = get_db()
-    today = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    today = datetime.datetime.now(KST).strftime("%Y-%m-%d")
     total = db_fetchone(conn, "SELECT COUNT(*) AS cnt FROM visits")
     total_visits = total["cnt"] if total else 0
     uniq = db_fetchone(conn, "SELECT COUNT(DISTINCT ip) AS cnt FROM visits")
@@ -778,6 +782,11 @@ def visit_stats(x_emp_id: str = Header(default=""), x_emp_code: str = Header(def
         "SELECT ip, user_agent, path, visited_at FROM visits ORDER BY visited_at DESC LIMIT 50"
     )
     recent = [dict(r) for r in recent_rows]
+    # IP별 방문 이력 묶기
+    ip_rows = db_fetchall(conn,
+        "SELECT ip, COUNT(*) AS visits, MAX(visited_at) AS last_seen, MIN(visited_at) AS first_seen FROM visits GROUP BY ip ORDER BY last_seen DESC"
+    )
+    by_ip = [dict(r) for r in ip_rows]
     # 날짜별 방문 수 (최근 30일)
     thirty_days_ago = (datetime.datetime.utcnow() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
     if USE_PG:
@@ -800,6 +809,7 @@ def visit_stats(x_emp_id: str = Header(default=""), x_emp_code: str = Header(def
         "today_visits": today_visits,
         "today_unique": today_unique,
         "recent": recent,
+        "by_ip": by_ip,
         "by_date": by_date,
     }
 

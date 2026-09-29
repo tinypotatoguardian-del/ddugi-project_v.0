@@ -453,6 +453,8 @@
         <span style="font-size:11px;color:var(--ink-soft);">오늘 <b id="vcToday" style="color:var(--ink);">—</b></span>
         <span style="font-size:10px;color:var(--placeholder);">·</span>
         <span style="font-size:11px;color:var(--ink-soft);">전체 <b id="vcTotal" style="color:var(--ink);">—</b></span>
+        <span style="font-size:10px;color:var(--placeholder);">·</span>
+        <span style="font-size:11px;color:var(--ink-soft);">순방문 <b id="vcUniq" style="color:var(--ink);">—</b></span>
       </div>
     </div>
   </nav>
@@ -5004,8 +5006,10 @@ tryAutoLogin();
     const fmtNum = n => n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n);
     const t = document.getElementById('vcToday');
     const v = document.getElementById('vcTotal');
+    const u = document.getElementById('vcUniq');
     if(t) t.textContent = fmtNum(d.today);
     if(v) v.textContent = fmtNum(d.total);
+    if(u) u.textContent = fmtNum(d.unique_total);
   }catch(e){}
 })();
 
