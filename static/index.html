@@ -3179,45 +3179,39 @@ function DEFAULT_INTRO_HTML(){
   return '<div style="background:var(--panel);border:2px solid var(--blueprint-2);border-radius:var(--radius);padding:24px 22px;margin-bottom:24px;text-align:center;">'+
     '<div style="font-size:48px;margin-bottom:8px;">🥔</div>'+
     '<h2 style="margin:0 0 4px;font-size:22px;color:var(--blueprint);">지구 종말 방지 프로젝트</h2>'+
-    '<p style="font-size:14px;color:var(--ink-soft);margin:0 0 16px;">AI 데이터센터 증식으로 인한 자원 낭비, 그리고 쓸모없는 AI가 넘쳐나는 세상.</p>'+
-    '<p style="font-size:15px;color:var(--ink);margin:0 0 12px;line-height:1.7;">ddugi는 세상에서 만난 것들을 마음에 담고,<br>마음에 담긴 것들은 어느 순간 작은 존재가 되어 자라납니다.<br>그 존재들이 제대로 성장하려면, 먼저 <b>진짜 문제</b>를 알아야 합니다.</p>'+
-    '<blockquote style="margin:16px auto;max-width:400px;text-align:center;border-left:none;background:none;font-size:16px;font-weight:700;color:var(--blueprint);">"AI가 지구를 멸망시키기 전에,<br>ddugi가 먼저 물어봅니다.<br>그거 진짜 AI가 필요해?"</blockquote>'+
-    '<p style="font-size:13px;color:var(--ink-soft);margin:0;">AI를 쓰지 않기로 판단한 것도 능력입니다. 필요 없는 곳에 AI를 안 쓰는 것이 지구를 지키는 첫걸음.</p>'+
+    '<p style="font-size:14px;color:var(--ink-soft);margin:0 0 16px;">AI를 아무 데나 쓰다가 정작 필요한 곳을 놓치는 세상을 막기 위해.</p>'+
+    '<blockquote style="margin:16px auto;max-width:400px;text-align:center;border-left:none;background:none;font-size:16px;font-weight:700;color:var(--blueprint);">"AI가 필요한지 먼저 물어봐야<br>쓸모 있는 AI가 나온다."</blockquote>'+
   '</div>'+
-  '<h2>ddugi</h2>'+
-    '<p class="intro-lead">AI 업무효율화 고민거리를 정의하고, 진단하고, 수행 기록까지 남기는 작업대입니다.</p>'+
-    '<blockquote>AI부터 만들지 말고, 업무부터 다시 보자.</blockquote>'+
-    '<ul class="intro-principles intro-core"><li>AI에게 문제를 맡기기 전에, 사람이 문제를 정의한다.</li><li>AI를 적용하는 능력보다, AI가 필요한 문제를 정의하는 능력을 먼저 키운다.</li><li>AI를 붙이는 것이 AX가 아니라, 일을 바꾸는 것이 AX다.</li></ul>'+
-    '<p>ddugi는 AI 도입을 권하는 도구가 아닙니다. 지금 하는 업무를 사실대로 정리하면, 기존 시스템, 자동화, Excel/Spotfire, 일반 Application, AI 중에서 그 업무에 가장 맞는 방법을 찾도록 돕습니다.</p>'+
-    '<h3>AI 슬롭(AI Slop)을 막습니다</h3>'+
-    '<p><b>AI 슬롭</b>은 필요 없는 곳에 AI를 붙이거나, 검증하지 않은 AI 결과물이 쌓이는 것을 말합니다. 만들 때는 그럴듯해 보여도, 결국 사람이 다시 확인하고 고치고 유지보수해야 해서 <b>인력, 시간, 회사 비용</b>이 새어 나갑니다.</p>'+
-    htmlTable(['슬롭이 만드는 낭비','ddugi가 막는 방법'], [
-      ['<b>🥔 포테이토 낭비</b><br>Excel이나 자동화로 될 일을 AI로 만들고, 그걸 계속 유지보수','진단이 <b>기존 시스템 → 자동화 → Excel/Spotfire → 일반 Application</b>을 먼저 검토하고, 그래도 안 되는 부분에만 AI를 권합니다'],
-      ['<b>⏳ 돌뚜 소진</b><br>검증되지 않은 AI 결과를 사람이 다시 확인하고 수정','<b>사람의 최종 판단 지점</b>을 미리 정하고, 09 테스트 및 검증에서 AI 오답과 누락을 확인합니다'],
-      ['<b>🏚️ 방이 꽉 참</b><br>쓰이지 않는 시스템, 불필요한 LLM 사용과 서버','<b>AI 고민거리 인정 기준</b>: AI를 빼도 목적을 달성하면 AI 고민거리가 아닙니다. 13 효과 확인에서 실제 효과를 측정합니다'],
-      ['<b>👁️ 흐린 눈으로 심기</b><br>근거 없는 AI 추천을 그대로 사용','01~02에는 <b>사실만</b> 입력하고, 진단은 판단 근거를 함께 제시합니다']]) +
-    '<p>그래서 <b>"AI를 쓰지 않기로 판단한 것"도 AI 역량으로 인정</b>합니다. AI가 필요 없는 일을 알아보는 눈이 슬롭을 막는 첫걸음입니다.</p>'+
-    '<h3>ddugi가 표준화하는 것</h3>'+
-    '<p>결과물(Agent)이 아니라, <b>만들기 전에 생각하는 과정</b>을 표준화합니다.</p>'+
-    '<p class="intro-flow">업무의 목적과 문제를 정의하고 → 해결 방법과 AI의 역할을 진단하고 → 필요한 기능과 Input/Output을 설계하고 → 바이브 코딩 등으로 구현하고 → 실제 업무 Case로 검증한다.</p>'+
-    '<p><b>일반 Application을 만들 때도 AI 역량이 필요합니다.</b> 진단 결과가 "AI 없이 자동화나 일반 Application으로 충분"이어도, 요구사항을 AI가 이해하게 설명하고(Prompt), 바이브 코딩으로 화면과 기능을 만들고, AI가 만든 코드를 검증하고, 반복 작업을 Skill로 만드는 것은 모두 AI 역량입니다. 제품 안에 AI가 없는 것과 AI 역량을 쓰지 않는 것은 다릅니다.</p>'+
-    '<p>AI를 잘하는 사람은 코딩을 잘하는 사람이 아니라, <b>업무를 AI가 처리할 수 있는 구조로 분해할 줄 아는 사람</b>입니다. AI를 쓰는 사람(L1 AI User)에서 업무 자체를 재설계하는 사람(L5 AX Architect)까지 <b>나의 AI 역량 레벨</b>로 확인할 수 있습니다. <b>레벨은 기술 개수가 아닙니다.</b> 개발을 잘해도 문제를 잘못 정의하면 L5가 아니고, 개발을 못해도 업무를 재설계해 효과를 만들면 L5입니다.</p>'+
-    '<h3>ddugi 자체도 하나의 고민거리입니다</h3>'+
-    '<p>지금 보고 계신 이 도구도 이 방법으로 만들어지고 있는 <b>진짜 고민거리</b>입니다. 처음 가설은 "입력하면 AI가 다 해주는 도구"였는데, 만들면서 "사람이 먼저 생각하는 흐름"으로 바뀌었습니다. 그 변화 과정을 <b>작성 예시 → ddugi</b> 탭에서 그대로 볼 수 있습니다.</p>'+
-    '<h3>AI 레벨 커리큘럼 — 나는 지금 어디?</h3>'+
-    '<p>처음 온 분들을 위해: 아래에서 내 수준에 맞는 레벨을 확인하고 시작하세요. 학년보다 <b>지금 AI를 어떻게 쓰느냐</b>가 기준입니다.</p>'+
-    renderCurriculumBlock()+
-    '<h3>이렇게 사용합니다</h3>'+
-    '<ol>'+
-      '<li><b>(선택) AI로 후보 찾기 (00)</b> 다룰 문제가 아직 명확하지 않다면, 업무를 자유롭게 설명해서 AI에게 개선 후보 2~3개와 각 후보의 AI 적합성 판정을 먼저 받아볼 수 있습니다. "적합" 판정을 받은 후보만 다음 단계로 이어집니다.</li>'+
-      '<li><b>업무 정리 (01~02, 직접)</b> 바꾸고 싶은 업무, 현재 프로세스, 문제, 개선 기준, 내가 생각하는 해결 방향을 AI에게 묻기 전에 먼저 적습니다.</li>'+
-      '<li><b>AI 검증 (3-1)</b> 검증 요청문을 AI에 넣어, 내 문제 정의와 가설을 AI가 검증하게 합니다.</li>'+
-      '<li><b>문제 재정의 (3-2, 직접)</b> 검증 결과를 보고 문제와 목표를 자기 말로 다시 씁니다.</li>'+
-      '<li><b>AI 고민거리 구조화 (3-3)</b> 다시 정의한 문제로 고민거리 구조와 이 고민거리로 기를 수 있는 역량을 받고, 학습 계획을 세웁니다.</li>'+
-      '<li><b>구현 설계와 결과·회고 (04~13)</b> <span class="tbd">준비 중</span> — 설계, 검증, 운영, 회고를 기록하는 기능이에요. 이 개인 프로젝트에서는 아직 안 열어뒀어요.</li>'+
-    '</ol>'+
-    '<h3>원칙</h3>'+
-    '<ul class="intro-principles"><li>문제 먼저</li><li>기존 기술 먼저</li><li>AI는 실질적인 가치가 있을 때만</li><li>최종 판단은 사람이</li></ul>';
+  '<h2>ddugi가 뭔가요?</h2>'+
+  '<p class="intro-lead">AI를 쓰기 전에 <b>"이게 진짜 문제가 맞나?"</b>를 먼저 생각하게 도와주는 도구예요.</p>'+
+  '<p>예를 들어, 수행평가 준비를 AI한테 맡겼는데 결과가 별로였던 적 있죠? 그건 AI가 나쁜 게 아니라, <b>뭘 부탁할지 미리 생각하지 않았기 때문</b>이에요. ddugi는 그 "생각하는 과정"을 도와줘요.</p>'+
+  '<blockquote>AI한테 시키기 전에, 나부터 문제를 정리하자.</blockquote>'+
+
+  '<h3>왜 필요한가요?</h3>'+
+  '<p>ChatGPT한테 뭔가 물어봤는데 엉뚱한 대답이 나온 적 있나요? 대부분은 <b>질문이 너무 막연했기 때문</b>이에요.</p>'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;">'+
+    '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:10px;padding:14px 16px;">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;">❌ 이렇게 하면</div>'+
+      '<div style="font-size:12px;color:var(--ink-soft);line-height:1.7;">"자소서 써줘"<br>"공부 도와줘"<br>"이 문제 해결해줘"<br>→ AI가 엉뚱한 방향으로 감</div>'+
+    '</div>'+
+    '<div style="background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:10px;padding:14px 16px;">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--blueprint);margin-bottom:6px;">✅ ddugi처럼 하면</div>'+
+      '<div style="font-size:12px;color:var(--ink);line-height:1.7;">어떤 문제인지 먼저 정리<br>→ AI가 도움이 되는 답을 줌<br>→ 내가 원하는 결과를 얻음</div>'+
+    '</div>'+
+  '</div>'+
+
+  '<h3>이렇게 쓰면 돼요</h3>'+
+  '<ol style="padding-left:20px;line-height:2;">'+
+    '<li><b>내 문제 적기 (01~02)</b> — AI한테 묻기 전에 내가 먼저 상황을 정리해요. 예: "수행평가 준비할 때 뭐가 제일 힘들지?"</li>'+
+    '<li><b>AI한테 검토받기 (3-1)</b> — 내가 정리한 내용을 AI한테 보여주고 "이 방향이 맞아?" 물어봐요.</li>'+
+    '<li><b>다시 다듬기 (3-2)</b> — AI 피드백을 보고 문제를 더 정확하게 고쳐 써요.</li>'+
+    '<li><b>AI 활용 계획 세우기 (3-3)</b> — 이 문제를 AI로 어떻게 풀지 구조를 잡아요.</li>'+
+  '</ol>'+
+
+  '<h3>AI를 안 써도 되는 경우도 있어요</h3>'+
+  '<p>ddugi를 쓰다 보면 <b>"이건 AI 없이도 되네"</b>라는 걸 발견할 때가 있어요. 그것도 능력이에요. AI가 꼭 필요한 곳에만 제대로 쓰는 게 목표니까요.</p>'+
+
+  '<ul class="intro-principles"><li>문제를 먼저 정리한다</li><li>간단한 방법부터 시도한다</li><li>AI가 정말 필요할 때 쓴다</li><li>결과는 내가 직접 확인한다</li></ul>';
 }
 function renderCurriculumSection(){
   window._curriculumTab = window._curriculumTab || 'easy';
