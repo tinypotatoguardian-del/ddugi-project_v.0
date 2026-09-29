@@ -688,6 +688,7 @@ const SECTIONS = [
 {id:'intro', num:'', title:'마음의 방 입구', special:'intro'},
 {id:'example', num:'EX', title:'먼저 온 포테이토', special:'example'},
 {id:'discover', num:'00', title:'씨앗 찾기 (선택)', special:'discover'},
+{id:'prompt-kit', num:'📋', title:'프롬프트 모음', special:'promptkit'},
 {id:'s1', num:'01', title:'씨앗 심기 · 지금의 일상', fields:[
   HINT('당신이 바꾸고 싶은 업무는 무엇인가요? 01~02는 AI에게 묻기 전에 직접 생각해서 적는 단계입니다.'),
   SUBHEAD('기본 정보'),
@@ -1386,7 +1387,7 @@ function renderSheet(){
   if((state.cur==='dashboard' || state.cur==='tasklist' || state.cur==='taxonomy') && !isAdmin) state.cur='s1';
   if((state.cur==='accounts' || state.cur==='visits') && !isMaster) state.cur='s1';
   let sec = SECTIONS.find(s=>s.id===state.cur) || SECTIONS[0];
-  if(sec.disabled && !isMaster){ sec = SECTIONS.find(s=>s.id==='s1'); state.cur = 's1'; }
+  if(sec.disabled && !isAdmin){ sec = SECTIONS.find(s=>s.id==='s1'); state.cur = 's1'; }
   if(sec.id==='redefine') prefillRedefineDefaults();
   const sheet = document.getElementById('sheet');
   if(sec.special==='export'){
@@ -1403,6 +1404,8 @@ function renderSheet(){
     sheet.innerHTML = renderIntroSection() + navFootHtml(sec);
   } else if(sec.special==='curriculum'){
     sheet.innerHTML = renderCurriculumSection() + navFootHtml(sec);
+  } else if(sec.special==='promptkit'){
+    sheet.innerHTML = renderPromptKitSection() + navFootHtml(sec);
   } else if(sec.special==='discover'){
     sheet.innerHTML = renderDiscoverSection() + navFootHtml(sec);
     initExportBox();
@@ -1874,8 +1877,8 @@ async function renderDashboard(){
 function navFootHtml(sec){
   const idx = SECTIONS.findIndex(s=>s.id===sec.id);
   // 준비 중(비활성) 섹션은 이전/다음 이동에서 건너뜀 (마스터는 모두 볼 수 있음)
-  let pi = idx-1; while(pi>=0 && SECTIONS[pi].disabled && !isMaster) pi--;
-  let ni = idx+1; while(ni<SECTIONS.length && SECTIONS[ni].disabled && !isMaster) ni++;
+  let pi = idx-1; while(pi>=0 && SECTIONS[pi].disabled && !isAdmin) pi--;
+  let ni = idx+1; while(ni<SECTIONS.length && SECTIONS[ni].disabled && !isAdmin) ni++;
   const prev = SECTIONS[pi];
   const next = SECTIONS[ni];
   // 어디로 가는지 목적지 이름을 그대로 보여줌 (다음 예시로 넘어가는 버튼과 헷갈리지 않게)
@@ -3534,6 +3537,94 @@ function renderIntroSection(){
     (introEditing ? '' : '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">01 씨앗 심기부터 시작하기</button>'+
       '<button type="button" class="secondary" data-action="goto" data-target="discover">00 씨앗 찾기부터 (아직 뭘 심을지 모르겠다면)</button>'+
       '<button type="button" class="secondary" data-action="goto" data-target="example">먼저 온 포테이토 보기</button></div>')+
+  '</div>';
+}
+
+function renderPromptKitSection(){
+  window._promptTab = window._promptTab || 'student';
+
+  const tabs = [
+    {id:'student', label:'🎓 학생용',    desc:'공부·과제·수행평가에 쓰는 프롬프트'},
+    {id:'jobhunt', label:'💼 취준용',    desc:'자소서·직무분석·면접 준비 프롬프트'},
+    {id:'work',    label:'🏢 현직자용',  desc:'업무 자동화·기획·보고서 프롬프트'}
+  ];
+
+  // 프롬프트 데이터 — 내용은 추후 채우기
+  const prompts = {
+    student: [
+      {tag:'공부', title:'개념 쉽게 설명해줘', desc:'어려운 개념을 내 수준에 맞게 풀어달라고 하는 프롬프트', template:''},
+      {tag:'과제', title:'과제 피드백 받기', desc:'내가 쓴 내용의 부족한 점을 짚어달라는 프롬프트', template:''},
+      {tag:'공부', title:'시험 전날 퀴즈 만들기', desc:'내 노트 내용으로 퀴즈를 만들어달라는 프롬프트', template:''},
+      {tag:'수행평가', title:'주제 선정 도움받기', desc:'수행평가 주제를 고를 때 쓰는 프롬프트', template:''},
+    ],
+    jobhunt: [
+      {tag:'자소서', title:'자소서 피드백 받기', desc:'내 자소서의 약한 부분을 구체적으로 짚어달라는 프롬프트', template:''},
+      {tag:'직무분석', title:'채용공고 핵심 뽑기', desc:'공고에서 합격 키워드를 추출하는 프롬프트', template:''},
+      {tag:'면접', title:'예상 질문 뽑기', desc:'직무와 자소서 기반으로 예상 면접 질문을 뽑는 프롬프트', template:''},
+      {tag:'자소서', title:'경험을 자소서로 바꾸기', desc:'내 경험을 자소서 문장으로 정리하는 프롬프트', template:''},
+    ],
+    work: [
+      {tag:'보고서', title:'보고서 초안 잡기', desc:'핵심 내용만 넣으면 보고서 구조를 잡아주는 프롬프트', template:''},
+      {tag:'기획', title:'문제 정의하기', desc:'업무 문제를 명확하게 정의하는 프롬프트 (ddugi 연동)', template:''},
+      {tag:'이메일', title:'업무 메일 다듬기', desc:'내가 쓴 메일을 더 자연스럽게 다듬어달라는 프롬프트', template:''},
+      {tag:'회의', title:'회의록 정리하기', desc:'회의 내용을 요점 정리해달라는 프롬프트', template:''},
+    ]
+  };
+
+  function tabHtml(){
+    return '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">' +
+      tabs.map(t => {
+        const a = window._promptTab === t.id;
+        return '<button type="button" onclick="promptKitTab(\''+t.id+'\')" style="padding:10px 16px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
+          t.label+'<br><span style="font-size:11px;opacity:.65;">'+t.desc+'</span>'+
+        '</button>';
+      }).join('') + '</div>';
+  }
+
+  function listHtml(){
+    const list = prompts[window._promptTab] || [];
+    return '<div style="display:flex;flex-direction:column;gap:10px;">' +
+      list.map((p,i) =>
+        '<div style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">'+
+          '<div style="padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">'+
+            '<span style="font-size:10px;padding:3px 8px;border-radius:6px;background:var(--blueprint-soft);color:var(--blueprint);font-weight:700;white-space:nowrap;margin-top:2px;">'+p.tag+'</span>'+
+            '<div style="flex:1;">'+
+              '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;">'+p.title+'</div>'+
+              '<div style="font-size:12px;color:var(--ink-soft);">'+p.desc+'</div>'+
+            '</div>'+
+            '<button type="button" onclick="promptKitOpen('+i+')" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--blueprint);font-weight:600;cursor:pointer;white-space:nowrap;">'+
+              (p.template ? '복사하기' : '✏️ 준비 중')+
+            '</button>'+
+          '</div>'+
+          (p.template ?
+            '<div style="padding:0 18px 14px;">'+
+              '<textarea id="pt-'+i+'" readonly style="width:100%;min-height:80px;font-size:12px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;resize:none;font-family:inherit;line-height:1.6;">'+p.template+'</textarea>'+
+            '</div>'
+          : '') +
+        '</div>'
+      ).join('') +
+    '</div>';
+  }
+
+  window.promptKitTab = function(id){
+    window._promptTab = id;
+    const el = document.getElementById('promptKitWrap');
+    if(el) el.innerHTML = tabHtml() + listHtml();
+  };
+  window.promptKitOpen = function(i){
+    const p = (prompts[window._promptTab]||[])[i];
+    if(!p || !p.template) return;
+    navigator.clipboard.writeText(p.template).then(()=>{
+      const btn = document.querySelectorAll('#promptKitWrap button')[i+tabs.length];
+      if(btn){ const orig = btn.textContent; btn.textContent='✅ 복사됨'; setTimeout(()=>btn.textContent=orig,1500); }
+    });
+  };
+
+  return '<div class="frame">'+
+    '<h2>📋 프롬프트 모음</h2>'+
+    '<div class="sub">상황별로 바로 쓸 수 있는 프롬프트 — 복사해서 ChatGPT에 붙여넣으세요</div>'+
+    '<p style="font-size:13px;color:var(--ink-soft);margin:10px 0 20px;">✏️ 표시된 항목은 내용 준비 중이에요. 써보고 싶은 상황이 있으면 알려주세요!</p>'+
+    '<div id="promptKitWrap">'+tabHtml()+listHtml()+'</div>'+
   '</div>';
 }
 
