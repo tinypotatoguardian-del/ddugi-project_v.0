@@ -20,6 +20,8 @@ ddugi Project v.0 — 지구 종말 방지 프로젝트
 
 import datetime
 import hashlib
+import zoneinfo
+KST = zoneinfo.ZoneInfo("Asia/Seoul")
 import hmac
 import json
 import os
