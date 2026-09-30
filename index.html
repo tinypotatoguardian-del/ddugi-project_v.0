@@ -3858,8 +3858,8 @@ function renderAIIntro(){
     '<h3 style="font-size:14px;font-weight:700;margin:0 0 12px;">📖 용어 사전</h3>'+
     '<div style="display:flex;flex-direction:column;gap:8px;">'+
       d.terms.map(t =>
-        '<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;">'+
-          '<div style="padding:12px 16px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">'+
+        '<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;" class="ai-term-card">'+
+          '<div style="padding:12px 16px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;" onclick="var c=this.closest(\'.ai-term-card\');var open=this.nextElementSibling.style.display!==\'none\';this.nextElementSibling.style.display=open?\'none\':\'block\';c.style.border=open?\'1px solid var(--line)\':\'1px solid var(--blueprint)\';c.style.boxShadow=open?\'\':\' 0 0 0 2px var(--blueprint-soft)\';">'
             '<div style="flex:1;">'+
               '<div style="font-size:13px;font-weight:700;color:var(--ink);">'+t.word+'</div>'+
               '<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">= '+t.easy+'</div>'+
@@ -3880,9 +3880,9 @@ function renderAICompanies(){
   const d = AI_TOOLS_DATA;
   return '<div style="display:flex;flex-direction:column;gap:16px;">'+
     d.companies.map(co =>
-      '<div style="border:2px solid var(--line);border-radius:12px;overflow:hidden;">'+
-        '<div style="padding:14px 18px;background:var(--panel);display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">'+
-          '<div style="width:36px;height:36px;border-radius:8px;background:'+co.color+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">'+co.name[0]+'</div>'+
+      '<div style="border:2px solid var(--line);border-radius:12px;overflow:hidden;" class="ai-co-card">'+
+        '<div style="padding:14px 18px;background:var(--panel);display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="var c=this.closest(\'.ai-co-card\');var open=this.nextElementSibling.style.display!==\'none\';this.nextElementSibling.style.display=open?\'none\':\'block\';c.style.border=open?\'2px solid var(--line)\':\'2px solid var(--blueprint)\';c.style.boxShadow=open?\'\':\' 0 0 0 2px var(--blueprint-soft)\';">'+
+          '<div style="width:36px;height:36px;border-radius:8px;background:'+co.color+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">'+co.name[0]+'</div>'
           '<div style="flex:1;">'+
             '<div style="font-size:14px;font-weight:700;color:var(--ink);">'+co.name+' <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">'+co.country+'</span></div>'+
             '<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">'+co.summary+'</div>'+
