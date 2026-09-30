@@ -3009,16 +3009,7 @@ function nextExampleBarHtml(){
   return '<div class="ex-nextbar"><button type="button" data-action="ex-tab" data-target="'+next+'">다음 예시 보기: '+esc(EXAMPLES[next].tab)+' →</button></div>';
 }
 function renderExampleSection(){
-  // Meta-tabs wrapper: conversational | example | direct
-  var metaTabs = renderOnboardingMetaTabs();
-  if(onboardingMetaTab === 'conv'){
-    if(!convVersion) return metaTabs + renderConvVersionPick();
-    return metaTabs + renderConvStep();
-  }
-  if(onboardingMetaTab === 'direct'){
-    return metaTabs + renderDirectPlant();
-  }
-  // Default: 'example' — original example content
+  // 예시만 보여주는 섹션 — 온보딩은 입구 버튼으로 이동
   const ex = EXAMPLES[exampleTab];
   const exTabLabel = e => { const cat = withExampleFields(e.fields, ()=>getV('s1_cat','')); return e.tab+(cat ? ' ('+exTrait(cat)+')' : ''); };
   const tabs = '<div class="extabs" role="tablist">'+Object.keys(EXAMPLES).map(k=>
@@ -3032,7 +3023,7 @@ function renderExampleSection(){
       '<div class="exportbar"><button type="button" class="secondary" data-action="ex-all" data-target="open">전체 펼치기</button><button type="button" class="secondary" data-action="ex-all" data-target="close">전체 접기</button></div>'+
     '</div>';
   if(ex.fullMenu){
-    return metaTabs + tabs + introFrame + exampleMenuBlocks(ex) +
+    return tabs + introFrame + exampleMenuBlocks(ex) +
       exDetails('▤','이 입력으로 만들어지는 업무 .md',
         '<div class="hint">3-1 검증과 3-3 구조화 요청에서는 이 내용 앞뒤에 각각의 프롬프트가 붙습니다. 담당자 이름은 들어가지 않습니다.</div>'+
         '<textarea class="exportbox" readonly>'+esc(md)+'</textarea>') +
@@ -3043,7 +3034,7 @@ function renderExampleSection(){
     exDetails('01', SECTIONS.find(x=>x.id==='s1').title, SECTIONS.find(x=>x.id==='s1').fields.map(renderField).join(''), {open:true})+
     exDetails('02', SECTIONS.find(x=>x.id==='s3').title, SECTIONS.find(x=>x.id==='s3').fields.map(renderField).join(''))
   );
-  return metaTabs + tabs + introFrame + forms +
+  return tabs + introFrame + forms +
     exDetails('▤','이 입력으로 만들어지는 업무 .md',
       '<div class="hint">3-1 검증과 3-3 구조화 요청에서는 이 내용 앞뒤에 각각의 프롬프트가 붙습니다. 담당자 이름은 들어가지 않습니다.</div>'+
       '<textarea class="exportbox" readonly>'+esc(md)+'</textarea>') +
