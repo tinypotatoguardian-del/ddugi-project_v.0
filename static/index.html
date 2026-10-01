@@ -4378,7 +4378,7 @@ function renderLandingSection(){
   const items = data[_tab];
   const tabHtml = tabs.map(t => {
     const a = _tab === t.id;
-    return `<button type="button" onclick="window._landingTab='${t.id}';renderSheet();"
+    return `<button type="button" onclick="window._landingTab='${t.id}';window._renderSheet();"
       style="padding:8px 16px;border-radius:20px;border:2px solid ${a?'var(--blueprint)':'var(--line)'};
       background:${a?'var(--blueprint-soft)':'transparent'};color:${a?'var(--blueprint)':'var(--ink-soft)'};
       font-weight:${a?700:400};font-size:13px;cursor:pointer;">${t.label}</button>`;
