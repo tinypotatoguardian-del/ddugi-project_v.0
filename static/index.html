@@ -556,6 +556,7 @@
   var seen = localStorage.getItem('ddugi_landing_seen');
   if(!seen){
     overlay.style.display = 'block';
+    document.body.style.overflow = 'hidden'; // 뒤 화면 스크롤 막기
   }
   var btn = document.getElementById('landingEnterBtn');
   if(btn){
@@ -564,8 +565,10 @@
       overlay.style.transition = 'opacity 0.3s';
       setTimeout(function(){
         overlay.style.display = 'none';
-        // 바로 Foundation(커리큘럼)으로 이동
-        goto('curriculum');
+        document.body.style.overflow = ''; // 스크롤 복구
+        // Foundation으로 바로 이동
+        state.cur = 'curriculum';
+        renderSheet();
       }, 300);
       localStorage.setItem('ddugi_landing_seen', '1');
     });
