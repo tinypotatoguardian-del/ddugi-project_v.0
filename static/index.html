@@ -3841,7 +3841,7 @@ const AI_TOOLS_DATA = {
       ]
     },
     adult: {
-      label: '직장인·중년',
+      label: '직장인',
       icon: '🏢',
       allowed: [
         { cat: '업무 보조', icon: '💼', examples: ['보고서 초안 잡아줘', '이메일 다듬어줘', '회의록 정리해줘', '엑셀 수식 알려줘'] },
@@ -4004,7 +4004,7 @@ function renderAIQuestions(){
     { id:'elementary', label:'🎒 초등학생' },
     { id:'middle_high', label:'📚 중고등학생' },
     { id:'university', label:'💼 대학생·취준생' },
-    { id:'adult', label:'🏢 직장인·중년' },
+    { id:'adult', label:'🏢 직장인' },
   ];
 
   function ageTabHtml(){
@@ -4059,14 +4059,14 @@ function renderAIQuestions(){
 
 
 function renderCurriculumSection(){
-  // 중고등학생 / 대학생·취준 / 직장인·중년 3탭 버전
+  // 중고등학생 / 대학생·취준 / 직장인 3탭 버전
   window._curriculumTab = window._curriculumTab || 'teen';
   window._curriculumIdx = window._curriculumIdx || 0;
 
   const tabs = [
     { id:'teen',   label:'📚 중고등학생', desc:'AI 첫 만남부터 진로 탐색까지' },
     { id:'career', label:'💼 대학생·취준', desc:'공부·자소서·직무 연결하기' },
-    { id:'work',   label:'🏢 직장인·중년', desc:'업무 보조·자동화·AX 설계' }
+    { id:'work',   label:'🏢 직장인', desc:'업무 보조·자동화·AX 설계' }
   ];
 
   const levels = {
