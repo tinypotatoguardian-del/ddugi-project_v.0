@@ -554,7 +554,6 @@
 window._landingEnter = function(){
   var overlay = document.getElementById('landingOverlay');
   if(overlay) overlay.style.display = 'none';
-  document.body.style.overflow = '';
   localStorage.setItem('ddugi_landing_seen','1');
   if(window._state) window._state.cur = 'curriculum';
   if(window._renderSheet) window._renderSheet();
@@ -565,7 +564,6 @@ window._landingEnter = function(){
   var seen = localStorage.getItem('ddugi_landing_seen');
   if(!seen){
     overlay.style.display = 'block';
-    document.body.style.overflow = 'hidden';
   }
 })();
 
