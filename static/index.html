@@ -4292,22 +4292,25 @@ function renderLandingSection(){
 window.introGenPrompt = function(){
   const text = (document.getElementById('introFreeText')||{}).value||'';
   if(!text.trim()){ alert('먼저 상황을 적어줘!'); return; }
-  const prompt = `다음 상황을 읽고, 아래 항목을 채워줘.
-반드시 JSON 형식으로만 답해줘. 설명 없이 JSON만.
+  const prompt = `아래 상황을 분석해서 JSON을 완성해줘.
+괄호 안 설명은 지시사항이야 — 지시사항 말고 실제 내용으로 채워줘.
+반드시 JSON만 출력해. 설명, 마크다운 없이.
 
 상황: "${text.trim()}"
 
 {
-  "seed_name": "씨앗 이름 (핵심 문제 한 줄 요약, 10~20자)",
-  "real_problem": "진짜 문제 (표면 문제 뒤에 있는 실제 문제. 예: '막막하다'가 아니라 '주제가 없어서 시작을 못 함')",
-  "current_situation": "현재 상황 (지금 어떤 상태인지 구체적으로)",
-  "desired_result": "원하는 결과 (뭐가 해결되면 좋겠는지)",
-  "problem_clarity": "막연함 | 어느정도명확 | 명확함",
-  "clarify_questions": "문제가 막연하다면 먼저 답해야 할 질문 1~2개 (명확하면 빈 문자열)",
-  "without_ai": "AI 없이도 해결 가능한 부분",
-  "with_ai": "AI가 도움 될 수 있는 부분",
-  "hypothesis": "내가 생각하는 해결 방향 가설 (1~2줄)"
-}`;
+  "seed_name": "반복업무 자동화 시작점 탐색",
+  "real_problem": "자동화하고 싶은데 어디서 시작해야 할지 몰라 아무것도 못 하고 있음",
+  "current_situation": "자동화 필요성은 느끼지만 어떤 도구/방법/순서로 해야 할지 막막한 상태",
+  "desired_result": "자동화를 처음 시작하는 순서와 방법을 알고, 첫 번째 작은 시도를 할 수 있는 상태",
+  "problem_clarity": "막연함",
+  "clarify_questions": "1. 지금 가장 반복적으로 하는 업무가 뭔가요? 2. 그 업무에서 가장 귀찮은 단계는 어디인가요?",
+  "without_ai": "반복 업무 목록 작성, 소요 시간 측정, 우선순위 정하기",
+  "with_ai": "업무 흐름 분석, 자동화 가능 여부 판단, 첫 번째 시도할 도구 추천",
+  "hypothesis": "어떤 업무를 자동화할지 먼저 정하고, 가장 단순한 단계부터 작게 시작하면 될 것 같다"
+}
+
+위는 예시야. 실제 상황: "${text.trim()}" 을 분석해서 새로 JSON을 작성해줘.`;
   const box = document.getElementById('introPromptBox');
   const pt = document.getElementById('introPromptText');
   if(box) box.style.display='block';
