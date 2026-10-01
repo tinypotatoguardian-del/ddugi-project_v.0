@@ -768,14 +768,15 @@ const LP_DONE_FIELD = {type:'lptable', store:'lp_done', label:'나의 AI 역량:
 const LP_PLAN_FIELD = {type:'lptable', store:'lp_plan', label:'이번 씨앗에서 경험할 AI 역량 (계획)', hint:'위 추천을 담거나 직접 고르세요. 이미 경험한 항목은 "경험함"으로 표시되어 다시 고를 필요가 없어요.'};
 
 const SECTIONS = [
-/* ---------- 상단 고정 메뉴 ---------- */
-{id:'curriculum', num:'📚', title:'AI 레벨 커리큘럼', special:'curriculum'},
-{id:'ai-tools', num:'🗺️', title:'AI 도구 가이드', special:'aitools'},
-{id:'mydash', num:'☆', title:'나의 마음의 방', special:'mydash'},
-{id:'intro', num:'', title:'마음의 방 입구', special:'intro'},
+/* ── 학습 ─────────────────────────────── */
+{id:'curriculum', num:'🌱', title:'Foundation', special:'curriculum'},
+{id:'ai-tools',   num:'🗺️', title:'AI 도구 가이드', special:'aitools'},
+{id:'prompt-kit', num:'📋', title:'프롬프트 모음', special:'promptkit'},
+/* ── 씨앗 정의서 ──────────────────────── */
+{id:'mydash',  num:'☆',  title:'나의 마음의 방', special:'mydash'},
+{id:'intro',   num:'',   title:'마음의 방 입구', special:'intro'},
 {id:'example', num:'EX', title:'먼저 온 포테이토', special:'example'},
 {id:'discover', num:'00', title:'씨앗 찾기 (선택)', special:'discover'},
-{id:'prompt-kit', num:'📋', title:'프롬프트 모음', special:'promptkit'},
 {id:'s1', num:'01', title:'씨앗 심기 · 지금의 일상', fields:[
   HINT('당신이 바꾸고 싶은 업무는 무엇인가요? 01~02는 AI에게 묻기 전에 직접 생각해서 적는 단계입니다.'),
   SUBHEAD('기본 정보'),
@@ -921,13 +922,13 @@ const SECTIONS = [
 ]},
 {id:'feedback', num:'🥔', title:'감자밭', special:'feedback'},
 {id:'guestbook', num:'📝', title:'방명록', special:'guestbook'},
-{id:'export', num:'▤', title:'밖으로 심기', special:'export'},
+{id:'export',    num:'▤',  title:'밖으로 심기', special:'export'},
 {id:'dashboard', num:'☰', title:'마음의 방 전경', special:'dashboard'},
 {id:'tasklist', num:'☷', title:'씨앗 목록', special:'tasklist'},
 {id:'taxonomy', num:'⚙', title:'분류 관리', special:'taxonomy'},
 {id:'accounts', num:'⚿', title:'계정 관리', special:'accounts'},
 {id:'visits', num:'📊', title:'방문 기록', special:'visits'},
-{id:'roadmap', num:'+', title:'밭 넓히기', special:'roadmap'}
+{id:'roadmap', num:'🌱', title:'밭 넓히기', special:'roadmap'}
 ];
 const TOTAL_SECTIONS = SECTIONS.filter(s=>!s.special && !s.disabled).length;
 // 사이드바 상위 메뉴: 그룹의 첫 섹션 id → 그룹 이름
@@ -953,7 +954,7 @@ const ROLE_KEY = 'ai_task_role_v1';
 
 /* ============== state ============== */
 const STORE_KEY = 'ai_task_def_v1';
-let state = { fields:{}, cur:'curriculum', locked:false, completed:false };
+let state = { fields:{}, cur:'intro', locked:false, completed:false };
 try{
   const raw = localStorage.getItem(STORE_KEY);
   if(raw) state = Object.assign(state, JSON.parse(raw));
