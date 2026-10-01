@@ -3520,41 +3520,57 @@ function renderCurriculumBlock(){
 }
 
 function DEFAULT_INTRO_HTML(){
-  return '<div style="background:var(--panel);border:2px solid var(--blueprint-2);border-radius:var(--radius);padding:24px 22px;margin-bottom:24px;text-align:center;">'+
-    '<div style="font-size:48px;margin-bottom:8px;">🥔</div>'+
-    '<h2 style="margin:0 0 4px;font-size:22px;color:var(--blueprint);">지구 종말 방지 프로젝트</h2>'+
-    '<p style="font-size:14px;color:var(--ink-soft);margin:0 0 16px;">AI를 아무 데나 쓰다가 정작 필요한 곳을 놓치는 세상을 막기 위해.</p>'+
-    '<blockquote style="margin:16px auto;max-width:400px;text-align:center;border-left:none;background:none;font-size:16px;font-weight:700;color:var(--blueprint);">"AI가 필요한지 먼저 물어봐야<br>쓸모 있는 AI가 나온다."</blockquote>'+
-  '</div>'+
-  '<h2>ddugi가 뭔가요?</h2>'+
-  '<p class="intro-lead">AI를 쓰기 전에 <b>"이게 진짜 문제가 맞나?"</b>를 먼저 생각하게 도와주는 도구예요.</p>'+
-  '<p>예를 들어, 수행평가 준비를 AI한테 맡겼는데 결과가 별로였던 적 있죠? 그건 AI가 나쁜 게 아니라, <b>뭘 부탁할지 미리 생각하지 않았기 때문</b>이에요. ddugi는 그 "생각하는 과정"을 도와줘요.</p>'+
-  '<blockquote>AI한테 시키기 전에, 나부터 문제를 정리하자.</blockquote>'+
+  return '<h2 style="margin:0 0 16px;font-size:18px;color:var(--ink);">이런 상황에서 써봤어요</h2>'+
 
-  '<h3>왜 필요한가요?</h3>'+
-  '<p>ChatGPT한테 뭔가 물어봤는데 엉뚱한 대답이 나온 적 있나요? 대부분은 <b>질문이 너무 막연했기 때문</b>이에요.</p>'+
-  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;">'+
-    '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:10px;padding:14px 16px;">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;">❌ 이렇게 하면</div>'+
-      '<div style="font-size:12px;color:var(--ink-soft);line-height:1.7;">"자소서 써줘"<br>"공부 도와줘"<br>"이 문제 해결해줘"<br>→ AI가 엉뚱한 방향으로 감</div>'+
-    '</div>'+
-    '<div style="background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:10px;padding:14px 16px;">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--blueprint);margin-bottom:6px;">✅ ddugi처럼 하면</div>'+
-      '<div style="font-size:12px;color:var(--ink);line-height:1.7;">어떤 문제인지 먼저 정리<br>→ AI가 도움이 되는 답을 줌<br>→ 내가 원하는 결과를 얻음</div>'+
+  '<div style="display:flex;flex-direction:column;gap:14px;">'+
+
+  '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px;">'+
+    '<div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;">📚 고2 · 수행평가 준비</div>'+
+    '<p style="font-size:13px;color:var(--ink-soft);font-style:italic;margin:0 0 10px;">"수행평가 주제를 AI한테 맡겼는데 결과가 너무 뻔했어요."</p>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+
+      '<div style="background:rgba(239,68,68,.06);border-radius:8px;padding:10px 12px;">'+
+        '<div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:4px;">❌ AI한테 바로</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);line-height:1.6;">"수행평가 주제 추천해줘"<br>→ 10개 나왔는데 다 비슷비슷함</div>'+
+      '</div>'+
+      '<div style="background:var(--blueprint-soft);border-radius:8px;padding:10px 12px;">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--blueprint);margin-bottom:4px;">✅ ddugi로 먼저</div>'+
+        '<div style="font-size:12px;color:var(--ink);line-height:1.6;">과목, 관심사, 분량 먼저 정리<br>→ 내 상황에 맞는 주제가 나옴</div>'+
+      '</div>'+
     '</div>'+
   '</div>'+
 
-  '<h3>이렇게 쓰면 돼요</h3>'+
-  '<ol style="padding-left:20px;line-height:2;">'+
-    '<li><b>내 문제 적기 (01~02)</b> — AI한테 묻기 전에 내가 먼저 상황을 정리해요. 예: "수행평가 준비할 때 뭐가 제일 힘들지?"</li>'+
-    '<li><b>AI한테 검토받기 (3-1)</b> — 내가 정리한 내용을 AI한테 보여주고 "이 방향이 맞아?" 물어봐요.</li>'+
-    '<li><b>다시 다듬기 (3-2)</b> — AI 피드백을 보고 문제를 더 정확하게 고쳐 써요.</li>'+
-    '<li><b>AI 활용 계획 세우기 (3-3)</b> — 이 문제를 AI로 어떻게 풀지 구조를 잡아요.</li>'+
-  '</ol>'+
+  '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px;">'+
+    '<div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;">💼 대학 3년 · 자소서 첫 작성</div>'+
+    '<p style="font-size:13px;color:var(--ink-soft);font-style:italic;margin:0 0 10px;">"ChatGPT가 써준 자소서, 읽어보니 내 얘기가 하나도 없었어요."</p>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+
+      '<div style="background:rgba(239,68,68,.06);border-radius:8px;padding:10px 12px;">'+
+        '<div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:4px;">❌ AI한테 바로</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);line-height:1.6;">"마케팅 직무 자소서 써줘"<br>→ 그럴듯하지만 나랑 무관한 내용</div>'+
+      '</div>'+
+      '<div style="background:var(--blueprint-soft);border-radius:8px;padding:10px 12px;">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--blueprint);margin-bottom:4px;">✅ ddugi로 먼저</div>'+
+        '<div style="font-size:12px;color:var(--ink);line-height:1.6;">경험, 강조 포인트, 지원사 먼저<br>→ AI 피드백이 내 얘기에 맞게 나옴</div>'+
+      '</div>'+
+    '</div>'+
+  '</div>'+
 
-  '<h3>AI를 안 써도 되는 경우도 있어요</h3>'+
-  '<p>ddugi를 쓰다 보면 <b>"이건 AI 없이도 되네"</b>라는 걸 발견할 때가 있어요. 그것도 능력이에요. AI가 꼭 필요한 곳에만 제대로 쓰는 게 목표니까요.</p>'+
+  '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px;">'+
+    '<div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;">🏢 직장 5년차 · 반복 업무 자동화</div>'+
+    '<p style="font-size:13px;color:var(--ink-soft);font-style:italic;margin:0 0 10px;">"매주 하는 보고서 취합, AI로 자동화하면 되지 않을까 생각했어요."</p>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+
+      '<div style="background:rgba(239,68,68,.06);border-radius:8px;padding:10px 12px;">'+
+        '<div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:4px;">❌ AI한테 바로</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);line-height:1.6;">"이 업무 자동화해줘"<br>→ 거창한 시스템 나왔는데 못 씀</div>'+
+      '</div>'+
+      '<div style="background:var(--blueprint-soft);border-radius:8px;padding:10px 12px;">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--blueprint);margin-bottom:4px;">✅ ddugi로 먼저</div>'+
+        '<div style="font-size:12px;color:var(--ink);line-height:1.6;">어디서 시간 걸리는지 먼저 정리<br>→ 취합 단계만 먼저 개선, 실제로 씀</div>'+
+      '</div>'+
+    '</div>'+
+  '</div>'+
 
+  '</div>'+
+  '<blockquote style="margin:20px 0 0;">AI한테 시키기 전에, 나부터 문제를 정리하자.</blockquote>'+
   '<ul class="intro-principles"><li>문제를 먼저 정리한다</li><li>간단한 방법부터 시도한다</li><li>AI가 정말 필요할 때 쓴다</li><li>결과는 내가 직접 확인한다</li></ul>';
 }
 
