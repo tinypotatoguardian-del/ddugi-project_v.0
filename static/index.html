@@ -552,23 +552,15 @@
 
 // 랜딩 페이지 로직 — IIFE 밖에서 window에 노출
 window._landingEnter = function(){
-  var overlay = document.getElementById('landingOverlay');
-  if(overlay) overlay.style.display = 'none';
-  var shell = document.getElementById('shell');
-  if(shell) shell.style.display = '';
-  var apphead = document.getElementById('apphead');
-  if(apphead) apphead.style.display = '';
   localStorage.setItem('ddugi_landing_seen','1');
-  if(window._state) window._state.cur = 'curriculum';
-  if(window._renderSheet) window._renderSheet();
-  window.scrollTo(0,0);
+  localStorage.setItem('ddugi_start_cur','curriculum');
+  location.reload();
 };
 (function(){
   var overlay = document.getElementById('landingOverlay');
   var seen = localStorage.getItem('ddugi_landing_seen');
   if(!seen){
     overlay.style.display = 'block';
-    // shell 숨기기 (body overflow:hidden 문제 우회)
     var shell = document.getElementById('shell');
     if(shell) shell.style.display = 'none';
     var apphead = document.getElementById('apphead');
@@ -988,6 +980,11 @@ if(localStorage.getItem('ai_task_ver') !== STORE_VER){
 }
 let state = { fields:{}, cur:'intro', locked:false, completed:false };
 window._state = state; // 외부 접근용
+// 랜딩에서 넘어온 경우 시작 페이지 설정
+(function(){
+  var startCur = localStorage.getItem('ddugi_start_cur');
+  if(startCur){ state.cur = startCur; localStorage.removeItem('ddugi_start_cur'); }
+})();
 try{
   const raw = localStorage.getItem(STORE_KEY);
   if(raw){
