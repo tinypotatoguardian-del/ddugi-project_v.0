@@ -554,6 +554,10 @@
 window._landingEnter = function(){
   var overlay = document.getElementById('landingOverlay');
   if(overlay) overlay.style.display = 'none';
+  var shell = document.getElementById('shell');
+  if(shell) shell.style.display = '';
+  var apphead = document.getElementById('apphead');
+  if(apphead) apphead.style.display = '';
   localStorage.setItem('ddugi_landing_seen','1');
   if(window._state) window._state.cur = 'curriculum';
   if(window._renderSheet) window._renderSheet();
@@ -564,6 +568,11 @@ window._landingEnter = function(){
   var seen = localStorage.getItem('ddugi_landing_seen');
   if(!seen){
     overlay.style.display = 'block';
+    // shell 숨기기 (body overflow:hidden 문제 우회)
+    var shell = document.getElementById('shell');
+    if(shell) shell.style.display = 'none';
+    var apphead = document.getElementById('apphead');
+    if(apphead) apphead.style.display = 'none';
   }
 })();
 
