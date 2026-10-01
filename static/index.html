@@ -4292,25 +4292,20 @@ function renderLandingSection(){
 window.introGenPrompt = function(){
   const text = (document.getElementById('introFreeText')||{}).value||'';
   if(!text.trim()){ alert('먼저 상황을 적어줘!'); return; }
-  const prompt = `아래 상황을 분석해서 JSON을 완성해줘.
-괄호 안 설명은 지시사항이야 — 지시사항 말고 실제 내용으로 채워줘.
-반드시 JSON만 출력해. 설명, 마크다운 없이.
+  const prompt = `아래 상황을 분석해서 항목을 채워줘.
+반드시 아래 형식 그대로만 답해줘. 번호와 레이블은 그대로 두고 콜론 뒤만 채워줘.
 
 상황: "${text.trim()}"
 
-{
-  "seed_name": "반복업무 자동화 시작점 탐색",
-  "real_problem": "자동화하고 싶은데 어디서 시작해야 할지 몰라 아무것도 못 하고 있음",
-  "current_situation": "자동화 필요성은 느끼지만 어떤 도구/방법/순서로 해야 할지 막막한 상태",
-  "desired_result": "자동화를 처음 시작하는 순서와 방법을 알고, 첫 번째 작은 시도를 할 수 있는 상태",
-  "problem_clarity": "막연함",
-  "clarify_questions": "1. 지금 가장 반복적으로 하는 업무가 뭔가요? 2. 그 업무에서 가장 귀찮은 단계는 어디인가요?",
-  "without_ai": "반복 업무 목록 작성, 소요 시간 측정, 우선순위 정하기",
-  "with_ai": "업무 흐름 분석, 자동화 가능 여부 판단, 첫 번째 시도할 도구 추천",
-  "hypothesis": "어떤 업무를 자동화할지 먼저 정하고, 가장 단순한 단계부터 작게 시작하면 될 것 같다"
-}
-
-위는 예시야. 실제 상황: "${text.trim()}" 을 분석해서 새로 JSON을 작성해줘.`;
+1. 씨앗 이름: (핵심 문제 한 줄, 15자 이내)
+2. 진짜 문제: (표면 문제 뒤에 있는 실제 문제. "막막하다" 말고 "왜 막막한지")
+3. 현재 상황: (지금 어떤 상태인지 구체적으로)
+4. 원하는 결과: (뭐가 해결되면 좋겠는지)
+5. 문제 선명도: 막연함 또는 어느정도명확 또는 명확함 중 하나만
+6. 먼저 답할 질문: (문제가 막연하면 먼저 생각해볼 질문 1~2개. 명확하면 "없음")
+7. AI 없이 가능한 것: (AI 없어도 할 수 있는 부분)
+8. AI가 도움될 부분: (AI가 실제로 도움될 수 있는 부분)
+9. 해결 방향 가설: (내가 생각하는 첫 번째 시도 방향)`;
   const box = document.getElementById('introStep2');
   const step3 = document.getElementById('introStep3');
   const pt = document.getElementById('introPromptText');
@@ -4334,41 +4329,53 @@ window.introAutoFill = function(){
   const raw = (document.getElementById('introAIResult')||{}).value||'';
   const msg = document.getElementById('introFillMsg');
   if(!raw.trim()){
-    if(msg){ msg.style.display='block'; msg.style.background='var(--danger-soft)'; msg.textContent='AI 답변을 먼저 붙여넣어줘!'; }
+    if(msg){ msg.style.display='block'; msg.style.background='rgba(239,68,68,.1)'; msg.style.color='#ef4444'; msg.textContent='AI 답변을 먼저 붙여넣어줘!'; }
     return;
   }
-  let data;
-  try{
-    // JSON 추출 (코드블록 안에 있을 수 있음)
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('JSON 없음');
-    data = JSON.parse(jsonMatch[0]);
-  } catch(e){
-    if(msg){ msg.style.display='block'; msg.style.background='rgba(239,68,68,.1)'; msg.style.color='#ef4444'; msg.textContent='JSON 형식으로 안 나온 것 같아. AI한테 "JSON으로만 답해줘"라고 다시 요청해봐.'; }
+
+  // 번호:레이블: 값 형식 파싱
+  function extract(num){
+    const re = new RegExp(num+'\\.\\s*[^:：]+[:：]\\s*(.+)');
+    const m = raw.match(re);
+    return m ? m[1].trim() : '';
+  }
+
+  const seedName   = extract('1');
+  const realProb   = extract('2');
+  const curSit     = extract('3');
+  const desired    = extract('4');
+  const clarity    = extract('5');
+  const clarifyQ   = extract('6');
+  const withoutAI  = extract('7');
+  const withAI     = extract('8');
+  const hypothesis = extract('9');
+
+  if(!seedName && !realProb){
+    if(msg){ msg.style.display='block'; msg.style.background='rgba(239,68,68,.1)'; msg.style.color='#ef4444'; msg.textContent='형식이 맞지 않아. AI한테 "번호: 레이블: 답변" 형식 그대로 답해달라고 다시 요청해봐.'; }
     return;
   }
+
   // 필드 채우기
-  const fill = (id, val) => { if(val){ setV(id, val); const el=document.getElementById(id); if(el) el.value=val; } };
-  fill('s1_name',    data.seed_name||'');
-  fill('s1_purpose', [data.real_problem, data.current_situation].filter(Boolean).join('\n\n'));
-  fill('s2_core',    data.real_problem||'');
-  fill('s1_goal',    data.desired_result||'');
-  fill('s1_hypo',    data.hypothesis||'');
+  const fill = (id, val) => { if(val){ setV(id, val); } };
+  fill('s1_name',    seedName);
+  fill('s1_purpose', [realProb, curSit].filter(Boolean).join('\n\n'));
+  fill('s2_core',    realProb);
+  fill('s1_goal',    desired);
+  fill('s1_hypo',    hypothesis);
   persist();
 
-  // 결과 요약 표시
-  let summary = '<b>🌱 채워진 내용 미리보기</b><br>';
-  if(data.seed_name) summary += '<br>📌 씨앗 이름: '+esc(data.seed_name);
-  if(data.real_problem) summary += '<br>🔍 진짜 문제: '+esc(data.real_problem);
-  if(data.problem_clarity) summary += '<br>💡 문제 선명도: '+esc(data.problem_clarity);
-  if(data.clarify_questions) summary += '<br>❓ 먼저 답할 것: '+esc(data.clarify_questions);
-  if(data.without_ai) summary += '<br>✅ AI 없이 가능: '+esc(data.without_ai);
-  if(data.with_ai) summary += '<br>🤖 AI 도움될 부분: '+esc(data.with_ai);
-  summary += '<br><br><b>씨앗 정의서(01번)에 채워뒀어. AI가 채운 거니까 맞는지 꼭 확인해줘!</b>';
+  // 결과 요약
+  let summary = '<b>🌱 채워진 내용</b><br><br>';
+  if(seedName)   summary += '📌 <b>씨앗 이름:</b> '+esc(seedName)+'<br>';
+  if(realProb)   summary += '🔍 <b>진짜 문제:</b> '+esc(realProb)+'<br>';
+  if(clarity)    summary += '💡 <b>문제 선명도:</b> '+esc(clarity)+'<br>';
+  if(clarifyQ && clarifyQ !== '없음') summary += '❓ <b>먼저 답할 것:</b> '+esc(clarifyQ)+'<br>';
+  if(withoutAI)  summary += '✅ <b>AI 없이 가능:</b> '+esc(withoutAI)+'<br>';
+  if(withAI)     summary += '🤖 <b>AI 도움될 부분:</b> '+esc(withAI)+'<br>';
+  summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>맞는지 꼭 확인하고 수정해줘!</b>';
 
   if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
 
-  // 3초 후 01번으로 이동
   setTimeout(()=>{ state.cur='s1'; renderSheet(); document.getElementById('main').scrollTo(0,0); }, 2500);
 };
 
