@@ -773,7 +773,7 @@ const SECTIONS = [
 {id:'diag', num:'3-3', title:'뿌리 내리기', special:'diag'},
 
 /* ---------- 후속: 고민거리 수행 기록 (요구서 7장, 진단 .md에는 포함하지 않음) ---------- */
-{id:'s16', num:'04', title:'먼저 자란 씨앗 (BoB)', disabled:true, disabledNote:'준비 중', fields:[
+{id:'s16', num:'04', title:'참고 과제 (BoB)', disabled:true, disabledNote:'준비 중', fields:[
   HINT('설계 전에 비슷한 기존 씨앗을 확인하세요. BoB는 복사해서 쓰는 Template이 아니라 시행착오를 줄이기 위한 Reference입니다.'),
   T('s16_bob','BoB'),
   T('s16_purpose','왜 이 씨앗을 봤는지'),
@@ -782,7 +782,7 @@ const SECTIONS = [
   T('s16_ui','참고한 모양'),
   TA('s16_solution','참고한 키우기 방법')
 ]},
-{id:'s7', num:'05', title:'가지 그리기', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s7', num:'05', title:'기능 상세 정의', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   HINT('AI 진단 결과의 핵심 기능을 기준으로 기능별 상세를 정의하세요. 정답이 아니어도 되니 일단 채워보고, 08 끝에서 AI에게 검토를 요청하세요.'),
   {type:'diffhint', sectionId:'s7'},
   {type:'example05'},
@@ -797,12 +797,12 @@ const SECTIONS = [
     {id:'exception', label:'예외 상황', type:'textarea', ph:'예: 이미 완료된 항목은 알림을 보내지 않는다'}
   ])
 ]},
-{id:'s9', num:'06', title:'눈에 보이는 모양', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s9', num:'06', title:'UX / UI 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   CL('s9_1','6-1. 사용자가 무엇을 보는가?', ['Dashboard','검색','입력','결과','분석','비교','알림','승인/확인','이력','기타']),
   TA('s9_2','6-2. 핵심 사용자 Flow','순서대로 적어주세요. 예: 1) 목록에서 항목 선택 2) 상태 변경 3) 저장하면 이력에 기록'),
   HINT('Dashboard만 만드는 씨앗이라면 업무효율화 목적과 실제 업무 변화가 있는지 재검토한다.')
 ]},
-{id:'s10', num:'07', title:'뿌리 구조', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s10', num:'07', title:'기술 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'glossary07'},
   Object.assign(CL('s10_1','7-1. 전체 Architecture 구성요소', ['Frontend','Backend','Database','API','LLM','RAG','Vector DB','Tool Calling','Workflow','Agent','Automation','Authentication','Logging','기타']), {lvFilter:true}),
   HINT('Model·Prompt·Context 같은 구현 디테일은 나중에 AI(바이브 코딩)의 도움을 받아 채워도 됩니다. 여기서 직접 판단해야 하는 건 "AI가 하는 일"과 "그중 사람이 반드시 확인할 지점"입니다.'),
@@ -812,14 +812,14 @@ const SECTIONS = [
     {id:'detail', label:'세부 사항 (선택, 나중에 채워도 됨)', type:'textarea', ph:'Model, Prompt, Context, RAG, Tool, Memory 등 구현 디테일'}
   ]), {lvFilter:true})
 ]},
-{id:'s11', num:'08', title:'양분 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s11', num:'08', title:'데이터 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'diffhint', sectionId:'s11'},
   {type:'datacandidates'},
   Object.assign(CL('s11_data','8-1. 필요한 데이터 (후보에서 선택, 직접 추가 가능)', [], true), {optsFn:()=>getV('s11_data_candidates',[])}),
   TA('s11_rel','8-2. 데이터 관계 (Entity 순서대로)','예: 고객 문의 → 처리 담당자 → 처리 이력 → 완료 확인'),
   {type:'designreview'}
 ]},
-{id:'s12', num:'09', title:'흔들어보기 (심화)', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s12', num:'09', title:'테스트 및 검증', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'codetest'},
   TA('s12_1','9-1. 테스트 시나리오','어떤 입력에 어떤 결과가 나와야 하는지, 실제로는 어땠는지 적어주세요. 예: 마감 D-1 항목 입력 → 알림 발송 기대 → 실제로 발송됨 (Pass)'),
   RG('s12_2','9-2. AI 품질 검증 (해당하는 경우)', [
@@ -831,12 +831,12 @@ const SECTIONS = [
   HINT('예측·AI 모델 씨앗은 AI를 바로 적용하지 않고 Gate를 차례로 확인합니다. Gate 1: 규칙(기존 방식)으로 계산한 값이 실제와 얼마나 맞는가? / Gate 2: 규칙으로 설명되지 않는 오차 패턴이 있는가? / Gate 3: AI가 Baseline보다 유의미하게 나은가? Gate 1~2를 통과해야 AI를 검토하고, Gate 3에서 Baseline보다 나아야 적용합니다.'),
   FT('s12_gate','9-4. 검증 Gate (예측·AI 모델 씨앗만, 확인한 Gate를 체크)', ['Gate 1. Rule Baseline','Gate 2. AI 필요성','Gate 3. AI 성능'], ['확인 결과 (수치·근거)','통과 여부'], true)
 ]},
-{id:'s13', num:'10', title:'밭에서 키우기', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s13', num:'10', title:'실제 사용 및 운영', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   RW([ T('s13_user','사용자'), T('s13_freq','사용 빈도'), T('s13_when','사용 시점'), T('s13_task','사용 업무') ]),
   CL('s13_2','10-1. 운영 방식', ['개인 사용','팀 사용','부서 사용','전사 확장 가능']),
   Object.assign(CL('s13_3','10-2. 운영에 필요한 요소', ['권한','보안','데이터 관리','Logging','오류 대응','유지보수','사용자 교육']), {lvFilter:true})
 ]},
-{id:'s14', num:'11', title:'수확 일지', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s14', num:'11', title:'구현 회고', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   TA('s14_1','11-1. 실제로 열린 열매'),
   TA('s14_2','11-2. 예상과 다르게 자란 것'),
   TA('s14_3','11-3. 키우면서 생긴 문제'),
@@ -879,8 +879,8 @@ const TOTAL_SECTIONS = SECTIONS.filter(s=>!s.special && !s.disabled).length;
 // 사이드바 상위 메뉴: 그룹의 첫 섹션 id → 그룹 이름
 const NAV_GROUPS = {
   discover:'A. 씨앗 정의서',
-  s16:'B. 가지 뻗기',
-  s12:'C. 열매와 수확'
+  s16:'B. 가지 그리기 (설계)',
+  s12:'C. 열매와 수확 (결과)'
 };
 // 한 번에 다 보이면 부담스러우니, 이전 단계를 손대기(비어있지 않기) 전까지는 사이드바에서 음영 처리만 함 (클릭은 막지 않음). admin/master는 항상 선명하게.
 const GATE_CHAIN = ['s1','s3','verify','redefine','diag','s7','s9','s10','s11','s12','s13','s14','s15','s17'];
@@ -2239,10 +2239,16 @@ function updateRulerAndNav(){
 
   // 그룹 → <details> 로 렌더
   groups.forEach(g => {
-    const isOpen = !['s16','s12'].includes(g.groupId); // B·C 기본 접힘
+    // 기본: A그룹만 열림, B·C는 접힘. 사용자가 열면 localStorage에 저장
+    const storageKey = 'ddugi_nav_open_'+g.groupId;
+    const defaultOpen = !['s16','s12'].includes(g.groupId);
+    const isOpen = localStorage.getItem(storageKey) !== null
+      ? localStorage.getItem(storageKey) === '1'
+      : defaultOpen;
     const itemsHtml = g.items.map(renderNavItem).join('');
     navHtml +=
-      '<details class="navdetails"'+(isOpen?' open':'')+' id="navdetails-'+g.groupId+'">'+
+      '<details class="navdetails"'+(isOpen?' open':'')+' id="navdetails-'+g.groupId+'" '+
+        'ontoggle="localStorage.setItem(\'ddugi_nav_open_'+g.groupId+'\',this.open?\'1\':\'0\')">'+
         '<summary class="navgroup-summary">'+esc(g.groupLabel)+'</summary>'+
         '<ul class="navlist">'+itemsHtml+'</ul>'+
       '</details>';
