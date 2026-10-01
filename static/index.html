@@ -584,11 +584,6 @@
       </p>
     </div>
 
-    <div style="text-align:center;">
-      <button id="landingEnterBtn" style="font-size:17px;font-weight:700;padding:16px 52px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,.35);transition:transform .1s;" onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform='scale(1)'">🥔 들어가기</button>
-      <p style="font-size:12px;color:var(--ink-soft);margin-top:14px;">AI가 꼭 필요한 곳에만 제대로 쓰는 게 목표예요.</p>
-    </div>
-
   </div>
 </div>
 <header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span>
@@ -661,7 +656,11 @@
     btn.addEventListener('click', function(){
       overlay.style.opacity = '0';
       overlay.style.transition = 'opacity 0.3s';
-      setTimeout(function(){ overlay.style.display = 'none'; }, 300);
+      setTimeout(function(){
+        overlay.style.display = 'none';
+        // 바로 Foundation(커리큘럼)으로 이동
+        goto('curriculum');
+      }, 300);
       localStorage.setItem('ddugi_landing_seen', '1');
     });
   }
