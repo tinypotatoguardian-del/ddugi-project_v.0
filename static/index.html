@@ -484,7 +484,7 @@
 
     <!-- 들어가기 -->
     <div style="text-align:center;margin-bottom:32px;">
-      <button id="landingEnterBtn" style="font-size:17px;font-weight:700;padding:16px 56px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,.35);transition:transform .1s;" onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform='scale(1)'">🥔 들어가기</button>
+      <button id="landingEnterBtn" onclick="window._landingEnter()" style="font-size:17px;font-weight:700;padding:16px 56px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,.35);">🥔 들어가기</button>
     </div>
 
     <!-- 회색 푸터 -->
@@ -550,25 +550,22 @@
 (function(){
 "use strict";
 
-// 랜딩 페이지 로직
+// 랜딩 페이지 로직 — IIFE 밖에서 window에 노출
+window._landingEnter = function(){
+  var overlay = document.getElementById('landingOverlay');
+  if(overlay) overlay.style.display = 'none';
+  document.body.style.overflow = '';
+  localStorage.setItem('ddugi_landing_seen','1');
+  state.cur = 'curriculum';
+  renderSheet();
+  window.scrollTo(0,0);
+};
 (function(){
   var overlay = document.getElementById('landingOverlay');
   var seen = localStorage.getItem('ddugi_landing_seen');
   if(!seen){
     overlay.style.display = 'block';
-    document.body.style.overflow = 'hidden'; // 뒤 화면 스크롤 막기
-  }
-  var btn = document.getElementById('landingEnterBtn');
-  if(btn){
-    btn.addEventListener('click', function(){
-      overlay.style.display = 'none';
-      document.body.style.overflow = '';
-      localStorage.setItem('ddugi_landing_seen', '1');
-      // Foundation으로 이동
-      state.cur = 'curriculum';
-      renderSheet();
-      window.scrollTo(0,0);
-    });
+    document.body.style.overflow = 'hidden';
   }
 })();
 
