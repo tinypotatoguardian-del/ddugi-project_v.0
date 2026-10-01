@@ -4302,14 +4302,15 @@ window.introGenPrompt = function(){
 상황: "${text.trim()}"
 
 1. 씨앗 이름: (핵심 문제 한 줄, 15자 이내)
-2. 진짜 문제: (표면 문제 뒤에 있는 실제 문제. "막막하다" 말고 "왜 막막한지")
-3. 현재 상황: (지금 어떤 상태인지 구체적으로)
-4. 원하는 결과: (뭐가 해결되면 좋겠는지)
-5. 문제 선명도: 막연함 또는 어느정도명확 또는 명확함 중 하나만
-6. 먼저 답할 질문: (문제가 막연하면 먼저 생각해볼 질문 1~2개. 명확하면 "없음")
-7. AI 없이 가능한 것: (AI 없어도 할 수 있는 부분)
-8. AI가 도움될 부분: (AI가 실제로 도움될 수 있는 부분)
-9. 해결 방향 가설: (내가 생각하는 첫 번째 시도 방향)`;
+2. 업무 목적: (이 업무는 왜 하는가? 어떤 목적으로 하는 일인가?)
+3. 현재 프로세스: (지금 어떻게 하고 있는지 순서대로. 예: 1) 자료 수집 2) 정리 3) 보고)
+4. 발생 빈도: 매일 또는 주 단위 또는 월 단위 또는 비정기 중 해당하는 것
+5. 시간이 많이 드는 단계: (가장 귀찮거나 오래 걸리는 단계가 어디인지)
+6. 핵심 문제: (진짜 해결하고 싶은 문제. 표면 말고 본질)
+7. 개선 기준: (뭐가 달라지면 이 업무가 좋아졌다고 할 수 있는지)
+8. 해결 방향 가설: (내가 생각하는 해결 방향, 첫 번째 시도 방향)
+9. AI 없이 가능한 것: (AI 없어도 할 수 있는 부분)
+10. AI가 도움될 부분: (AI가 실제로 도움될 수 있는 부분)`;
   const box = document.getElementById('introStep2');
   const step3 = document.getElementById('introStep3');
   const pt = document.getElementById('introPromptText');
@@ -4345,16 +4346,17 @@ window.introAutoFill = function(){
   }
 
   const seedName   = extract('1');
-  const realProb   = extract('2');
-  const curSit     = extract('3');
-  const desired    = extract('4');
-  const clarity    = extract('5');
-  const clarifyQ   = extract('6');
-  const withoutAI  = extract('7');
-  const withAI     = extract('8');
-  const hypothesis = extract('9');
+  const purpose    = extract('2');
+  const flow       = extract('3');
+  const freq       = extract('4');
+  const slow       = extract('5');
+  const core       = extract('6');
+  const goal       = extract('7');
+  const hypothesis = extract('8');
+  const withoutAI  = extract('9');
+  const withAI     = extract('10');
 
-  if(!seedName && !realProb){
+  if(!seedName && !core){
     if(msg){ msg.style.display='block'; msg.style.background='rgba(239,68,68,.1)'; msg.style.color='#ef4444'; msg.textContent='형식이 맞지 않아. AI한테 "번호: 레이블: 답변" 형식 그대로 답해달라고 다시 요청해봐.'; }
     return;
   }
@@ -4362,18 +4364,26 @@ window.introAutoFill = function(){
   // 필드 채우기
   const fill = (id, val) => { if(val){ window._setV(id, val); } };
   fill('s1_name',    seedName);
-  fill('s1_purpose', [realProb, curSit].filter(Boolean).join('\n\n'));
-  fill('s2_core',    realProb);
-  fill('s1_goal',    desired);
+  fill('s1_purpose', purpose);
+  fill('s2_flow',    flow);
+  fill('s2_slow',    slow);
+  fill('s2_core',    core);
+  fill('s1_goal',    goal);
   fill('s1_hypo',    hypothesis);
+  // 발생 빈도는 체크박스라 직접 설정
+  if(freq){
+    const freqMap = {'매일':'매일','주 단위':'주 단위','월 단위':'월 단위','비정기':'비정기'};
+    const matched = Object.keys(freqMap).find(k => freq.includes(k));
+    if(matched) window._setV('s2_freq', [matched]);
+  }
   window._persist();
 
   // 결과 요약
   let summary = '<b>🌱 채워진 내용</b><br><br>';
   if(seedName)   summary += '📌 <b>씨앗 이름:</b> '+esc(seedName)+'<br>';
-  if(realProb)   summary += '🔍 <b>진짜 문제:</b> '+esc(realProb)+'<br>';
-  if(clarity)    summary += '💡 <b>문제 선명도:</b> '+esc(clarity)+'<br>';
-  if(clarifyQ && clarifyQ !== '없음') summary += '❓ <b>먼저 답할 것:</b> '+esc(clarifyQ)+'<br>';
+  if(core)       summary += '🔍 <b>핵심 문제:</b> '+esc(core)+'<br>';
+  if(freq)       summary += '⏱ <b>발생 빈도:</b> '+esc(freq)+'<br>';
+  if(slow)       summary += '🐢 <b>시간 많이 드는 단계:</b> '+esc(slow)+'<br>';
   if(withoutAI)  summary += '✅ <b>AI 없이 가능:</b> '+esc(withoutAI)+'<br>';
   if(withAI)     summary += '🤖 <b>AI 도움될 부분:</b> '+esc(withAI)+'<br>';
   summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>맞는지 꼭 확인하고 수정해줘!</b>';
