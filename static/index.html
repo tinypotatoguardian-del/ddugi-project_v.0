@@ -2279,15 +2279,21 @@ function updateRulerAndNav(){
   }
 
   // 그룹 구조로 HTML 생성
-  let groups = []; // [{groupId, groupLabel, items:[s,...]}]
+  let groups = [];
   let noGroupItems = [];
+  let afterGroupItems = []; // 그룹 뒤에 나오는 special 섹션들 (감자밭, 방명록 등)
   let curGroup = null;
+
+  // 그룹 종료 후 나오는 special 섹션 판별
+  const TRAILING_SPECIALS = new Set(['feedback','guestbook','export','roadmap']);
 
   SECTIONS.filter(s=>s.special!=='dashboard'&&s.special!=='tasklist'&&s.special!=='accounts'&&s.special!=='taxonomy'&&s.special!=='visits').forEach(s=>{
     if(NAV_GROUPS[s.id]){
-      // 새 그룹 시작
       curGroup = {groupId:s.id, groupLabel:NAV_GROUPS[s.id], items:[s]};
       groups.push(curGroup);
+    } else if(s.special && TRAILING_SPECIALS.has(s.special)){
+      // 감자밭·방명록·내보내기·밭넓히기는 그룹 밖 하단에
+      afterGroupItems.push(s);
     } else if(curGroup){
       curGroup.items.push(s);
     } else {
@@ -2312,6 +2318,12 @@ function updateRulerAndNav(){
         '<ul class="navlist">'+itemsHtml+'</ul>'+
       '</div>';
   });
+
+  // 그룹 뒤 하단 섹션 (감자밭·방명록·내보내기·밭넓히기)
+  if(afterGroupItems.length){
+    navHtml += '<hr class="navdivider">';
+    navHtml += afterGroupItems.map(renderNavItem).join('');
+  }
 
   if(isAdmin){
     const adminBtn = s => '<li><button type="button" class="navbtn sub'+(state.cur===s.id?' active':'')+'" data-action="goto" data-target="'+s.id+'">'+
