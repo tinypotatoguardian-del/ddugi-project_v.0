@@ -556,8 +556,8 @@ window._landingEnter = function(){
   if(overlay) overlay.style.display = 'none';
   document.body.style.overflow = '';
   localStorage.setItem('ddugi_landing_seen','1');
-  state.cur = 'curriculum';
-  renderSheet();
+  if(window._state) window._state.cur = 'curriculum';
+  if(window._renderSheet) window._renderSheet();
   window.scrollTo(0,0);
 };
 (function(){
@@ -980,6 +980,7 @@ if(localStorage.getItem('ai_task_ver') !== STORE_VER){
   localStorage.setItem('ai_task_ver', STORE_VER);
 }
 let state = { fields:{}, cur:'intro', locked:false, completed:false };
+window._state = state; // 외부 접근용
 try{
   const raw = localStorage.getItem(STORE_KEY);
   if(raw){
@@ -1732,6 +1733,7 @@ function fieldHasValue(f){
 }
 
 function renderSheet(){
+  window._renderSheet = renderSheet; // 외부 접근용
   if((state.cur==='dashboard' || state.cur==='tasklist' || state.cur==='taxonomy') && !isAdmin) state.cur='s1';
   if((state.cur==='accounts' || state.cur==='visits') && !isMaster) state.cur='s1';
   let sec = SECTIONS.find(s=>s.id===state.cur) || SECTIONS[0];
