@@ -561,16 +561,13 @@
   var btn = document.getElementById('landingEnterBtn');
   if(btn){
     btn.addEventListener('click', function(){
-      overlay.style.opacity = '0';
-      overlay.style.transition = 'opacity 0.3s';
-      setTimeout(function(){
-        overlay.style.display = 'none';
-        document.body.style.overflow = ''; // 스크롤 복구
-        // Foundation으로 바로 이동
-        state.cur = 'curriculum';
-        renderSheet();
-      }, 300);
+      overlay.style.display = 'none';
+      document.body.style.overflow = '';
       localStorage.setItem('ddugi_landing_seen', '1');
+      // Foundation으로 이동
+      state.cur = 'curriculum';
+      renderSheet();
+      window.scrollTo(0,0);
     });
   }
 })();
