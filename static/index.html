@@ -99,17 +99,18 @@
   .sec-status{ margin-left:auto; font-size:11px; font-weight:600; white-space:nowrap; padding:1px 6px; border-radius:var(--radius); }
   .sec-status.st-partial{ color:var(--blueprint-2); background:var(--blueprint-soft); }
   .sec-status.st-done{ color:var(--ok); background:var(--ok-soft); }
-  .navgroup{
-    padding:12px 20px 4px;
+  .navdetails{ border:none; }
+  .navdetails > summary.navgroup-summary{
+    list-style:none; padding:12px 20px 4px;
     font-size:12.5px; font-weight:700; color:var(--blueprint); letter-spacing:.01em;
     cursor:pointer; display:flex; align-items:center; gap:6px; user-select:none;
   }
-  .navgroup:hover{ color:var(--blueprint-2); }
-  .navgroup:first-child{ padding-top:6px; }
-  .navgroup .nav-arrow{ font-size:10px; margin-left:auto; transition:transform .2s; }
-  .navgroup.collapsed .nav-arrow{ transform:rotate(-90deg); }
-  .navgroup-items{ overflow:hidden; transition:max-height .25s ease; }
-  .navgroup-items.collapsed{ max-height:0 !important; }
+  .navdetails > summary.navgroup-summary::-webkit-details-marker{ display:none; }
+  .navdetails > summary.navgroup-summary::after{
+    content:'▾'; font-size:10px; margin-left:auto; transition:transform .2s;
+  }
+  .navdetails:not([open]) > summary.navgroup-summary::after{ transform:rotate(-90deg); }
+  .navdetails > summary.navgroup-summary:hover{ color:var(--blueprint-2); }
   .navbtn.sub{ padding-left:30px; }
   .navbtn.dim{ opacity:1; background:var(--line-soft); color:var(--ink-soft); }
   .navbtn.dim:hover{ background:var(--blueprint-soft); }
@@ -2175,28 +2176,7 @@ function navFootHtml(sec){
   '</div>';
 }
 
-function toggleNavGroup(groupId){
-  if(!window._navCollapsed) window._navCollapsed = new Set();
-  const el = document.getElementById('navgroup-'+groupId);
-  const headers = document.querySelectorAll('.navgroup');
-  let header = null;
-  headers.forEach(h => { if(h.onclick && h.getAttribute('onclick') && h.getAttribute('onclick').includes(groupId)) header = h; });
-
-  if(window._navCollapsed.has(groupId)){
-    window._navCollapsed.delete(groupId);
-    if(el){ el.classList.remove('collapsed'); el.style.maxHeight = (el.scrollHeight + 100)+'px'; }
-    // header 찾기
-    document.querySelectorAll('.navgroup').forEach(h => {
-      if(h.textContent.trim() && h.onclick){ const oc = h.getAttribute('onclick')||''; if(oc.includes("'"+groupId+"'")) h.classList.remove('collapsed'); }
-    });
-  } else {
-    window._navCollapsed.add(groupId);
-    if(el){ el.classList.add('collapsed'); el.style.maxHeight = '0'; }
-    document.querySelectorAll('.navgroup').forEach(h => {
-      const oc = h.getAttribute('onclick')||''; if(oc.includes("'"+groupId+"'")) h.classList.add('collapsed');
-    });
-  }
-}
+/* toggleNavGroup 제거 — <details> 로 대체됨 */
 
 function updateRulerAndNav(){
   const relevant = SECTIONS.filter(s=>!s.special && !s.disabled);
@@ -2209,20 +2189,10 @@ function updateRulerAndNav(){
   const nav = document.getElementById('navlist');
   let navHtml = '';
 
-  // 그룹별로 섹션을 묶어서 접기/펼치기 처리
-  // NAV_COLLAPSED: 기본으로 접혀있는 그룹 ID 목록
-  const NAV_COLLAPSED_DEFAULT = new Set(['s16', 's12']); // B, C 그룹은 기본 접힘
-  if(!window._navCollapsed) window._navCollapsed = new Set(NAV_COLLAPSED_DEFAULT);
-
-  let currentGroupId = null;
-  let currentGroupItems = [];
-  let pendingSections = [];
-
-  // 상단 고정 메뉴 (그룹 없는 것들) 먼저
-  const topSections = SECTIONS.filter(s =>
-    !s.special && !s.disabled ? false :
-    (s.special && !NAV_GROUPS[s.id] && s.special!=='dashboard' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy' && s.special!=='visits')
-  );
+  const TRAILING_SPECIALS = new Set(['feedback','guestbook','export','roadmap']);
+  const HIDDEN_SPECIALS = new Set(['dashboard','tasklist','accounts','taxonomy','visits']);
+  // B·C 그룹은 기본 접힘 (details open 여부)
+  const DEFAULT_OPEN = new Set(); // 비어있으면 A그룹(씨앗정의서)만 open
 
   function renderNavItem(s){
     const active = s.id===state.cur;
@@ -2239,27 +2209,23 @@ function updateRulerAndNav(){
     const dim = isSectionLocked(s);
     const st = sectionStatus(s);
     const stMark = st==='done' ? '<span class="sec-status st-done">완료</span>' : st==='partial' ? '<span class="sec-status st-partial">작성중</span>' : '<span class="dot"></span>';
-    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook';
+    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook'||s.special==='landing';
     return '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(isTop?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
       '<span class="num">'+s.num+'</span>'+esc(s.title)+stMark+'</button></li>'+
       (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
   }
 
-  // 그룹 구조로 HTML 생성
+  // 섹션 분류
   let groups = [];
   let noGroupItems = [];
-  let afterGroupItems = []; // 그룹 뒤에 나오는 special 섹션들 (감자밭, 방명록 등)
+  let afterGroupItems = [];
   let curGroup = null;
 
-  // 그룹 종료 후 나오는 special 섹션 판별
-  const TRAILING_SPECIALS = new Set(['feedback','guestbook','export','roadmap']);
-
-  SECTIONS.filter(s=>s.special!=='dashboard'&&s.special!=='tasklist'&&s.special!=='accounts'&&s.special!=='taxonomy'&&s.special!=='visits').forEach(s=>{
+  SECTIONS.filter(s=>!HIDDEN_SPECIALS.has(s.special)).forEach(s=>{
     if(NAV_GROUPS[s.id]){
       curGroup = {groupId:s.id, groupLabel:NAV_GROUPS[s.id], items:[s]};
       groups.push(curGroup);
     } else if(s.special && TRAILING_SPECIALS.has(s.special)){
-      // 감자밭·방명록·내보내기·밭넓히기는 그룹 밖 하단에
       afterGroupItems.push(s);
     } else if(curGroup){
       curGroup.items.push(s);
@@ -2268,49 +2234,46 @@ function updateRulerAndNav(){
     }
   });
 
-  // 그룹 없는 상단 섹션 먼저
+  // 상단 고정 섹션
   navHtml += noGroupItems.map(renderNavItem).join('');
 
-  // 그룹별 렌더
+  // 그룹 → <details> 로 렌더
   groups.forEach(g => {
-    const collapsed = window._navCollapsed.has(g.groupId);
+    const isOpen = !['s16','s12'].includes(g.groupId); // B·C 기본 접힘
     const itemsHtml = g.items.map(renderNavItem).join('');
-    // 그룹 헤더 높이 계산 (펼칠 때 max-height 충분히)
-    const estHeight = g.items.length * 40 + 100;
     navHtml +=
-      '<li class="navgroup'+(collapsed?' collapsed':'')+'" onclick="toggleNavGroup(\''+g.groupId+'\')">'+
-        esc(g.groupLabel)+'<span class="nav-arrow">▾</span>'+
-      '</li>'+
-      '<div class="navgroup-items'+(collapsed?' collapsed':'')+'" id="navgroup-'+g.groupId+'" style="max-height:'+(collapsed?'0':estHeight+'px')+'">'+
+      '<details class="navdetails"'+(isOpen?' open':'')+' id="navdetails-'+g.groupId+'">'+
+        '<summary class="navgroup-summary">'+esc(g.groupLabel)+'</summary>'+
         '<ul class="navlist">'+itemsHtml+'</ul>'+
-      '</div>';
+      '</details>';
   });
 
-  // 그룹 뒤 하단 섹션 (감자밭·방명록·내보내기·밭넓히기)
+  // 하단 섹션
   if(afterGroupItems.length){
     navHtml += '<hr class="navdivider">';
     navHtml += afterGroupItems.map(renderNavItem).join('');
   }
 
+  // 관리자
   if(isAdmin){
-    const adminBtn = s => '<li><button type="button" class="navbtn sub'+(state.cur===s.id?' active':'')+'" data-action="goto" data-target="'+s.id+'">'+
-        '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="dot"></span></button></li>';
-    const adminCollapsed = window._navCollapsed && window._navCollapsed.has('__admin__');
-    const masterCollapsed = window._navCollapsed && window._navCollapsed.has('__master__');
-    const adminItems = adminBtn(SECTIONS.find(s=>s.id==='tasklist')) + adminBtn(SECTIONS.find(s=>s.id==='dashboard')) + adminBtn(SECTIONS.find(s=>s.id==='taxonomy')) +
+    const adminBtn = s => s ? '<li><button type="button" class="navbtn sub'+(state.cur===s.id?' active':'')+'" data-action="goto" data-target="'+s.id+'">'+
+      '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="dot"></span></button></li>' : '';
+    const adminItems = adminBtn(SECTIONS.find(s=>s.id==='tasklist')) +
+      adminBtn(SECTIONS.find(s=>s.id==='dashboard')) +
+      adminBtn(SECTIONS.find(s=>s.id==='taxonomy')) +
       '<li><button type="button" class="navbtn sub" data-admin-pw><span class="num">⚿</span>비밀번호 변경</button></li>';
     navHtml += '<hr class="navdivider">'+
-      '<li class="navgroup'+(adminCollapsed?' collapsed':'')+'" onclick="toggleNavGroup(\'__admin__\')">관리자 · 실무<span class="nav-arrow">▾</span></li>'+
-      '<div class="navgroup-items'+(adminCollapsed?' collapsed':'')+'" id="navgroup-__admin__" style="max-height:'+(adminCollapsed?'0':'300px')+'">'+
+      '<details class="navdetails" open id="navdetails-__admin__">'+
+        '<summary class="navgroup-summary">관리자 · 실무</summary>'+
         '<ul class="navlist">'+adminItems+'</ul>'+
-      '</div>';
+      '</details>';
     if(isMaster){
       const masterItems = adminBtn(SECTIONS.find(s=>s.id==='accounts')) + adminBtn(SECTIONS.find(s=>s.id==='visits'));
       navHtml +=
-        '<li class="navgroup'+(masterCollapsed?' collapsed':'')+'" onclick="toggleNavGroup(\'__master__\')">마스터<span class="nav-arrow">▾</span></li>'+
-        '<div class="navgroup-items'+(masterCollapsed?' collapsed':'')+'" id="navgroup-__master__" style="max-height:'+(masterCollapsed?'0':'200px')+'">'+
+        '<details class="navdetails" open id="navdetails-__master__">'+
+          '<summary class="navgroup-summary">마스터</summary>'+
           '<ul class="navlist">'+masterItems+'</ul>'+
-        '</div>';
+        '</details>';
     }
   }
   nav.innerHTML = navHtml;
