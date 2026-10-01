@@ -4288,12 +4288,114 @@ function renderLandingSection(){
   </div>`;
 }
 
+// ── 인트로 자동채우기 기능 ──────────────────────────────
+window.introGenPrompt = function(){
+  const text = (document.getElementById('introFreeText')||{}).value||'';
+  if(!text.trim()){ alert('먼저 상황을 적어줘!'); return; }
+  const prompt = `다음 상황을 읽고, 아래 항목을 채워줘.
+반드시 JSON 형식으로만 답해줘. 설명 없이 JSON만.
+
+상황: "${text.trim()}"
+
+{
+  "seed_name": "씨앗 이름 (핵심 문제 한 줄 요약, 10~20자)",
+  "real_problem": "진짜 문제 (표면 문제 뒤에 있는 실제 문제. 예: '막막하다'가 아니라 '주제가 없어서 시작을 못 함')",
+  "current_situation": "현재 상황 (지금 어떤 상태인지 구체적으로)",
+  "desired_result": "원하는 결과 (뭐가 해결되면 좋겠는지)",
+  "problem_clarity": "막연함 | 어느정도명확 | 명확함",
+  "clarify_questions": "문제가 막연하다면 먼저 답해야 할 질문 1~2개 (명확하면 빈 문자열)",
+  "without_ai": "AI 없이도 해결 가능한 부분",
+  "with_ai": "AI가 도움 될 수 있는 부분",
+  "hypothesis": "내가 생각하는 해결 방향 가설 (1~2줄)"
+}`;
+  const box = document.getElementById('introPromptBox');
+  const pt = document.getElementById('introPromptText');
+  if(box) box.style.display='block';
+  if(pt) pt.value = prompt;
+};
+
+window.introCopyPrompt = function(){
+  const pt = document.getElementById('introPromptText');
+  if(!pt) return;
+  navigator.clipboard.writeText(pt.value).then(()=>{
+    const btn = document.getElementById('introCopyBtn');
+    if(btn){ btn.textContent='✅ 복사됨'; setTimeout(()=>btn.textContent='복사',1500); }
+  });
+};
+
+window.introAutoFill = function(){
+  const raw = (document.getElementById('introAIResult')||{}).value||'';
+  const msg = document.getElementById('introFillMsg');
+  if(!raw.trim()){
+    if(msg){ msg.style.display='block'; msg.style.background='var(--danger-soft)'; msg.textContent='AI 답변을 먼저 붙여넣어줘!'; }
+    return;
+  }
+  let data;
+  try{
+    // JSON 추출 (코드블록 안에 있을 수 있음)
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('JSON 없음');
+    data = JSON.parse(jsonMatch[0]);
+  } catch(e){
+    if(msg){ msg.style.display='block'; msg.style.background='rgba(239,68,68,.1)'; msg.style.color='#ef4444'; msg.textContent='JSON 형식으로 안 나온 것 같아. AI한테 "JSON으로만 답해줘"라고 다시 요청해봐.'; }
+    return;
+  }
+  // 필드 채우기
+  const fill = (id, val) => { if(val){ setV(id, val); const el=document.getElementById(id); if(el) el.value=val; } };
+  fill('s1_name',    data.seed_name||'');
+  fill('s1_purpose', [data.real_problem, data.current_situation].filter(Boolean).join('\n\n'));
+  fill('s2_core',    data.real_problem||'');
+  fill('s1_goal',    data.desired_result||'');
+  fill('s1_hypo',    data.hypothesis||'');
+  persist();
+
+  // 결과 요약 표시
+  let summary = '<b>🌱 채워진 내용 미리보기</b><br>';
+  if(data.seed_name) summary += '<br>📌 씨앗 이름: '+esc(data.seed_name);
+  if(data.real_problem) summary += '<br>🔍 진짜 문제: '+esc(data.real_problem);
+  if(data.problem_clarity) summary += '<br>💡 문제 선명도: '+esc(data.problem_clarity);
+  if(data.clarify_questions) summary += '<br>❓ 먼저 답할 것: '+esc(data.clarify_questions);
+  if(data.without_ai) summary += '<br>✅ AI 없이 가능: '+esc(data.without_ai);
+  if(data.with_ai) summary += '<br>🤖 AI 도움될 부분: '+esc(data.with_ai);
+  summary += '<br><br><b>씨앗 정의서(01번)에 채워뒀어. AI가 채운 거니까 맞는지 꼭 확인해줘!</b>';
+
+  if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
+
+  // 3초 후 01번으로 이동
+  setTimeout(()=>{ state.cur='s1'; renderSheet(); document.getElementById('main').scrollTo(0,0); }, 2500);
+};
+
 function renderIntroSection(){
   const editBtn = isMaster ? '<div class="exportbar"><button type="button" class="secondary" data-action="intro-edit" data-target="'+(introEditing?'off':'on')+'">'+(introEditing?'편집 닫기':'✎ 안내문 편집 (마스터)')+'</button></div>' : '';
   const body = introEditing
     ? taxBlockHtml('intro_html','시작하기(00) 안내문 — HTML', INTRO_HTML, 'HTML 태그 그대로 적으세요. 비워두고 저장하면 기본 안내문으로 돌아가요.')
     : INTRO_HTML;
-  return '<div class="frame intro">'+editBtn+body+
+
+  const autoFillHtml = `
+<div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:22px;margin-bottom:20px;">
+  <h3 style="margin:0 0 6px;font-size:15px;color:var(--ink);">✍️ 뭘 만들고 싶은지 말해봐</h3>
+  <p style="font-size:13px;color:var(--ink-soft);margin:0 0 14px;line-height:1.7;">자유롭게 써줘. 막막한 상황, 만들고 싶은 것, 해결하고 싶은 문제 — 뭐든.</p>
+  <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:100px;font-size:13px;padding:12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;"></textarea>
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+    <button type="button" onclick="introGenPrompt()" style="padding:8px 18px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📋 프롬프트 생성하기</button>
+    <span style="font-size:12px;color:var(--ink-soft);align-self:center;">→ 복사해서 ChatGPT / Claude에 붙여넣기</span>
+  </div>
+  <div id="introPromptBox" style="display:none;margin-top:14px;">
+    <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">📎 이 프롬프트를 복사해서 AI에게 붙여넣어봐:</div>
+    <div style="position:relative;">
+      <textarea id="introPromptText" readonly style="width:100%;min-height:180px;font-size:12px;padding:12px;border:1px solid var(--blueprint-2);border-radius:8px;background:var(--blueprint-soft);color:var(--ink);resize:none;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
+      <button type="button" onclick="introCopyPrompt()" id="introCopyBtn" style="position:absolute;top:8px;right:8px;padding:4px 12px;border-radius:6px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:11px;font-weight:600;cursor:pointer;">복사</button>
+    </div>
+    <div style="margin-top:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">📥 AI 답변을 여기 붙여넣기:</div>
+      <textarea id="introAIResult" placeholder="AI가 답변한 내용을 여기에 붙여넣어줘 (JSON 형식으로 나올 거야)" style="width:100%;min-height:100px;font-size:12px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
+      <button type="button" onclick="introAutoFill()" style="margin-top:8px;padding:8px 18px;border-radius:8px;border:none;background:var(--ok);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">🌱 씨앗 정의서 자동채우기</button>
+      <div id="introFillMsg" style="display:none;margin-top:8px;font-size:12px;padding:10px 14px;border-radius:8px;"></div>
+    </div>
+  </div>
+</div>`;
+
+  return '<div class="frame intro">'+editBtn+autoFillHtml+body+
     (introEditing ? '' : '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>'+
       '<button type="button" class="secondary" onclick="goToConv()">🌱 대화로 시작하기</button>'+
       '<button type="button" class="secondary" data-action="goto" data-target="example">🥔 먼저 온 포테이토 보기</button></div>')+
