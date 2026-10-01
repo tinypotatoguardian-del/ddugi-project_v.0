@@ -379,7 +379,9 @@ async def log_visit(request: Request, call_next):
     )
     if should_log:
         try:
-            ip = request.client.host if request.client else "unknown"
+            # Railway 리버스 프록시 뒤에서 실제 IP 가져오기
+            forwarded = request.headers.get("x-forwarded-for", "")
+            ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
             ua = request.headers.get("user-agent", "")
             now = datetime.datetime.utcnow().isoformat()
             conn = get_db()
