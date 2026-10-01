@@ -430,6 +430,49 @@
 </style>
 </head>
 <body>
+
+<div id="landingOverlay" style="display:none;position:fixed;inset:0;z-index:100;background:var(--paper);overflow-y:auto;padding:40px 20px 60px;">
+  <div style="max-width:600px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:72px;margin-bottom:12px;">🥔</div>
+      <h1 style="font-size:28px;font-weight:700;color:var(--blueprint);margin:0 0 8px;">지구 종말 방지 프로젝트</h1>
+      <p style="font-size:15px;color:var(--ink-soft);margin:0;">AI를 아무 데나 쓰다가 정작 필요한 곳을 놓치는 세상을 막기 위해.</p>
+      <blockquote style="margin:20px auto;max-width:400px;text-align:center;border-left:none;background:var(--blueprint-soft);border-radius:12px;padding:16px 20px;font-size:16px;font-weight:700;color:var(--blueprint);">"AI가 필요한지 먼저 물어봐야<br>쓸모 있는 AI가 나온다."</blockquote>
+    </div>
+
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:24px;margin-bottom:20px;">
+      <h2 style="font-size:17px;font-weight:700;margin:0 0 10px;">ddugi가 뭔가요?</h2>
+      <p style="font-size:14px;color:var(--ink);line-height:1.8;margin:0 0 12px;">AI를 쓰기 전에 <b>"이게 진짜 문제가 맞나?"</b>를 먼저 생각하게 도와주는 도구예요.</p>
+      <p style="font-size:14px;color:var(--ink);line-height:1.8;margin:0;">예를 들어, 수행평가 준비를 AI한테 맡겼는데 결과가 별로였던 적 있죠? 그건 AI가 나쁜 게 아니라, <b>뭘 부탁할지 미리 생각하지 않았기 때문</b>이에요. ddugi는 그 "생각하는 과정"을 도와줘요.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+      <div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:12px;padding:16px;">
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;">❌ 이렇게 하면</div>
+        <div style="font-size:13px;color:var(--ink-soft);line-height:1.8;">"자소서 써줘"<br>"공부 도와줘"<br>"이 문제 해결해줘"<br>→ AI가 엉뚱한 방향으로 감</div>
+      </div>
+      <div style="background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:12px;padding:16px;">
+        <div style="font-size:13px;font-weight:700;color:var(--blueprint);margin-bottom:8px;">✅ ddugi처럼 하면</div>
+        <div style="font-size:13px;color:var(--ink);line-height:1.8;">어떤 문제인지 먼저 정리<br>→ AI가 도움이 되는 답을 줌<br>→ 내가 원하는 결과를 얻음</div>
+      </div>
+    </div>
+
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:24px;margin-bottom:28px;">
+      <h2 style="font-size:17px;font-weight:700;margin:0 0 14px;">이렇게 쓰면 돼요</h2>
+      <ol style="margin:0;padding-left:20px;line-height:2.2;font-size:14px;">
+        <li><b>내 문제 적기 (01~02)</b> — AI한테 묻기 전에 내가 먼저 상황을 정리해요.</li>
+        <li><b>AI한테 검토받기 (3-1)</b> — "이 방향이 맞아?" 물어봐요.</li>
+        <li><b>다시 다듬기 (3-2)</b> — AI 피드백으로 문제를 더 정확하게 고쳐 써요.</li>
+        <li><b>AI 활용 계획 세우기 (3-3)</b> — 이 문제를 AI로 어떻게 풀지 구조를 잡아요.</li>
+      </ol>
+    </div>
+
+    <div style="text-align:center;">
+      <button id="landingEnterBtn" style="font-size:17px;font-weight:700;padding:16px 48px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(139,92,246,.3);">🥔 들어가기</button>
+      <p style="font-size:12px;color:var(--ink-soft);margin-top:12px;">AI가 꼭 필요한 곳에만 제대로 쓰는 게 목표예요.</p>
+    </div>
+  </div>
+</div>
 <header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span>
 <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
   <span id="userBadge" style="font-size:12px;color:var(--ink-soft);display:none;"></span>
@@ -487,6 +530,25 @@
 <script>
 (function(){
 "use strict";
+
+// 랜딩 페이지 로직
+(function(){
+  var overlay = document.getElementById('landingOverlay');
+  var seen = localStorage.getItem('ddugi_landing_seen');
+  if(!seen){
+    overlay.style.display = 'block';
+  }
+  var btn = document.getElementById('landingEnterBtn');
+  if(btn){
+    btn.addEventListener('click', function(){
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.3s';
+      setTimeout(function(){ overlay.style.display = 'none'; }, 300);
+      localStorage.setItem('ddugi_landing_seen', '1');
+    });
+  }
+})();
+
 
 /* ============== schema helpers ============== */
 function T(id,label,ph,required){ return {type:'text', id, label, ph:ph||'', required:!!required}; }
