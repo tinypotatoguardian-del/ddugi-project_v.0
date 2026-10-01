@@ -959,9 +959,11 @@ try{
   const raw = localStorage.getItem(STORE_KEY);
   if(raw){
     const saved = JSON.parse(raw);
-    // cur은 저장하지 않음 — 항상 intro에서 시작
-    const { cur: _ignored, ...rest } = saved;
-    state = Object.assign(state, rest);
+    // cur은 무조건 무시 — 항상 intro에서 시작
+    delete saved.cur;
+    state = Object.assign(state, saved);
+    // 저장된 데이터에서도 cur 제거해서 다시 저장
+    localStorage.setItem(STORE_KEY, JSON.stringify(saved));
   }
 }catch(e){ /* storage unavailable */ }
 
@@ -970,7 +972,9 @@ function persist(){
   clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>{
     try{
-      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      // cur은 저장 안 함 — 항상 intro에서 시작해야 하므로
+      const {cur: _skip, ...toSave} = state;
+      localStorage.setItem(STORE_KEY, JSON.stringify(toSave));
       flashSaved();
     }catch(e){ /* ignore */ }
     syncToDb();
