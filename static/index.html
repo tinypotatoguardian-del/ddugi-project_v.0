@@ -1346,6 +1346,10 @@ function flashSaved(){
 
 function getV(id, def){ return (id in state.fields) ? state.fields[id] : def; }
 function setV(id, val){ state.fields[id]=val; persist(); }
+// 외부(window) 접근용
+window._setV = function(id, val){ setV(id, val); };
+window._getV = function(id, def){ return getV(id, def); };
+window._persist = function(){ persist(); };
 
 function esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -4356,13 +4360,13 @@ window.introAutoFill = function(){
   }
 
   // 필드 채우기
-  const fill = (id, val) => { if(val){ setV(id, val); } };
+  const fill = (id, val) => { if(val){ window._setV(id, val); } };
   fill('s1_name',    seedName);
   fill('s1_purpose', [realProb, curSit].filter(Boolean).join('\n\n'));
   fill('s2_core',    realProb);
   fill('s1_goal',    desired);
   fill('s1_hypo',    hypothesis);
-  persist();
+  window._persist();
 
   // 결과 요약
   let summary = '<b>🌱 채워진 내용</b><br><br>';
@@ -4376,7 +4380,7 @@ window.introAutoFill = function(){
 
   if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
 
-  setTimeout(()=>{ state.cur='s1'; renderSheet(); document.getElementById('main').scrollTo(0,0); }, 2500);
+  setTimeout(()=>{ window._state.cur='s1'; window._renderSheet(); document.getElementById('main').scrollTo(0,0); }, 2500);
 };
 
 function renderIntroSection(){
