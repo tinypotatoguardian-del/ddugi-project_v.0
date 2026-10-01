@@ -431,66 +431,6 @@
 </head>
 <body>
 
-<div id="landingOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:var(--paper);overflow-y:auto;min-height:100vh;">
-  <div style="max-width:860px;margin:0 auto;padding:48px 32px 80px;box-sizing:border-box;">
-
-    <!-- 헤더 -->
-    <div style="text-align:center;margin-bottom:40px;">
-      <div style="font-size:72px;margin-bottom:16px;">🥔</div>
-      <h1 style="font-size:28px;font-weight:800;color:var(--blueprint);margin:0 0 12px;">지구 종말 방지 프로젝트</h1>
-      <p style="font-size:15px;color:var(--ink-soft);margin:0;line-height:1.8;">AI 데이터센터 증식으로 인한 자원 낭비,<br>그리고 쓸모없는 AI가 넘쳐나는 세상.</p>
-    </div>
-
-    <!-- AI Slop -->
-    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:28px 32px;margin-bottom:24px;">
-      <h2 style="font-size:17px;font-weight:800;margin:0 0 6px;color:var(--ink);">🌍 AI Slop이 뭔가요?</h2>
-      <p style="font-size:14px;color:var(--ink-soft);margin:0 0 18px;">쓸모없는 AI 결과물들이에요.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;">
-        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>뻔하고 누구한테나 해당되는 자소서</span></div>
-        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>이상한 손가락이 달린 AI 그림</span></div>
-        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>아무도 안 읽는 AI 블로그 글들</span></div>
-        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>"AI로 만들었다"는 게 티 나서 신뢰를 잃는 것들</span></div>
-      </div>
-      <div style="background:rgba(239,68,68,.07);border-left:4px solid #ef4444;border-radius:0 10px 10px 0;padding:14px 18px;">
-        <p style="font-size:13px;color:var(--ink);line-height:1.8;margin:0;">이 쓸모없는 결과물 하나를 만들기 위해 <b>엄청난 전기, 물, 자원</b>이 소비돼요.<br>데이터센터가 돌아가고, 지구가 뜨거워지고 있어요.</p>
-      </div>
-    </div>
-
-    <!-- 핵심 문구 -->
-    <div style="background:var(--blueprint-soft);border-radius:16px;padding:28px 32px;margin-bottom:24px;text-align:center;">
-      <p style="font-size:20px;font-weight:800;color:var(--blueprint);margin:0;line-height:1.7;">"AI가 지구를 멸망시키기 전에,<br>ddugi가 먼저 물어봅니다.<br>그거 진짜 AI가 필요해?"</p>
-    </div>
-
-    <!-- AX 철학 -->
-    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:28px 32px;margin-bottom:32px;">
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;gap:14px;align-items:flex-start;">
-          <span style="color:var(--blueprint);font-weight:800;font-size:18px;flex-shrink:0;">01</span>
-          <p style="font-size:15px;color:var(--ink);margin:0;line-height:1.6;">AI를 만들기 전에, <b>업무를 먼저 본다.</b></p>
-        </div>
-        <div style="display:flex;gap:14px;align-items:flex-start;">
-          <span style="color:var(--blueprint);font-weight:800;font-size:18px;flex-shrink:0;">02</span>
-          <p style="font-size:15px;color:var(--ink);margin:0;line-height:1.6;">AI에게 맡기기 전에, <b>사람이 문제를 정의한다.</b></p>
-        </div>
-        <div style="display:flex;gap:14px;align-items:flex-start;">
-          <span style="color:var(--blueprint);font-weight:800;font-size:18px;flex-shrink:0;">03</span>
-          <p style="font-size:15px;color:var(--ink);margin:0;line-height:1.6;">AI를 붙이는 것이 AX가 아니라, <b>일을 바꾸는 것이 AX다.</b></p>
-        </div>
-      </div>
-      <div style="border-top:1px solid var(--line-soft);margin-top:20px;padding-top:16px;">
-        <p style="font-size:14px;color:var(--ink-soft);margin:0;line-height:1.8;">AI를 쓰지 않기로 판단한 것도 능력입니다.<br>필요 없는 곳에 AI를 안 쓰는 것이 지구를 지키는 첫걸음.</p>
-      </div>
-    </div>
-
-    <!-- 들어가기 -->
-    <div style="text-align:center;margin-bottom:32px;">
-      <button id="landingEnterBtn" onclick="window._landingEnter()" style="font-size:17px;font-weight:700;padding:16px 56px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,.35);">🥔 들어가기</button>
-    </div>
-
-    <!-- 회색 푸터 -->
-    <p style="font-size:12px;color:var(--placeholder);text-align:center;line-height:1.8;margin:0;">현재 버전은 교육 목적으로 만들어졌으며, 씨앗·감자밭 등 새싹 세계관 언어로 구성되어 있습니다.<br>향후 대상(학생 / 취준생 / 기업)에 따라 언어와 스킨을 선택할 수 있도록 확장할 예정입니다.</p>
-
-  </div>
 
 <header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span>
 <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
@@ -550,23 +490,6 @@
 (function(){
 "use strict";
 
-// 랜딩 페이지 로직 — IIFE 밖에서 window에 노출
-window._landingEnter = function(){
-  localStorage.setItem('ddugi_landing_seen','1');
-  localStorage.setItem('ddugi_start_cur','curriculum');
-  location.reload();
-};
-(function(){
-  var overlay = document.getElementById('landingOverlay');
-  var seen = localStorage.getItem('ddugi_landing_seen');
-  if(!seen){
-    overlay.style.display = 'block';
-    var shell = document.getElementById('shell');
-    if(shell) shell.style.display = 'none';
-    var apphead = document.getElementById('apphead');
-    if(apphead) apphead.style.display = 'none';
-  }
-})();
 
 
 /* ============== schema helpers ============== */
@@ -787,6 +710,8 @@ const LP_DONE_FIELD = {type:'lptable', store:'lp_done', label:'나의 AI 역량:
 const LP_PLAN_FIELD = {type:'lptable', store:'lp_plan', label:'이번 씨앗에서 경험할 AI 역량 (계획)', hint:'위 추천을 담거나 직접 고르세요. 이미 경험한 항목은 "경험함"으로 표시되어 다시 고를 필요가 없어요.'};
 
 const SECTIONS = [
+/* ── 랜딩 ──────────────────────────────── */
+{id:'landing', num:'🥔', title:'처음 오셨나요?', special:'landing'},
 /* ── 학습 ─────────────────────────────── */
 {id:'curriculum', num:'🌱', title:'Foundation', special:'curriculum'},
 {id:'ai-tools',   num:'🗺️', title:'AI 도구 가이드', special:'aitools'},
@@ -978,13 +903,8 @@ if(localStorage.getItem('ai_task_ver') !== STORE_VER){
   localStorage.removeItem(STORE_KEY);
   localStorage.setItem('ai_task_ver', STORE_VER);
 }
-let state = { fields:{}, cur:'intro', locked:false, completed:false };
+let state = { fields:{}, cur:'landing', locked:false, completed:false };
 window._state = state; // 외부 접근용
-// 랜딩에서 넘어온 경우 시작 페이지 설정
-(function(){
-  var startCur = localStorage.getItem('ddugi_start_cur');
-  if(startCur){ state.cur = startCur; localStorage.removeItem('ddugi_start_cur'); }
-})();
 try{
   const raw = localStorage.getItem(STORE_KEY);
   if(raw){
@@ -1757,6 +1677,8 @@ function renderSheet(){
     initGuestbookSection();
   } else if(sec.special==='example'){
     sheet.innerHTML = renderExampleSection() + navFootHtml(sec);
+  } else if(sec.special==='landing'){
+    sheet.innerHTML = renderLandingSection();
   } else if(sec.special==='intro'){
     sheet.innerHTML = renderIntroSection() + navFootHtml(sec);
   } else if(sec.special==='curriculum'){
@@ -4428,6 +4350,46 @@ function renderCurriculumWrap(){
   return '<div id="curricWrap2">'+buildC()+'</div>';
 }
 
+
+function renderLandingSection(){
+  return `<div style="max-width:720px;margin:0 auto;padding:40px 24px 80px;box-sizing:border-box;">
+    <div style="text-align:center;margin-bottom:36px;">
+      <div style="font-size:72px;margin-bottom:16px;">🥔</div>
+      <h1 style="font-size:26px;font-weight:800;color:var(--blueprint);margin:0 0 10px;">지구 종말 방지 프로젝트</h1>
+      <p style="font-size:14px;color:var(--ink-soft);margin:0;line-height:1.8;">AI 데이터센터 증식으로 인한 자원 낭비,<br>그리고 쓸모없는 AI가 넘쳐나는 세상.</p>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:24px;margin-bottom:18px;">
+      <h2 style="font-size:16px;font-weight:800;margin:0 0 6px;color:var(--ink);">🌍 AI Slop이 뭔가요?</h2>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 14px;">쓸모없는 AI 결과물들이에요.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>뻔하고 누구한테나 해당되는 자소서</span></div>
+        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>이상한 손가락이 달린 AI 그림</span></div>
+        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>아무도 안 읽는 AI 블로그 글들</span></div>
+        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>"AI로 만들었다"는 게 티 나서 신뢰를 잃는 것들</span></div>
+      </div>
+      <div style="background:rgba(239,68,68,.07);border-left:4px solid #ef4444;border-radius:0 8px 8px 0;padding:12px 16px;">
+        <p style="font-size:13px;color:var(--ink);line-height:1.8;margin:0;">이 쓸모없는 결과물 하나를 만들기 위해 <b>엄청난 전기, 물, 자원</b>이 소비돼요.<br>데이터센터가 돌아가고, 지구가 뜨거워지고 있어요.</p>
+      </div>
+    </div>
+    <div style="background:var(--blueprint-soft);border-radius:14px;padding:24px;margin-bottom:18px;text-align:center;">
+      <p style="font-size:18px;font-weight:800;color:var(--blueprint);margin:0;line-height:1.7;">"AI가 지구를 멸망시키기 전에,<br>ddugi가 먼저 물어봅니다.<br>그거 진짜 AI가 필요해?"</p>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:24px;margin-bottom:28px;">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--blueprint);font-weight:800;font-size:16px;flex-shrink:0;">01</span><p style="font-size:14px;color:var(--ink);margin:0;line-height:1.6;">AI를 만들기 전에, <b>업무를 먼저 본다.</b></p></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--blueprint);font-weight:800;font-size:16px;flex-shrink:0;">02</span><p style="font-size:14px;color:var(--ink);margin:0;line-height:1.6;">AI에게 맡기기 전에, <b>사람이 문제를 정의한다.</b></p></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--blueprint);font-weight:800;font-size:16px;flex-shrink:0;">03</span><p style="font-size:14px;color:var(--ink);margin:0;line-height:1.6;">AI를 붙이는 것이 AX가 아니라, <b>일을 바꾸는 것이 AX다.</b></p></div>
+      </div>
+      <div style="border-top:1px solid var(--line-soft);margin-top:16px;padding-top:14px;">
+        <p style="font-size:13px;color:var(--ink-soft);margin:0;line-height:1.8;">AI를 쓰지 않기로 판단한 것도 능력입니다.<br>필요 없는 곳에 AI를 안 쓰는 것이 지구를 지키는 첫걸음.</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-bottom:24px;">
+      <button type="button" onclick="state.cur='curriculum';renderSheet();" style="font-size:17px;font-weight:700;padding:16px 56px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,.35);">🥔 들어가기</button>
+    </div>
+    <p style="font-size:12px;color:var(--placeholder);text-align:center;line-height:1.8;margin:0;">현재 버전은 교육 목적으로 만들어졌으며, 씨앗·감자밭 등 새싹 세계관 언어로 구성되어 있습니다.<br>향후 대상(학생 / 취준생 / 기업)에 따라 언어와 스킨을 선택할 수 있도록 확장할 예정입니다.</p>
+  </div>`;
+}
 
 function renderIntroSection(){
   const editBtn = isMaster ? '<div class="exportbar"><button type="button" class="secondary" data-action="intro-edit" data-target="'+(introEditing?'off':'on')+'">'+(introEditing?'편집 닫기':'✎ 안내문 편집 (마스터)')+'</button></div>' : '';
