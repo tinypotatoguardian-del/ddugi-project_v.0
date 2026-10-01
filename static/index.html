@@ -431,46 +431,164 @@
 </head>
 <body>
 
-<div id="landingOverlay" style="display:none;position:fixed;inset:0;z-index:100;background:var(--paper);overflow-y:auto;padding:40px 20px 60px;">
-  <div style="max-width:600px;margin:0 auto;">
-    <div style="text-align:center;margin-bottom:32px;">
-      <div style="font-size:72px;margin-bottom:12px;">🥔</div>
-      <h1 style="font-size:28px;font-weight:700;color:var(--blueprint);margin:0 0 8px;">지구 종말 방지 프로젝트</h1>
-      <p style="font-size:15px;color:var(--ink-soft);margin:0;">AI를 아무 데나 쓰다가 정작 필요한 곳을 놓치는 세상을 막기 위해.</p>
-      <blockquote style="margin:20px auto;max-width:400px;text-align:center;border-left:none;background:var(--blueprint-soft);border-radius:12px;padding:16px 20px;font-size:16px;font-weight:700;color:var(--blueprint);">"AI가 필요한지 먼저 물어봐야<br>쓸모 있는 AI가 나온다."</blockquote>
-    </div>
+<div id="landingOverlay" style="display:none;position:fixed;inset:0;z-index:100;background:var(--paper);overflow-y:auto;padding:40px 20px 80px;">
+  <div style="max-width:620px;margin:0 auto;">
 
-    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:24px;margin-bottom:20px;">
-      <h2 style="font-size:17px;font-weight:700;margin:0 0 10px;">ddugi가 뭔가요?</h2>
-      <p style="font-size:14px;color:var(--ink);line-height:1.8;margin:0 0 12px;">AI를 쓰기 전에 <b>"이게 진짜 문제가 맞나?"</b>를 먼저 생각하게 도와주는 도구예요.</p>
-      <p style="font-size:14px;color:var(--ink);line-height:1.8;margin:0;">예를 들어, 수행평가 준비를 AI한테 맡겼는데 결과가 별로였던 적 있죠? 그건 AI가 나쁜 게 아니라, <b>뭘 부탁할지 미리 생각하지 않았기 때문</b>이에요. ddugi는 그 "생각하는 과정"을 도와줘요.</p>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
-      <div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:12px;padding:16px;">
-        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;">❌ 이렇게 하면</div>
-        <div style="font-size:13px;color:var(--ink-soft);line-height:1.8;">"자소서 써줘"<br>"공부 도와줘"<br>"이 문제 해결해줘"<br>→ AI가 엉뚱한 방향으로 감</div>
-      </div>
-      <div style="background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:12px;padding:16px;">
-        <div style="font-size:13px;font-weight:700;color:var(--blueprint);margin-bottom:8px;">✅ ddugi처럼 하면</div>
-        <div style="font-size:13px;color:var(--ink);line-height:1.8;">어떤 문제인지 먼저 정리<br>→ AI가 도움이 되는 답을 줌<br>→ 내가 원하는 결과를 얻음</div>
+    <!-- 헤더 -->
+    <div style="text-align:center;margin-bottom:36px;">
+      <div style="font-size:80px;margin-bottom:16px;">🥔</div>
+      <h1 style="font-size:26px;font-weight:800;color:var(--blueprint);margin:0 0 10px;line-height:1.3;">지구 종말 방지 프로젝트</h1>
+      <p style="font-size:14px;color:var(--ink-soft);margin:0 0 6px;">by 뚜기 (Tiny Potato)</p>
+      <div style="display:inline-block;background:var(--blueprint-soft);border-radius:14px;padding:16px 24px;margin-top:16px;">
+        <p style="font-size:15px;font-weight:700;color:var(--blueprint);margin:0;line-height:1.7;">"AI가 지구를 멸망시키기 전에,<br>뚜기가 먼저 물어봅니다.<br>그거 진짜 AI가 필요해?"</p>
       </div>
     </div>
 
-    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:24px;margin-bottom:28px;">
-      <h2 style="font-size:17px;font-weight:700;margin:0 0 14px;">이렇게 쓰면 돼요</h2>
-      <ol style="margin:0;padding-left:20px;line-height:2.2;font-size:14px;">
-        <li><b>내 문제 적기 (01~02)</b> — AI한테 묻기 전에 내가 먼저 상황을 정리해요.</li>
-        <li><b>AI한테 검토받기 (3-1)</b> — "이 방향이 맞아?" 물어봐요.</li>
-        <li><b>다시 다듬기 (3-2)</b> — AI 피드백으로 문제를 더 정확하게 고쳐 써요.</li>
-        <li><b>AI 활용 계획 세우기 (3-3)</b> — 이 문제를 AI로 어떻게 풀지 구조를 잡아요.</li>
-      </ol>
+    <!-- 뚜기가 누군가요 -->
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:26px;margin-bottom:18px;">
+      <h2 style="font-size:17px;font-weight:800;margin:0 0 14px;color:var(--ink);">🥔 뚜기가 누군가요?</h2>
+      <p style="font-size:14px;color:var(--ink);line-height:1.9;margin:0 0 12px;">작고, 귀엽고, 어딘가 어설픈 감자.<br>쉽게 포기하지 않고, 끈덕지게 계속하는 친구예요.</p>
+      <p style="font-size:14px;color:var(--ink);line-height:1.9;margin:0;">근데 뚜기한테 딱 한 가지 무서운 게 있어요.<br><b>AI Slop으로 지구가 망하는 것.</b></p>
+    </div>
+
+    <!-- AI Slop이 뭔가요 -->
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:26px;margin-bottom:18px;">
+      <h2 style="font-size:17px;font-weight:800;margin:0 0 14px;color:var(--ink);">🌍 AI Slop이 뭔가요?</h2>
+      <p style="font-size:14px;color:var(--ink);line-height:1.9;margin:0 0 14px;">쓸모없는 AI 결과물들이에요.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink-soft);line-height:1.7;">
+          <span style="flex-shrink:0;">❌</span><span>뻔하고 누구한테나 해당되는 자소서</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink-soft);line-height:1.7;">
+          <span style="flex-shrink:0;">❌</span><span>이상한 손가락이 달린 AI 그림</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink-soft);line-height:1.7;">
+          <span style="flex-shrink:0;">❌</span><span>아무도 안 읽는 AI 블로그 글들</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink-soft);line-height:1.7;">
+          <span style="flex-shrink:0;">❌</span><span>"AI로 만들었다"는 게 티 나서 오히려 신뢰를 잃는 것들</span>
+        </div>
+      </div>
+      <div style="background:rgba(239,68,68,.07);border-radius:10px;padding:14px 16px;border-left:4px solid #ef4444;">
+        <p style="font-size:13px;color:var(--ink);line-height:1.8;margin:0;">이 쓸모없는 결과물 하나를 만들기 위해 <b>엄청난 전기, 물, 자원</b>이 소비돼요.<br>데이터센터가 돌아가고, 지구가 뜨거워지고 있어요.<br>뚜기는 이게 무서워요.</p>
+      </div>
+    </div>
+
+    <!-- 세계관 -->
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:26px;margin-bottom:18px;">
+      <h2 style="font-size:17px;font-weight:800;margin:0 0 14px;color:var(--ink);">🌱 ddugi 세계관</h2>
+      <p style="font-size:14px;color:var(--ink);line-height:1.9;margin:0 0 12px;">뚜기는 세상에서 만난 것들을 마음에 담아요.<br>마음에 담긴 것들은 어느 순간 작은 씨앗이 되어 자라나요.</p>
+      <p style="font-size:14px;color:var(--ink);line-height:1.9;margin:0 0 16px;">그 씨앗들이 제대로 자라려면, 먼저 <b>진짜 문제</b>를 알아야 해요.</p>
+      <div style="background:var(--blueprint-soft);border-radius:10px;padding:14px 16px;">
+        <p style="font-size:13px;color:var(--blueprint);line-height:1.8;margin:0;">ddugi는 그 씨앗을 심는 곳이에요.<br>AI한테 시키기 전에, 내가 먼저 문제를 정리하는 곳.</p>
+      </div>
+    </div>
+
+    <!-- 뭘 할 수 있어요 -->
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:26px;margin-bottom:18px;">
+      <h2 style="font-size:17px;font-weight:800;margin:0 0 16px;color:var(--ink);">📚 뭘 할 수 있어요?</h2>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;">🌱</span>
+          <div><b style="font-size:14px;">Foundation</b><br><span style="font-size:13px;color:var(--ink-soft);">AI가 뭔지, ChatGPT랑 Claude는 뭐가 다른지, 내 수준은 어딘지 — 단계별 커리큘럼</span></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;">🗺️</span>
+          <div><b style="font-size:14px;">AI 도구 가이드</b><br><span style="font-size:13px;color:var(--ink-soft);">ChatGPT / Claude / Gemini 뭐가 다른지, 상황별로 뭘 써야 하는지</span></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;">📋</span>
+          <div><b style="font-size:14px;">프롬프트 모음</b><br><span style="font-size:13px;color:var(--ink-soft);">바로 복사해서 쓸 수 있는 프롬프트 — 학생용 / 취준용 / 현직자용</span></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;">✏️</span>
+          <div><b style="font-size:14px;">씨앗 정의서 (00~3-3)</b><br><span style="font-size:13px;color:var(--ink-soft);">내 문제를 먼저 정리하고 → AI한테 검토받고 → 계획 세우는 단계별 과정</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI 안 써도 되는 말 -->
+    <div style="background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:14px;padding:18px 22px;margin-bottom:28px;">
+      <p style="font-size:13px;color:var(--blueprint);margin:0;line-height:1.9;">
+        AI를 쓰지 않기로 판단한 것도 능력이에요.<br>
+        필요 없는 곳에 AI를 안 쓰는 것이 지구를 지키는 첫걸음.<br>
+        <b>지금 계속 만들어가는 중이에요 — 같이 쓰면서 키워가요. 🥔</b>
+      </p>
     </div>
 
     <div style="text-align:center;">
-      <button id="landingEnterBtn" style="font-size:17px;font-weight:700;padding:16px 48px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(139,92,246,.3);">🥔 들어가기</button>
-      <p style="font-size:12px;color:var(--ink-soft);margin-top:12px;">AI가 꼭 필요한 곳에만 제대로 쓰는 게 목표예요.</p>
+      <button id="landingEnterBtn" style="font-size:17px;font-weight:700;padding:16px 52px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,.35);transition:transform .1s;" onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform='scale(1)'">🥔 들어가기</button>
+      <p style="font-size:12px;color:var(--ink-soft);margin-top:14px;">AI가 꼭 필요한 곳에만 제대로 쓰는 게 목표예요.</p>
     </div>
+
+  </div>
+</div>
+      <div style="font-size:80px;margin-bottom:16px;">🥔</div>
+      <h1 style="font-size:26px;font-weight:800;color:var(--blueprint);margin:0 0 10px;line-height:1.3;">지구 종말 방지 프로젝트</h1>
+      <p style="font-size:15px;color:var(--ink-soft);margin:0 0 20px;line-height:1.7;">AI 데이터센터가 폭발적으로 늘어나는 세상.<br>근데 정작 AI를 제대로 쓰는 법을 아무도 안 알려줘요.</p>
+      <div style="display:inline-block;background:var(--blueprint-soft);border-radius:14px;padding:16px 24px;">
+        <p style="font-size:16px;font-weight:700;color:var(--blueprint);margin:0;line-height:1.6;">"AI가 필요한지 먼저 물어봐야<br>쓸모 있는 AI가 나온다."</p>
+      </div>
+    </div>
+
+    <!-- 왜 만들었냐 -->
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:26px;margin-bottom:18px;">
+      <h2 style="font-size:17px;font-weight:800;margin:0 0 14px;color:var(--ink);">🌱 왜 만들었어요?</h2>
+      <p style="font-size:14px;color:var(--ink);line-height:1.9;margin:0 0 14px;">저도 처음엔 맨땅에 헤딩하면서 AI를 배웠어요.<br>
+      ChatGPT에 "자소서 써줘" 넣었다가 닫고, "AI로 공부하고 싶은데 어디서 시작하지?" 하고 막히고.<br>
+      그 불필요한 시행착오가 너무 아까웠어요.</p>
+      <p style="font-size:14px;color:var(--ink);line-height:1.9;margin:0;">겪어야 할 시행착오는 직접 겪어야 해요. 근데 <b>불필요한 시행착오는 줄일 수 있어요.</b><br>
+      ddugi는 그 시간을 아껴주기 위해 만들었어요.</p>
+    </div>
+
+    <!-- 뚜기가 뭐냐 -->
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:26px;margin-bottom:18px;">
+      <h2 style="font-size:17px;font-weight:800;margin:0 0 14px;color:var(--ink);">🥔 ddugi가 뭔가요?</h2>
+      <p style="font-size:14px;color:var(--ink);line-height:1.9;margin:0 0 12px;">AI를 쓰기 전에 <b>"이게 진짜 문제가 맞나?"</b>를 먼저 생각하게 도와주는 도구예요.</p>
+      <p style="font-size:14px;color:var(--ink);line-height:1.9;margin:0 0 16px;">AI한테 막연하게 시키면 막연한 답이 와요. ddugi는 그 질문을 구체적으로 만드는 과정을 단계별로 안내해줘요.</p>
+      <div style="background:var(--paper);border-radius:10px;padding:14px 18px;border-left:4px solid var(--blueprint);">
+        <p style="font-size:13px;color:var(--ink-soft);line-height:1.8;margin:0;">지금 이 버전은 <b>중고등학생을 위한 AI 기초 학습 도구</b>예요.<br>
+        AI가 뭔지 모르는 상태에서 시작해도 돼요 — <b>Foundation</b> 탭에서 내 수준부터 확인해봐요.</p>
+      </div>
+    </div>
+
+    <!-- 이 서비스로 뭘 할 수 있냐 -->
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:26px;margin-bottom:18px;">
+      <h2 style="font-size:17px;font-weight:800;margin:0 0 16px;color:var(--ink);">📚 뭘 할 수 있어요?</h2>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;">🌱</span>
+          <div><b style="font-size:14px;">Foundation</b><br><span style="font-size:13px;color:var(--ink-soft);">AI가 뭔지, ChatGPT랑 Claude는 뭐가 다른지, 내 수준은 어딘지 — 단계별 커리큘럼</span></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;">🗺️</span>
+          <div><b style="font-size:14px;">AI 도구 가이드</b><br><span style="font-size:13px;color:var(--ink-soft);">ChatGPT / Claude / Gemini 뭐가 다른지, 상황별로 뭘 써야 하는지</span></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;">📋</span>
+          <div><b style="font-size:14px;">프롬프트 모음</b><br><span style="font-size:13px;color:var(--ink-soft);">바로 복사해서 쓸 수 있는 프롬프트 — 학생용 / 취준용 / 현직자용</span></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="font-size:22px;flex-shrink:0;">✏️</span>
+          <div><b style="font-size:14px;">씨앗 정의서 (00~3-3)</b><br><span style="font-size:13px;color:var(--ink-soft);">내 문제를 먼저 정리하고 → AI한테 검토받고 → 계획 세우는 단계별 과정</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 현재 버전 안내 -->
+    <div style="background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:14px;padding:18px 22px;margin-bottom:28px;">
+      <p style="font-size:13px;color:var(--blueprint);margin:0;line-height:1.8;">
+        🏗️ <b>지금 계속 만들어가는 중이에요.</b><br>
+        쓰다가 불편한 거, 있었으면 하는 기능 — 감자밭에 심어주면 반영할게요.<br>
+        같이 쓰면서 키워가는 게 목표예요.
+      </p>
+    </div>
+
+    <div style="text-align:center;">
+      <button id="landingEnterBtn" style="font-size:17px;font-weight:700;padding:16px 52px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,.35);transition:transform .1s;" onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform='scale(1)'">🥔 들어가기</button>
+      <p style="font-size:12px;color:var(--ink-soft);margin-top:14px;">AI가 꼭 필요한 곳에만 제대로 쓰는 게 목표예요.</p>
+    </div>
+
   </div>
 </div>
 <header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span>
