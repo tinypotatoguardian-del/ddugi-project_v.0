@@ -954,6 +954,11 @@ const ROLE_KEY = 'ai_task_role_v1';
 
 /* ============== state ============== */
 const STORE_KEY = 'ai_task_def_v1';
+const STORE_VER = 'v2'; // 버전 바뀌면 localStorage 자동 초기화
+if(localStorage.getItem('ai_task_ver') !== STORE_VER){
+  localStorage.removeItem(STORE_KEY);
+  localStorage.setItem('ai_task_ver', STORE_VER);
+}
 let state = { fields:{}, cur:'intro', locked:false, completed:false };
 try{
   const raw = localStorage.getItem(STORE_KEY);
