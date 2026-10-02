@@ -99,18 +99,17 @@
   .sec-status{ margin-left:auto; font-size:11px; font-weight:600; white-space:nowrap; padding:1px 6px; border-radius:var(--radius); }
   .sec-status.st-partial{ color:var(--blueprint-2); background:var(--blueprint-soft); }
   .sec-status.st-done{ color:var(--ok); background:var(--ok-soft); }
-  .navdetails{ border:none; }
-  .navdetails > summary.navgroup-summary{
-    list-style:none; padding:12px 20px 4px;
+  .navgroup{
+    padding:12px 20px 4px;
     font-size:12.5px; font-weight:700; color:var(--blueprint); letter-spacing:.01em;
     cursor:pointer; display:flex; align-items:center; gap:6px; user-select:none;
   }
-  .navdetails > summary.navgroup-summary::-webkit-details-marker{ display:none; }
-  .navdetails > summary.navgroup-summary::after{
-    content:'▾'; font-size:10px; margin-left:auto; transition:transform .2s;
-  }
-  .navdetails:not([open]) > summary.navgroup-summary::after{ transform:rotate(-90deg); }
-  .navdetails > summary.navgroup-summary:hover{ color:var(--blueprint-2); }
+  .navgroup:hover{ color:var(--blueprint-2); }
+  .navgroup:first-child{ padding-top:6px; }
+  .navgroup .nav-arrow{ font-size:10px; margin-left:auto; transition:transform .2s; }
+  .navgroup.collapsed .nav-arrow{ transform:rotate(-90deg); }
+  .navgroup-items{ overflow:hidden; transition:max-height .25s ease; }
+  .navgroup-items.collapsed{ max-height:0 !important; }
   .navbtn.sub{ padding-left:30px; }
   .navbtn.dim{ opacity:1; background:var(--line-soft); color:var(--ink-soft); }
   .navbtn.dim:hover{ background:var(--blueprint-soft); }
@@ -672,7 +671,7 @@ function lpRecommendHtml(){
     '<button type="button" class="linkbtn" data-action="lp-refresh">추천 새로고침</button></div>';
   if(rec.length){
     html += '<div class="lvrec-items">'+rec.map(i=>'<span class="lvrec-chip">'+esc(i)+'</span>').join('')+'</div>'+
-      '<button type="button" class="addbtn" data-action="lp-add" data-target="'+esc(rec.join('|'))+'">추천 항목 계획에 담기</button>';
+      '<button type="button" class="addbtn" data-action="lp-add" data-target="'+escAttr(rec.join('|'))+'">추천 항목 계획에 담기</button>';
   }
   if(!result) html += '<div class="fhint" style="margin-top:6px">AI 진단 결과를 위에 붙여넣은 뒤 "추천 새로고침"을 누르면, 결과에 나온 역량으로 추천이 바뀝니다.</div>';
   return html + '</div>';
@@ -697,7 +696,7 @@ function renderLpTable(f){
   const chip = o => { const c = val.indexOf(o)>-1;
     const link = LEVEL_ITEM_LINKS[o] ? ' <a href="'+LEVEL_ITEM_LINKS[o]+'" target="_blank" rel="noopener" class="lvlink" title="더 배우기">📖</a>' : '';
     if(done.indexOf(o)>-1) return '<label class="opt lp-done"><input type="checkbox" checked disabled data-keep-disabled>'+esc(o)+'<small>경험함</small></label>'+link;
-    return '<label class="opt'+(c?' checked':'')+'"><input type="checkbox" data-checklist="'+f.store+'" data-opt="'+esc(o)+'" '+(c?'checked':'')+'>'+esc(o)+'</label>'+link; };
+    return '<label class="opt'+(c?' checked':'')+'"><input type="checkbox" data-checklist="'+f.store+'" data-opt="'+escAttr(o)+'" '+(c?'checked':'')+'>'+esc(o)+'</label>'+link; };
   let html = '<div class="field"><label>'+esc(f.label)+'</label>'+(f.hint ? '<div class="fhint">'+esc(f.hint)+'</div>' : '')+
     '<div class="lp-tools"><button type="button" class="chip-btn" data-action="lp-all" data-target="'+f.store+'">전체 선택</button>'+
     '<button type="button" class="chip-btn" data-action="lp-none" data-target="'+f.store+'">전체 해제</button></div>';
@@ -773,16 +772,16 @@ const SECTIONS = [
 {id:'diag', num:'3-3', title:'뿌리 내리기', special:'diag'},
 
 /* ---------- 후속: 고민거리 수행 기록 (요구서 7장, 진단 .md에는 포함하지 않음) ---------- */
-{id:'s16', num:'04', title:'참고 과제 (BoB)', disabled:true, disabledNote:'준비 중', fields:[
-  HINT('설계 전에 비슷한 기존 과제을 확인하세요. BoB는 복사해서 쓰는 Template이 아니라 시행착오를 줄이기 위한 Reference입니다.'),
+{id:'s16', num:'04', title:'먼저 자란 씨앗 (BoB)', disabled:true, disabledNote:'준비 중', fields:[
+  HINT('설계 전에 비슷한 기존 씨앗을 확인하세요. BoB는 복사해서 쓰는 Template이 아니라 시행착오를 줄이기 위한 Reference입니다.'),
   T('s16_bob','BoB'),
-  T('s16_purpose','왜 이 과제를 참고했는지'),
-  T('s16_arch','참고한 기술 구조'),
-  T('s16_tech','참고한 기술 스택'),
-  T('s16_ui','참고한 UI'),
-  TA('s16_solution','참고한 해결 방법')
+  T('s16_purpose','왜 이 씨앗을 봤는지'),
+  T('s16_arch','참고한 뿌리 구조'),
+  T('s16_tech','참고한 양분'),
+  T('s16_ui','참고한 모양'),
+  TA('s16_solution','참고한 키우기 방법')
 ]},
-{id:'s7', num:'05', title:'기능 상세 정의', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s7', num:'05', title:'가지 그리기', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   HINT('AI 진단 결과의 핵심 기능을 기준으로 기능별 상세를 정의하세요. 정답이 아니어도 되니 일단 채워보고, 08 끝에서 AI에게 검토를 요청하세요.'),
   {type:'diffhint', sectionId:'s7'},
   {type:'example05'},
@@ -797,12 +796,12 @@ const SECTIONS = [
     {id:'exception', label:'예외 상황', type:'textarea', ph:'예: 이미 완료된 항목은 알림을 보내지 않는다'}
   ])
 ]},
-{id:'s9', num:'06', title:'UX / UI 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s9', num:'06', title:'눈에 보이는 모양', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   CL('s9_1','6-1. 사용자가 무엇을 보는가?', ['Dashboard','검색','입력','결과','분석','비교','알림','승인/확인','이력','기타']),
   TA('s9_2','6-2. 핵심 사용자 Flow','순서대로 적어주세요. 예: 1) 목록에서 항목 선택 2) 상태 변경 3) 저장하면 이력에 기록'),
   HINT('Dashboard만 만드는 씨앗이라면 업무효율화 목적과 실제 업무 변화가 있는지 재검토한다.')
 ]},
-{id:'s10', num:'07', title:'기술 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s10', num:'07', title:'뿌리 구조', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'glossary07'},
   Object.assign(CL('s10_1','7-1. 전체 Architecture 구성요소', ['Frontend','Backend','Database','API','LLM','RAG','Vector DB','Tool Calling','Workflow','Agent','Automation','Authentication','Logging','기타']), {lvFilter:true}),
   HINT('Model·Prompt·Context 같은 구현 디테일은 나중에 AI(바이브 코딩)의 도움을 받아 채워도 됩니다. 여기서 직접 판단해야 하는 건 "AI가 하는 일"과 "그중 사람이 반드시 확인할 지점"입니다.'),
@@ -812,14 +811,14 @@ const SECTIONS = [
     {id:'detail', label:'세부 사항 (선택, 나중에 채워도 됨)', type:'textarea', ph:'Model, Prompt, Context, RAG, Tool, Memory 등 구현 디테일'}
   ]), {lvFilter:true})
 ]},
-{id:'s11', num:'08', title:'데이터 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s11', num:'08', title:'양분 설계', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'diffhint', sectionId:'s11'},
   {type:'datacandidates'},
   Object.assign(CL('s11_data','8-1. 필요한 데이터 (후보에서 선택, 직접 추가 가능)', [], true), {optsFn:()=>getV('s11_data_candidates',[])}),
   TA('s11_rel','8-2. 데이터 관계 (Entity 순서대로)','예: 고객 문의 → 처리 담당자 → 처리 이력 → 완료 확인'),
   {type:'designreview'}
 ]},
-{id:'s12', num:'09', title:'테스트 및 검증', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s12', num:'09', title:'흔들어보기 (심화)', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   {type:'codetest'},
   TA('s12_1','9-1. 테스트 시나리오','어떤 입력에 어떤 결과가 나와야 하는지, 실제로는 어땠는지 적어주세요. 예: 마감 D-1 항목 입력 → 알림 발송 기대 → 실제로 발송됨 (Pass)'),
   RG('s12_2','9-2. AI 품질 검증 (해당하는 경우)', [
@@ -831,12 +830,12 @@ const SECTIONS = [
   HINT('예측·AI 모델 씨앗은 AI를 바로 적용하지 않고 Gate를 차례로 확인합니다. Gate 1: 규칙(기존 방식)으로 계산한 값이 실제와 얼마나 맞는가? / Gate 2: 규칙으로 설명되지 않는 오차 패턴이 있는가? / Gate 3: AI가 Baseline보다 유의미하게 나은가? Gate 1~2를 통과해야 AI를 검토하고, Gate 3에서 Baseline보다 나아야 적용합니다.'),
   FT('s12_gate','9-4. 검증 Gate (예측·AI 모델 씨앗만, 확인한 Gate를 체크)', ['Gate 1. Rule Baseline','Gate 2. AI 필요성','Gate 3. AI 성능'], ['확인 결과 (수치·근거)','통과 여부'], true)
 ]},
-{id:'s13', num:'10', title:'실제 사용 및 운영', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s13', num:'10', title:'밭에서 키우기', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   RW([ T('s13_user','사용자'), T('s13_freq','사용 빈도'), T('s13_when','사용 시점'), T('s13_task','사용 업무') ]),
   CL('s13_2','10-1. 운영 방식', ['개인 사용','팀 사용','부서 사용','전사 확장 가능']),
   Object.assign(CL('s13_3','10-2. 운영에 필요한 요소', ['권한','보안','데이터 관리','Logging','오류 대응','유지보수','사용자 교육']), {lvFilter:true})
 ]},
-{id:'s14', num:'11', title:'구현 회고', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
+{id:'s14', num:'11', title:'수확 일지', disabled:true, disabledNote:'개인 프로젝트 미사용', fields:[
   TA('s14_1','11-1. 실제로 열린 열매'),
   TA('s14_2','11-2. 예상과 다르게 자란 것'),
   TA('s14_3','11-3. 키우면서 생긴 문제'),
@@ -879,8 +878,8 @@ const TOTAL_SECTIONS = SECTIONS.filter(s=>!s.special && !s.disabled).length;
 // 사이드바 상위 메뉴: 그룹의 첫 섹션 id → 그룹 이름
 const NAV_GROUPS = {
   discover:'A. 씨앗 정의서',
-  s16:'B. 가지 그리기 (설계)',
-  s12:'C. 열매와 수확 (결과)'
+  s16:'B. 가지 뻗기',
+  s12:'C. 열매와 수확'
 };
 // 한 번에 다 보이면 부담스러우니, 이전 단계를 손대기(비어있지 않기) 전까지는 사이드바에서 음영 처리만 함 (클릭은 막지 않음). admin/master는 항상 선명하게.
 const GATE_CHAIN = ['s1','s3','verify','redefine','diag','s7','s9','s10','s11','s12','s13','s14','s15','s17'];
@@ -1236,7 +1235,7 @@ function hideModal(){
 function adminModalHtml(){
   return '<h2 style="margin-top:0;font-size:16px;">관리자 로그인</h2>'+
     '<div class="fhint" style="margin-bottom:14px;">마음의 방 전경 등 관리자 메뉴는 아이디와 비밀번호로 로그인해야 볼 수 있어요. 5회 틀리면 그 아이디는 5분간 잠깁니다.</div>'+
-    '<div class="field"><label>아이디</label><input type="text" id="loginEmpId" autocomplete="username" value="'+esc(empId)+'"></div>'+
+    '<div class="field"><label>아이디</label><input type="text" id="loginEmpId" autocomplete="username" value="'+escAttr(empId)+'"></div>'+
     '<div class="field"><label>비밀번호</label><input type="password" id="loginCode" autocomplete="current-password"></div>'+
     '<div id="adminErr" style="color:var(--danger);font-size:12px;min-height:16px;"></div>'+
     '<div style="display:flex;gap:8px;">'+
@@ -1346,14 +1345,11 @@ function flashSaved(){
 
 function getV(id, def){ return (id in state.fields) ? state.fields[id] : def; }
 function setV(id, val){ state.fields[id]=val; persist(); }
-// 외부(window) 접근용
-window._setV = function(id, val){ setV(id, val); };
-window._getV = function(id, def){ return getV(id, def); };
-window._persist = function(){ persist(); };
 
 function esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function escAttr(s){ return esc(s); }
 
 /* ============== field rendering ============== */
 function fieldWrap(inner, field, extraClass){
@@ -1368,11 +1364,11 @@ function renderField(f){
     case 'static': return '<div class="field"><label>'+esc(f.label)+'</label><div class="staticval">'+esc(f.value)+'</div></div>';
     case 'text': return fieldWrap(
       '<label for="'+f.id+'">'+esc(f.label)+(f.required?' <span class="req">*</span>':'')+'</label>'+
-      '<input type="text" id="'+f.id+'" data-bind="'+f.id+'" placeholder="'+esc(f.ph)+'" value="'+esc(getV(f.id,''))+'">'
+      '<input type="text" id="'+f.id+'" data-bind="'+f.id+'" placeholder="'+escAttr(f.ph)+'" value="'+escAttr(getV(f.id,''))+'">'
     , f);
     case 'textarea': return fieldWrap(
       '<label for="'+f.id+'">'+esc(f.label)+(f.required?' <span class="req">*</span>':'')+'</label>'+
-      '<textarea id="'+f.id+'" data-bind="'+f.id+'" placeholder="'+esc(getV(f.id+'_hint','')||f.ph)+'">'+esc(getV(f.id,''))+'</textarea>'
+      '<textarea id="'+f.id+'" data-bind="'+f.id+'" placeholder="'+escAttr(getV(f.id+'_hint','')||f.ph)+'">'+esc(getV(f.id,''))+'</textarea>'
     , f);
     case 'row': return '<div class="row-fields">' + f.children.map(renderField).join('') + '</div>';
     case 'checklist': return renderChecklist(f);
@@ -1406,13 +1402,13 @@ function renderChecklist(f){
   const val = getV(f.id, []);
   const opts = checklistOpts(f).map(o=>{
     const checked = val.indexOf(o) > -1;
-    return '<label class="opt'+(checked?' checked':'')+'"><input type="checkbox" data-checklist="'+f.id+'" data-opt="'+esc(o)+'" '+(checked?'checked':'')+'>'+esc(o)+'</label>';
+    return '<label class="opt'+(checked?' checked':'')+'"><input type="checkbox" data-checklist="'+f.id+'" data-opt="'+escAttr(o)+'" '+(checked?'checked':'')+'>'+esc(o)+'</label>';
   }).join('');
   let otherHtml='';
   // 보기에 '기타'가 있으면 체크했을 때만 입력칸 표시
   const hasEtc = checklistOpts(f).indexOf('기타') > -1;
   if(f.other && (!hasEtc || val.indexOf('기타') > -1)){
-    otherHtml = '<input type="text" class="opt-other" data-bind="'+f.id+'_other" placeholder="기타 입력" value="'+esc(getV(f.id+'_other',''))+'">';
+    otherHtml = '<input type="text" class="opt-other" data-bind="'+f.id+'_other" placeholder="기타 입력" value="'+escAttr(getV(f.id+'_other',''))+'">';
   }
   return '<div class="field"><label>'+esc(f.label)+'</label>'+(f.lvFilter ? toolNoteHtml() : '')+'<div class="opts">'+opts+'</div>'+otherHtml+'</div>';
 }
@@ -1422,7 +1418,7 @@ function renderRadio(f){
   const optList = f.optsFn ? f.optsFn() : f.opts;
   const opts = optList.map(o=>{
     const checked = val===o;
-    return '<label class="opt'+(checked?' checked':'')+'"><input type="radio" name="'+f.id+'" data-radio="'+f.id+'" data-opt="'+esc(o)+'" '+(checked?'checked':'')+'>'+esc(o)+'</label>';
+    return '<label class="opt'+(checked?' checked':'')+'"><input type="radio" name="'+f.id+'" data-radio="'+f.id+'" data-opt="'+escAttr(o)+'" '+(checked?'checked':'')+'>'+esc(o)+'</label>';
   }).join('');
   return '<div class="field"><label>'+esc(f.label)+'</label><div class="opts">'+opts+'</div></div>';
 }
@@ -1438,10 +1434,10 @@ function renderFTable(f){
       if(ph===null) return '<td></td>';
       const v = rowVal[c]||'';
       const hint = ph || '';
-      return '<td><input type="text" data-ftable="'+f.id+'" data-row="'+esc(r)+'" data-col="'+esc(c)+'" value="'+esc(v)+'"'+(hint?' placeholder="'+esc(hint)+'"':'')+'></td>';
+      return '<td><input type="text" data-ftable="'+f.id+'" data-row="'+escAttr(r)+'" data-col="'+escAttr(c)+'" value="'+escAttr(v)+'"'+(hint?' placeholder="'+escAttr(hint)+'"':'')+'></td>';
     }).join('');
     const label = f.check
-      ? '<label class="ftcheck"><input type="checkbox" data-ftcheck="'+f.id+'" data-row="'+esc(r)+'"'+(off?'':' checked')+'>'+esc(r)+'</label>'
+      ? '<label class="ftcheck"><input type="checkbox" data-ftcheck="'+f.id+'" data-row="'+escAttr(r)+'"'+(off?'':' checked')+'>'+esc(r)+'</label>'
       : esc(r);
     return '<tr'+(off?' class="off"':'')+'><td class="rowlabel">'+label+'</td>'+cells+'</tr>';
   }).join('');
@@ -1453,7 +1449,7 @@ function renderDTableBody(f){
   let head = '<tr>'+f.cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'<th></th></tr>';
   let body = rows.map((row,idx)=>{
     const cells = f.cols.map(c=>{
-      return '<td><input type="text" data-dtable="'+f.id+'" data-idx="'+idx+'" data-col="'+esc(c)+'" value="'+esc(row[c]||'')+'"></td>';
+      return '<td><input type="text" data-dtable="'+f.id+'" data-idx="'+idx+'" data-col="'+escAttr(c)+'" value="'+escAttr(row[c]||'')+'"></td>';
     }).join('');
     const rm = rows.length>1 ? '<button type="button" class="rmbtn" data-action="rm-dtable" data-target="'+f.id+'" data-idx="'+idx+'">×</button>' : '';
     return '<tr>'+cells+'<td class="rmcol">'+rm+'</td></tr>';
@@ -1467,7 +1463,7 @@ function renderDListBody(f){
   let body = items.map((v,idx)=>{
     const rm = items.length>1 ? '<button type="button" class="rmbtn" data-action="rm-dlist" data-target="'+f.id+'" data-idx="'+idx+'">×</button>' : '<span style="width:22px;display:inline-block"></span>';
     return '<div class="listitem"><span class="arrow">'+(idx+1)+' →</span>'+
-      '<input type="text" data-dlist="'+f.id+'" data-idx="'+idx+'" placeholder="'+esc(f.ph)+'" value="'+esc(v)+'">'+rm+'</div>';
+      '<input type="text" data-dlist="'+f.id+'" data-idx="'+idx+'" placeholder="'+escAttr(f.ph)+'" value="'+escAttr(v)+'">'+rm+'</div>';
   }).join('');
   return body + '<button type="button" class="addbtn" data-action="add-dlist" data-target="'+f.id+'">+ 단계 추가</button>';
 }
@@ -1600,11 +1596,11 @@ function renderRepeatBody(f){
   let body = items.map((item,idx)=>{
     const subs = f.subs.filter(s=>!f.lvFilter || toolShown(s.label, !!String(item[s.id]||'').trim())).map(s=>{
       const v = item[s.id]||'';
-      const ph = s.ph ? ' placeholder="'+esc(s.ph)+'"' : '';
+      const ph = s.ph ? ' placeholder="'+escAttr(s.ph)+'"' : '';
       if(s.type==='textarea'){
         return '<div class="field"><label>'+esc(s.label)+'</label><textarea data-repeat="'+f.id+'" data-idx="'+idx+'" data-sub="'+s.id+'"'+ph+'>'+esc(v)+'</textarea></div>';
       }
-      return '<div class="field"><label>'+esc(s.label)+'</label><input type="text" data-repeat="'+f.id+'" data-idx="'+idx+'" data-sub="'+s.id+'" value="'+esc(v)+'"'+ph+'></div>';
+      return '<div class="field"><label>'+esc(s.label)+'</label><input type="text" data-repeat="'+f.id+'" data-idx="'+idx+'" data-sub="'+s.id+'" value="'+escAttr(v)+'"'+ph+'></div>';
     }).join('');
     const rm = items.length>1 ? '<button type="button" class="rmbtn" data-action="rm-repeat" data-target="'+f.id+'" data-idx="'+idx+'">×</button>' : '';
     return '<div class="groupitem"><span class="gnum">#'+(idx+1)+'</span>'+rm+subs+'</div>';
@@ -1944,7 +1940,7 @@ async function renderAccounts(){
       const when = a.createdAt ? new Date(a.createdAt).toLocaleDateString('ko-KR') : '-';
       const roleLabel = a.role==='master' ? '마스터' : '관리자';
       return '<tr><td>'+esc(a.empId)+'</td><td>'+esc(a.name||'-')+'</td><td>'+esc(roleLabel)+'</td><td>'+esc(when)+'</td>'+
-        '<td>'+(a.role==='admin' ? '<button type="button" class="chip-btn" data-action="acct-del" data-target="'+esc(a.empId)+'">관리자 해제</button>' : '-')+'</td></tr>';
+        '<td>'+(a.role==='admin' ? '<button type="button" class="chip-btn" data-action="acct-del" data-target="'+escAttr(a.empId)+'">관리자 해제</button>' : '-')+'</td></tr>';
     }).join('');
     out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>이름</th><th>역할</th><th>만든 날짜</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
@@ -1991,7 +1987,7 @@ async function renderVisitsData(){
       const maxCnt = Math.max(1, ...d.by_date.map(r=>r.cnt));
       chart.innerHTML = d.by_date.map(r=>{
         const h = Math.max(4, Math.round(110*r.cnt/maxCnt));
-        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0" title="'+esc(r.date+': '+r.cnt+'건')+'">'+
+        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0" title="'+escAttr(r.date+': '+r.cnt+'건')+'">'+
           '<div style="width:100%;max-width:24px;height:'+h+'px;background:var(--blueprint-2);border-radius:3px 3px 0 0"></div>'+
           '<div style="font-size:9px;color:var(--ink-soft);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">'+esc(r.date.slice(5))+'</div></div>';
       }).join('');
@@ -2138,7 +2134,7 @@ async function renderDashboard(){
     const reqs = list.filter(v=>v.gate && v.gate.level && v.gate.aiResult);
     const gateRows = reqs.map(v=>{
       const g = v.gate, r = v.gateReview && v.gateReview.level===g.level ? v.gateReview : null;
-      const t = esc(v.docId+'|'+g.level);
+      const t = escAttr(v.docId+'|'+g.level);
       return '<tr><td>'+esc(v.name||'-')+'</td><td>'+esc(g.task||'-')+'</td><td>'+esc(g.level)+'</td><td>'+esc(gateAiVerdict(g.aiResult)||'형식 확인 필요')+'</td>'+
         '<td>'+(r ? esc(r.decision)+(r.note ? '<br><small>'+esc(r.note)+'</small>' : '') : '대기')+'</td>'+
         '<td><button type="button" class="chip-btn" data-action="gate-ok" data-target="'+t+'">인정</button> '+
@@ -2180,7 +2176,28 @@ function navFootHtml(sec){
   '</div>';
 }
 
-/* toggleNavGroup 제거 — <details> 로 대체됨 */
+function toggleNavGroup(groupId){
+  if(!window._navCollapsed) window._navCollapsed = new Set();
+  const el = document.getElementById('navgroup-'+groupId);
+  const headers = document.querySelectorAll('.navgroup');
+  let header = null;
+  headers.forEach(h => { if(h.onclick && h.getAttribute('onclick') && h.getAttribute('onclick').includes(groupId)) header = h; });
+
+  if(window._navCollapsed.has(groupId)){
+    window._navCollapsed.delete(groupId);
+    if(el){ el.classList.remove('collapsed'); el.style.maxHeight = (el.scrollHeight + 100)+'px'; }
+    // header 찾기
+    document.querySelectorAll('.navgroup').forEach(h => {
+      if(h.textContent.trim() && h.onclick){ const oc = h.getAttribute('onclick')||''; if(oc.includes("'"+groupId+"'")) h.classList.remove('collapsed'); }
+    });
+  } else {
+    window._navCollapsed.add(groupId);
+    if(el){ el.classList.add('collapsed'); el.style.maxHeight = '0'; }
+    document.querySelectorAll('.navgroup').forEach(h => {
+      const oc = h.getAttribute('onclick')||''; if(oc.includes("'"+groupId+"'")) h.classList.add('collapsed');
+    });
+  }
+}
 
 function updateRulerAndNav(){
   const relevant = SECTIONS.filter(s=>!s.special && !s.disabled);
@@ -2193,10 +2210,20 @@ function updateRulerAndNav(){
   const nav = document.getElementById('navlist');
   let navHtml = '';
 
-  const TRAILING_SPECIALS = new Set(['feedback','guestbook','export','roadmap']);
-  const HIDDEN_SPECIALS = new Set(['dashboard','tasklist','accounts','taxonomy','visits']);
-  // B·C 그룹은 기본 접힘 (details open 여부)
-  const DEFAULT_OPEN = new Set(); // 비어있으면 A그룹(씨앗정의서)만 open
+  // 그룹별로 섹션을 묶어서 접기/펼치기 처리
+  // NAV_COLLAPSED: 기본으로 접혀있는 그룹 ID 목록
+  const NAV_COLLAPSED_DEFAULT = new Set(['s16', 's12']); // B, C 그룹은 기본 접힘
+  if(!window._navCollapsed) window._navCollapsed = new Set(NAV_COLLAPSED_DEFAULT);
+
+  let currentGroupId = null;
+  let currentGroupItems = [];
+  let pendingSections = [];
+
+  // 상단 고정 메뉴 (그룹 없는 것들) 먼저
+  const topSections = SECTIONS.filter(s =>
+    !s.special && !s.disabled ? false :
+    (s.special && !NAV_GROUPS[s.id] && s.special!=='dashboard' && s.special!=='tasklist' && s.special!=='accounts' && s.special!=='taxonomy' && s.special!=='visits')
+  );
 
   function renderNavItem(s){
     const active = s.id===state.cur;
@@ -2213,23 +2240,27 @@ function updateRulerAndNav(){
     const dim = isSectionLocked(s);
     const st = sectionStatus(s);
     const stMark = st==='done' ? '<span class="sec-status st-done">완료</span>' : st==='partial' ? '<span class="sec-status st-partial">작성중</span>' : '<span class="dot"></span>';
-    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook'||s.special==='landing';
+    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook';
     return '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(isTop?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
       '<span class="num">'+s.num+'</span>'+esc(s.title)+stMark+'</button></li>'+
       (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
   }
 
-  // 섹션 분류
+  // 그룹 구조로 HTML 생성
   let groups = [];
   let noGroupItems = [];
-  let afterGroupItems = [];
+  let afterGroupItems = []; // 그룹 뒤에 나오는 special 섹션들 (감자밭, 방명록 등)
   let curGroup = null;
 
-  SECTIONS.filter(s=>!HIDDEN_SPECIALS.has(s.special)).forEach(s=>{
+  // 그룹 종료 후 나오는 special 섹션 판별
+  const TRAILING_SPECIALS = new Set(['feedback','guestbook','export','roadmap']);
+
+  SECTIONS.filter(s=>s.special!=='dashboard'&&s.special!=='tasklist'&&s.special!=='accounts'&&s.special!=='taxonomy'&&s.special!=='visits').forEach(s=>{
     if(NAV_GROUPS[s.id]){
       curGroup = {groupId:s.id, groupLabel:NAV_GROUPS[s.id], items:[s]};
       groups.push(curGroup);
     } else if(s.special && TRAILING_SPECIALS.has(s.special)){
+      // 감자밭·방명록·내보내기·밭넓히기는 그룹 밖 하단에
       afterGroupItems.push(s);
     } else if(curGroup){
       curGroup.items.push(s);
@@ -2238,52 +2269,49 @@ function updateRulerAndNav(){
     }
   });
 
-  // 상단 고정 섹션
+  // 그룹 없는 상단 섹션 먼저
   navHtml += noGroupItems.map(renderNavItem).join('');
 
-  // 그룹 → <details> 로 렌더
+  // 그룹별 렌더
   groups.forEach(g => {
-    // 기본: A그룹만 열림, B·C는 접힘. 사용자가 열면 localStorage에 저장
-    const storageKey = 'ddugi_nav_open_'+g.groupId;
-    const defaultOpen = !['s16','s12'].includes(g.groupId);
-    const isOpen = localStorage.getItem(storageKey) !== null
-      ? localStorage.getItem(storageKey) === '1'
-      : defaultOpen;
+    const collapsed = window._navCollapsed.has(g.groupId);
     const itemsHtml = g.items.map(renderNavItem).join('');
+    // 그룹 헤더 높이 계산 (펼칠 때 max-height 충분히)
+    const estHeight = g.items.length * 40 + 100;
     navHtml +=
-      '<details class="navdetails"'+(isOpen?' open':'')+' id="navdetails-'+g.groupId+'" '+
-        'ontoggle="localStorage.setItem(\'ddugi_nav_open_'+g.groupId+'\',this.open?\'1\':\'0\')">'+
-        '<summary class="navgroup-summary">'+esc(g.groupLabel)+'</summary>'+
+      '<li class="navgroup'+(collapsed?' collapsed':'')+'" onclick="toggleNavGroup(\''+g.groupId+'\')">'+
+        esc(g.groupLabel)+'<span class="nav-arrow">▾</span>'+
+      '</li>'+
+      '<div class="navgroup-items'+(collapsed?' collapsed':'')+'" id="navgroup-'+g.groupId+'" style="max-height:'+(collapsed?'0':estHeight+'px')+'">'+
         '<ul class="navlist">'+itemsHtml+'</ul>'+
-      '</details>';
+      '</div>';
   });
 
-  // 하단 섹션
+  // 그룹 뒤 하단 섹션 (감자밭·방명록·내보내기·밭넓히기)
   if(afterGroupItems.length){
     navHtml += '<hr class="navdivider">';
     navHtml += afterGroupItems.map(renderNavItem).join('');
   }
 
-  // 관리자
   if(isAdmin){
-    const adminBtn = s => s ? '<li><button type="button" class="navbtn sub'+(state.cur===s.id?' active':'')+'" data-action="goto" data-target="'+s.id+'">'+
-      '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="dot"></span></button></li>' : '';
-    const adminItems = adminBtn(SECTIONS.find(s=>s.id==='tasklist')) +
-      adminBtn(SECTIONS.find(s=>s.id==='dashboard')) +
-      adminBtn(SECTIONS.find(s=>s.id==='taxonomy')) +
+    const adminBtn = s => '<li><button type="button" class="navbtn sub'+(state.cur===s.id?' active':'')+'" data-action="goto" data-target="'+s.id+'">'+
+        '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="dot"></span></button></li>';
+    const adminCollapsed = window._navCollapsed && window._navCollapsed.has('__admin__');
+    const masterCollapsed = window._navCollapsed && window._navCollapsed.has('__master__');
+    const adminItems = adminBtn(SECTIONS.find(s=>s.id==='tasklist')) + adminBtn(SECTIONS.find(s=>s.id==='dashboard')) + adminBtn(SECTIONS.find(s=>s.id==='taxonomy')) +
       '<li><button type="button" class="navbtn sub" data-admin-pw><span class="num">⚿</span>비밀번호 변경</button></li>';
     navHtml += '<hr class="navdivider">'+
-      '<details class="navdetails" open id="navdetails-__admin__">'+
-        '<summary class="navgroup-summary">관리자 · 실무</summary>'+
+      '<li class="navgroup'+(adminCollapsed?' collapsed':'')+'" onclick="toggleNavGroup(\'__admin__\')">관리자 · 실무<span class="nav-arrow">▾</span></li>'+
+      '<div class="navgroup-items'+(adminCollapsed?' collapsed':'')+'" id="navgroup-__admin__" style="max-height:'+(adminCollapsed?'0':'300px')+'">'+
         '<ul class="navlist">'+adminItems+'</ul>'+
-      '</details>';
+      '</div>';
     if(isMaster){
       const masterItems = adminBtn(SECTIONS.find(s=>s.id==='accounts')) + adminBtn(SECTIONS.find(s=>s.id==='visits'));
       navHtml +=
-        '<details class="navdetails" open id="navdetails-__master__">'+
-          '<summary class="navgroup-summary">마스터</summary>'+
+        '<li class="navgroup'+(masterCollapsed?' collapsed':'')+'" onclick="toggleNavGroup(\'__master__\')">마스터<span class="nav-arrow">▾</span></li>'+
+        '<div class="navgroup-items'+(masterCollapsed?' collapsed':'')+'" id="navgroup-__master__" style="max-height:'+(masterCollapsed?'0':'200px')+'">'+
           '<ul class="navlist">'+masterItems+'</ul>'+
-        '</details>';
+        '</div>';
     }
   }
   nav.innerHTML = navHtml;
@@ -2957,7 +2985,7 @@ function renderConvStep(){
     '<div class="conv-card">'+
       '<span class="conv-potato">🥔</span>'+
       '<div class="conv-question">'+esc(q.q)+'</div>'+
-      '<textarea id="convInput" placeholder="'+esc(q.ph)+'">'+esc(convAnswers[convStep]||'')+'</textarea>'+
+      '<textarea id="convInput" placeholder="'+esc(q.ph)+'">'+(convAnswers[convStep]||'')+'</textarea>'+
       '<div id="convHint" class="conv-hint"></div>'+
     '</div>'+
     '<div class="conv-btns">'+
@@ -3423,7 +3451,7 @@ function renderCurriculumBlock(){
         '</div>'+
         '<span style="font-size:10px;color:'+(active?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(active?'700':'400')+';text-align:center;max-width:60px;line-height:1.3;">'+l.title+'</span>'+
       '</button>'+
-      (i<levels.length-1?'<div style="width:24px;height:2px;background:var(--line);flex-shrink:0;margin-top:25px;"></div>':'');
+      (i<levels.length-1?'<div style="width:24px;height:2px;background:var(--line);margin-bottom:20px;flex-shrink:0;"></div>':'');
     }).join('');
   }
 
@@ -4110,41 +4138,27 @@ function renderCurriculumSection(){
         next:'내가 어필할 수 있는 AI 역량이 1개 이상 구체적으로 생겼다', nextLv:null}
     ],
     work: [
-      {lv:'LV.1', icon:'🔍', title:'업무 보조로 쓰기', tag:'L1 AI User',
+      {lv:'LV.1', icon:'🔍', title:'업무 보조로 쓰기', tag:'AI 첫 도입',
         q:'"업무에 AI를 써보고 싶은데 어떻게 시작하지?"',
         learn:['보고서·이메일·회의록 AI로 다듬기', '반복 업무에서 AI가 도움 되는 부분 찾기', 'AI 답변 검증 — 그대로 쓰면 안 되는 이유', '팀에 AI 쓴다고 말하기 전에 먼저 해볼 것들'],
         terms:[['생성형 AI','텍스트·이미지·코드 등을 새로 만들어내는 AI'],['프롬프트','AI에게 하는 지시문. 잘 쓸수록 결과가 달라짐'],['할루시네이션','AI가 없는 사실을 있다고 만들어내는 현상. 검증 필수']],
         cases:[{who:'마케팅팀 대리 · 5년차', what:'주간 보고서 초안을 AI에게 시켰더니 방향은 맞는데 수치가 틀렸음.', result:'"수치는 내가 넣을게, 구조랑 문장만 다듬어줘"로 역할 나눔. 작성 시간 40% 단축'},{who:'인사팀 과장 · 중년', what:'"AI가 뭔지 모르겠어서 무서웠는데" 이메일 다듬기부터 시작.', result:'일주일 만에 하루 30분 절약. 지금은 채용공고 초안까지 AI로 작성'}],
         mission:{time:'10분', task:'지금 하고 있는 업무에서 반복적인 것 하나를 골라서\nChatGPT에게 "이걸 더 빠르게 할 수 있는 방법 있어?"라고 물어보기.\n예: 회의록 정리, 메일 작성, 보고서 목차 잡기', check:'AI가 제안한 방법 중 1개라도 실제로 써봤으면 성공.'},
         next:'업무에서 AI가 실제로 도움 된 순간을 1번 이상 경험했다', nextLv:'LV.2 →'},
-      {lv:'LV.2', icon:'⚙️', title:'업무 흐름에 연결', tag:'L2 AI Operator',
+      {lv:'LV.2', icon:'⚙️', title:'업무 흐름에 연결', tag:'실전 활용',
         q:'"AI를 그냥 쓰는 게 아니라, 업무 흐름에 제대로 연결하고 싶어"',
         learn:['반복 업무 자동화 가능성 진단', '노코드 도구로 간단한 자동화 만들기 (Make, Zapier)', 'AI가 해야 할 일 vs 사람이 해야 할 일 구분하기', '팀에 AI 도입할 때 설득하는 법'],
         terms:[['자동화','내가 안 해도 알아서 돌아가게 만들기'],['노코드','코딩 없이 도구를 연결해서 자동화 만드는 것'],['워크플로우','반복 작업을 순서대로 흐르게 만든 것']],
         cases:[{who:'기획팀 차장 · 15년차', what:'주간 데이터 취합 → 보고서 작성이 매주 3시간.', result:'Make로 자동 취합 → AI 초안 생성 흐름 만들어 1시간으로 단축'},{who:'스타트업 COO', what:'"우리 팀이 AI를 도입해야 하는데 뭐부터 해야 하지?"', result:'ddugi로 업무 문제 정의 → AI 필요한 곳과 아닌 곳 구분 → 우선순위 3개 도출'}],
         mission:{time:'20분', task:'지금 팀에서 가장 반복적인 업무 하나를 골라서\nddugi 씨앗 정의서(01번)에 직접 써보기.\n"지금 어떻게 하고 있어? 뭐가 불편해? AI로 뭐가 달라지면 좋겠어?"', check:'씨앗 이름 + 핵심 문제 한 줄 완성했으면 성공.', link:true},
         next:'내가 설계한 개선안이 실제로 한 번 이상 팀에서 쓰였다', nextLv:'LV.3 →'},
-      {lv:'LV.3', icon:'🛠️', title:'도구 직접 만들기', tag:'L3 AI Builder',
-        q:'"써보는 걸 넘어서, 내가 쓸 수 있는 도구를 직접 만들고 싶어"',
-        learn:['바이브코딩으로 간단한 업무 도구 만들기', 'AI한테 코드 짜달라고 시키고 실제로 돌리기', '노코드(n8n·Make)로 자동화 워크플로우 구축', '만든 도구를 팀에 공유하고 피드백 받기'],
-        terms:[['바이브코딩','AI에게 코드를 짜달라고 해서 실제로 작동하는 것을 만드는 방식'],['API','서비스끼리 대화하는 규칙. AI를 내 도구에 연결하는 통로'],['자동화 스크립트','반복 작업을 코드로 대신 처리하게 만든 것']],
-        cases:[{who:'영업팀 대리 · 3년차', what:'매주 CRM 데이터 정리가 1시간. Claude한테 "이 엑셀 데이터 정리하는 Python 코드 짜줘" 요청.', result:'코드 한 번 돌리니 5분으로 단축. 팀 전체에 공유함'},{who:'콘텐츠 기획자 · 4년차', what:'n8n으로 유튜브 트렌드 수집 → AI 요약 → 슬랙 발송 자동화.', result:'매일 아침 트렌드 리포트가 자동으로 들어옴. 기획 회의 시간 절반으로 줄어듦'}],
-        mission:{time:'20분', task:'반복 업무 하나를 골라서 ChatGPT/Claude에게:\n"이 업무를 자동화하는 Python 코드 짜줘.\n[업무 설명: 지금 어떻게 하고 있는지 구체적으로]"\n→ 코드를 실제로 실행해보기', check:'내가 만든 코드가 실제로 한 번 이상 실행됐으면 성공.'},
-        next:'업무에 실제로 작동하는 도구를 만들었는가?', nextLv:'LV.4 →'},
-      {lv:'LV.4', icon:'🔗', title:'시스템에 연결하기', tag:'L4 AI System Builder',
-        q:'"AI가 우리 데이터랑 연결돼서 알아서 돌아가게 하고 싶어"',
-        learn:['NotebookLM으로 내 문서 기반 AI 만들기 (RAG 원리 체험)', '회사 문서·데이터를 AI한테 먹이기', 'n8n AI 에이전트로 멀티스텝 자동화', 'AI가 적합한 곳 vs 사람이 해야 할 곳 경계 설계'],
-        terms:[['RAG','내 문서를 AI에게 먹여서 그 내용 기반으로 답하게 하는 기술'],['벡터DB','문서의 의미를 숫자로 저장해두는 창고. AI가 검색하는 데 씀'],['에이전트','목표를 주면 스스로 계획하고 도구를 써서 실행하는 AI']],
-        cases:[{who:'HR팀 팀장 · 10년차', what:'사내 규정 PDF 50개. 직원들이 "연차 어떻게 써요?" 물어볼 때마다 직접 찾아줬음.', result:'NotebookLM에 규정 문서 올리고 링크 공유. 이제 직원들이 직접 물어봄. 문의 70% 감소'},{who:'이커머스 CS팀장 · 8년차', what:'고객 문의 1만 건 분류 자동화. Claude API + 앱스크립트로 연결.', result:'분류 정확도 85%. 담당자는 애매한 것만 검토. 처리 속도 3배'}],
-        mission:{time:'30분', task:'NotebookLM(notebooklm.google.com)에 접속해서\n업무 관련 문서·자료 3개 이상 업로드 →\n"이 자료 기반으로 [내 질문]에 답해줘" 테스트해보기', check:'AI가 내 문서 내용을 기반으로 답변했으면 성공.'},
-        next:'AI가 데이터·시스템과 연결되어 지속적으로 작동하는가?', nextLv:'LV.5 →'},
-      {lv:'LV.5', icon:'🗺️', title:'업무 자체를 바꾸기', tag:'L5 AX Architect',
-        q:'"AI를 붙이는 게 아니라, 일하는 방식 자체를 바꾸고 싶어"',
-        learn:['업무 전체를 다시 설계하기 (Process Redesign)', 'AI가 할 것 vs 사람이 반드시 할 것 경계 정하기 (Human-AI Boundary)', '문제부터 먼저 정의하기 — AI가 필요한 곳 vs 아닌 곳 구분', '효과 측정 방법 설계 + 팀 전체로 확산하기'],
-        terms:[['AX','AI Transformation. AI를 붙이는 게 아니라 업무 자체를 AI로 재설계하는 것'],['Human-in-the-loop','AI가 실행하고 사람이 검토·승인하는 구조. 중요한 결정은 사람이'],['AI Slop','필요 없는 곳에 AI를 붙이거나 검증 없이 결과물을 쓰는 것']],
+      {lv:'LV.3', icon:'🛠️', title:'AX 설계하기', tag:'AX 기획',
+        q:'"팀·부서 단위로 AI를 제대로 도입하고 싶어"',
+        learn:['AX 과제 탐색·설계 프로세스 (ddugi 전체 흐름)', 'AI 필요성 진단 — 억지로 AI 붙이지 않기', 'AI Slop 탐지 — 단순 자동화를 AI로 포장하면 안 되는 이유', '효과 측정 방법 설계'],
+        terms:[['AX','AI Transformation. 업무 자체를 AI로 재설계하는 것'],['AI Slop','필요 없는 곳에 AI를 붙이거나 검증 없이 결과물을 쓰는 것'],['PoC','Proof of Concept. 제일 작은 버전으로 먼저 검증하는 것']],
         cases:[{who:'IT기업 PM · 8년차', what:'"AI 도입하자"는 경영진 지시 → 어디서 시작해야 할지 몰랐음.', result:'ddugi로 5개 업무 후보 탐색 → AI 필요한 것 2개·불필요한 것 3개 구분 → 우선순위 명확해짐'},{who:'제조업 팀장 · 20년차', what:'보고서 AI 자동 생성 만들었는데 직원들이 안 씀.', result:'사용자 인터뷰 → "결과물 믿을 수가 없어요" → Human-in-the-loop 구조로 재설계'}],
-        mission:{time:'30분', task:'ddugi 씨앗 찾기(00번)에서 팀의 업무를 자유롭게 설명하고\nAI가 찾아주는 개선 후보 2~3개 받아보기.\n→ "적합" 판정 받은 것만 다음 단계로\n→ 개발 역량 없어도 OK — 업무 재설계가 핵심', check:'AI 적합·부적합 판정 결과를 팀에 공유할 수 있겠다 싶으면 성공.', link:true},
-        next:'AI 때문에 업무 방식 자체가 바뀌었는가?', nextLv:null}
+        mission:{time:'30분', task:'ddugi 씨앗 찾기(00번)에서 팀의 업무를 자유롭게 설명하고\nAI가 찾아주는 개선 후보 2~3개 받아보기.\n→ "적합" 판정 받은 것만 다음 단계로', check:'AI 적합·부적합 판정 결과를 보고 팀에 공유할 수 있겠다 싶으면 성공.', link:true},
+        next:'AX 과제 정의서를 완성하고 팀원과 공유했다', nextLv:null}
     ]
   };
 
@@ -4159,7 +4173,7 @@ function renderCurriculumSection(){
   }
 
   function fHtml(list){
-    return '<div style="display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;">' +
+    return '<div style="display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;">' +
       list.map((l,i)=>{
         const a=i===(window._curriculumIdx||0);
         return '<button type="button" onclick="curricSelect('+i+')" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;">'+
@@ -4231,6 +4245,151 @@ function renderCurriculumSection(){
     return tHtml()+fHtml(list)+cHtml(list[idx],idx);
   }
   return '<div id="curricWrap">'+buildC3()+'</div>';
+}
+
+
+function renderCurriculumWrap(){
+  // renderCurriculumSection에서 탭+플로우+카드 전체를 반환
+  window._curriculumTab = window._curriculumTab || 'easy';
+  window._curriculumIdx = window._curriculumIdx || 0;
+  const tabs = [
+    { id:'easy', label:'🌱 처음 보는 사람', desc:'AI가 뭔지 모르는 상태에서 시작' },
+    { id:'mid',  label:'⚙️ 중간 단계',     desc:'써봤는데 더 잘 쓰고 싶어' },
+    { id:'hard', label:'🛠️ 심화',          desc:'설계하고 진로까지 연결하고 싶어' }
+  ];
+  const levels = {
+    easy:[
+      {lv:'LV.0',icon:'🌱',title:'AI 처음 만남',tag:'완전 처음',q:'"AI가 뭔진 모르겠는데 다들 쓰는 것 같아"',
+        learn:['유튜브 알고리즘, 번역기 — 이미 AI를 쓰고 있었다','ChatGPT가 뭔지 직접 들어가서 말 걸어보기','AI가 가끔 틀린다는 것 (환각)','AI에게 물어보기 vs 검색하기 차이'],
+        terms:[['AI','사람처럼 생각하는 척 하는 컴퓨터 프로그램'],['ChatGPT','OpenAI가 만든 대화형 AI. 말 걸면 답해줌'],['환각','AI가 모르는 걸 아는 척 꾸며내는 것. 믿으면 안 됨']],
+        cases:[{who:'고2 · 문과',what:'ChatGPT에 "수행평가 주제 추천해줘" 한 마디 넣었다가 답변이 너무 길어서 당황.',result:'AI가 틀릴 수 있다는 걸 직접 확인하고 나서야 믿고 쓰기 시작함'},{who:'대학교 1학년 · 경영학과',what:'"AI에 대해 알려줘" 했다가 위키피디아 같은 답변만 받음.',result:'질문을 어떻게 하느냐가 결과를 바꾼다는 걸 처음 느낀 계기'}],
+        next:'ChatGPT에 질문을 3번 이상 해봤고, AI가 틀릴 수 있다는 걸 안다',nextLv:'LV.1 →',
+        mission:{time:'5분',task:'ChatGPT(chat.openai.com)에 접속해서 지금 머릿속에 있는 고민 하나를 그냥 말해보기. "요즘 자소서 쓰는 게 너무 막막해" 같은 거 아무거나.',check:'AI가 뭔가 답했으면 성공. 틀려도 괜찮아, 그게 포인트야.'}},
+      {lv:'LV.1',icon:'🔍',title:'도구로 쓰기',tag:'써봤지만 어색함',q:'"그냥 쓰긴 하는데, 내가 제대로 쓰는 건지 모르겠어"',
+        learn:['AI한테 더 잘 물어보는 방법이 있다','"역할"을 주면 답변이 달라진다','같은 질문, 다르게 물어보고 비교하기','ChatGPT / Claude / Gemini 뭐가 다른지'],
+        terms:[['프롬프트','AI에게 하는 말. 어떻게 말하느냐가 결과를 바꿈'],['역할 주기','"너는 국어 선생님이야" 처럼 AI에게 역할을 부여하는 것'],['토큰','AI가 읽는 글자 단위. 너무 길면 잊어버림']],
+        cases:[{who:'고3 · 이과',what:'"수학 문제 풀어줘"라고 했더니 중간 과정이 틀렸음. 복붙했다가 선생님한테 걸림.',result:'"풀이 과정도 설명해줘"를 붙이기 시작함. 직접 확인하는 습관 생김'},{who:'대학교 2학년 · 영문과',what:'"전문가처럼 써줘"와 "영문과 교수처럼 써줘"의 결과가 완전히 다른 걸 발견.',result:'역할 부여 프롬프트로 에세이 퀄리티가 눈에 띄게 올라감'}],
+        next:'프롬프트 조금만 바꿔도 답이 달라진다는 걸 직접 느꼈다',nextLv:null,
+        mission:{time:'10분',task:'같은 질문을 3가지 방식으로 바꿔서 ChatGPT에 넣어보기.\n① "자소서 써줘"\n② "취업준비생 입장에서 자소서 첫 문장을 써줘"\n③ "너는 10년차 HR 담당자야. 합격하는 자소서 첫 문장의 특징을 알려줘"',check:'3개 결과가 다르면 성공. 어떻게 다른지 한 줄씩 메모해봐.'}}
+
+    ],
+    mid:[
+      {lv:'LV.1',icon:'🔍',title:'프롬프트 제대로 쓰기',tag:'기초 탈출',q:'"그냥 쓰는 것 말고, 원하는 답을 뽑는 방법이 있어?"',
+        learn:['역할+맥락+형식 세트로 주기','긴 문서 요약 / 퀴즈 생성 / 번역 품질 올리기','AI 답변 검증 체크리스트 만들기','이미지 생성 AI 기초 (Midjourney, DALL-E)'],
+        terms:[['프롬프트 엔지니어링','AI에게 잘 부탁하는 기술. 말을 잘 구성할수록 결과가 좋음'],['컨텍스트','AI에게 알려주는 배경 정보. 많을수록 정확한 답이 나옴'],['시스템 프롬프트','AI의 기본 성격/역할을 미리 설정하는 지시문']],
+        cases:[{who:'대학교 2학년 · 사회학과',what:'노션에 스터디 기록 쌓다가 "이 내용 기반으로 나한테 퀴즈 내줘"를 시도.',result:'AI 기반 복습 루틴 완성. 시험 전날 루틴이 됨'},{who:'고3 · 이과',what:'"풀이 과정도 단계별로, 내가 틀릴 수 있는 부분도 짚어줘"로 프롬프트 바꿈.',result:'수학 오답률이 줄었고, AI 검증 습관이 생김'}],
+        next:'같은 목적의 프롬프트를 3가지 버전으로 만들어서 비교해봤다',nextLv:'LV.2 →',
+        mission:{time:'10분',task:'관심 있는 직무의 채용공고 하나를 복사해서 ChatGPT에 붙여넣고 이렇게 물어봐:\n"이 공고에서 가장 중요한 역량 3가지만 뽑아줘. 그리고 내가 자소서에서 꼭 언급해야 할 키워드도 알려줘."',check:'역량 3개 + 키워드가 나왔으면 성공. 내 자소서에 그 키워드가 있는지 확인해봐.'}},
+      {lv:'LV.2',icon:'⚙️',title:'내 일에 연결하기',tag:'실전 활용',q:'"공부·취준·업무에 AI를 제대로 연결하고 싶어"',
+        learn:['취준 활용 — 자소서 피드백, 직무 분석, 면접 준비','노션 + AI로 정보 정리 시스템 만들기','AI에게 "문제 먼저 정의"하게 시키는 연습','AI 없을 때 vs 있을 때 결과물 직접 비교'],
+        terms:[['RAG','AI에게 내 문서를 먼저 읽히고 질문하는 방식'],['워크플로우','반복 작업을 순서대로 흐르게 만든 것'],['AX','회사/업무 전체를 AI로 바꾸는 것']],
+        cases:[{who:'대학교 3학년 · 경영학과 · AX 직무 취준',what:'채용공고 10개를 AI에게 붙여넣고 공통 키워드를 뽑음.',result:'직무 분석 프레임워크 생김. 서류 합격률 올라감'},{who:'대학교 2학년 · 경제학과',what:'노션 페이지 내용 붙여넣고 AI가 퀴즈 내게 하는 루틴 만들었더니 개인 과외 느낌.',result:'시험 전날 루틴 완성. 친구들에게도 공유함'}],
+        next:'AI 없이 했을 때와 있을 때 결과물 차이를 직접 느꼈다',nextLv:null,
+        mission:{time:'15분',task:'내 자소서 한 문단을 ChatGPT에 붙여넣고 이렇게 물어봐:\n"이 자소서에서 애매하거나 구체적이지 않은 부분을 짚어줘. 그리고 더 구체적으로 쓰려면 어떤 내용을 추가해야 할지 알려줘."\n→ 피드백 받고 실제로 한 줄만 고쳐보기.',check:'고치기 전/후 비교해서 뭐가 달라졌는지 느꼈으면 성공.'}}
+    ],
+    hard:[
+      {lv:'LV.3',icon:'🛠️',title:'구조 설계',tag:'직접 만들기',q:'"그냥 쓰는 게 아니라, 직접 설계하고 만들어보고 싶어"',
+        learn:['자동화 흐름 설계 (문제 → 입력 → 처리 → 출력)','노코드 자동화 — Make, n8n으로 실제 연결','AI 기획서 1페이지 작성 (ddugi 씨앗 정의서)','API 개념 — 서비스끼리 연결하는 창구'],
+        terms:[['API','서비스끼리 말 걸 수 있는 창구. 코딩 없이도 연결 가능'],['노코드','코딩 없이 도구를 연결해서 자동화 만드는 것'],['트리거','자동화를 시작시키는 신호. 예: 이메일 오면 → 노션에 저장']],
+        cases:[{who:'대학교 4학년 · 산업공학과',what:'Make로 구글 폼 → 노션 DB → 슬랙 알림 흐름 만들었는데 트리거 개념 몰라서 삽질 3일.',result:'자동화 설계 감각 생김. 포트폴리오에 "업무 효율화 경험"으로 녹임'},{who:'취업준비생 · 비전공자 · AX기획 지원',what:'코딩 하나도 모르는데 ddugi 도구로 문제 정의 연습 먼저 함.',result:'면접에서 "문제를 먼저 쪼개는 경험"을 말했더니 반응이 좋았음'}],
+        next:'내가 설계한 자동화가 실제로 한 번 이상 작동했다',nextLv:'LV.4 →',
+        mission:{time:'20분',task:'ddugi에서 직접 씨앗 하나 심어보기 🌱\n지금 반복적으로 하는 귀찮은 일 하나를 골라서 01~02 작성해봐.\n예: "매번 채용공고 찾아서 정리하는 게 너무 번거로워"',check:'씨앗 이름 + 핵심 문제 한 줄 썼으면 성공. AI가 필요한지 아닌지 판단은 그 다음이야.',link:true}},
+      {lv:'LV.4',icon:'🧭',title:'진로 방향 잡기',tag:'커리어 연결',q:'"AI 시대에 나는 어디로 가야 하지?"',
+        learn:['AI 관련 직무 지형도 — 기획 / 개발 / 데이터 / 운영','AI가 대체 못하는 능력 — 문제 정의, 판단, 관계','LV.2~3 결과물을 포트폴리오로 만드는 법','채용공고 5개 분석 → 공통 역량 뽑기'],
+        terms:[['AX기획자','회사 업무를 AI로 어떻게 바꿀지 설계하는 사람'],['데이터 리터러시','숫자와 데이터를 읽고 해석하는 기초 능력'],['MLOps','AI 모델을 실제 서비스로 유지·관리하는 것']],
+        cases:[{who:'졸업예정자 · 경영정보학과 · PM 지망',what:'"이걸로 뭘 할 수 있는 사람이에요?"라는 질문에 막혔음. LV.2~3 결과물 정리하면서 한 문장 완성.',result:'"문제를 보는 눈"을 어필하는 방향으로 전환'},{who:'대학교 3학년 · 컴퓨터공학과',what:'채용공고 20개 분석했더니 "AI를 만드는 사람"보다 "AI를 업무에 연결하는 사람"을 더 많이 뽑고 있다는 걸 발견.',result:'기술 스택 중심 → 문제 해결 경험 중심으로 이력서 재구성'}],
+        next:'특화 직무 심화 과정으로 → AX기획 / 개발 / 데이터 분석 중 선택',nextLv:null,
+        mission:{time:'20분',task:'관심 직무 채용공고 5개를 찾아서 ChatGPT에 붙여넣고 물어봐:\n"이 5개 공고에서 공통으로 요구하는 역량과 키워드를 뽑아줘. 그리고 AI 관련 역량이 포함됐다면 어떤 수준을 원하는지도 알려줘."\n→ 결과를 보고 내 현재 수준과 비교해봐.',check:'공통 역량 목록이 나오고, 내가 갖춘 것과 부족한 것을 구분했으면 성공.'}}
+
+    ]
+  };
+
+  function tHtml(){
+    return '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">' +
+      tabs.map(t=>{
+        const a = window._curriculumTab===t.id;
+        return '<button type="button" onclick="curricTab2(\''+t.id+'\')" style="padding:10px 16px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
+          t.label+'<br><span style="font-size:11px;opacity:.65;">'+t.desc+'</span>'+
+        '</button>';
+      }).join('')+'</div>';
+  }
+  function fHtml(list){
+    return '<div style="display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;">' +
+      list.map((l,i)=>{
+        const a=i===(window._curriculumIdx||0);
+        return '<button type="button" onclick="curricSelect2('+i+')" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;">'+
+          '<div style="width:52px;height:52px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';transition:all .15s;">'+
+            '<span style="font-size:9px;font-weight:700;color:'+(a?'var(--blueprint)':'var(--placeholder)')+'">'+l.lv+'</span>'+
+            '<span style="font-size:17px;">'+l.icon+'</span>'+
+          '</div>'+
+          '<span style="font-size:10px;color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';text-align:center;max-width:60px;line-height:1.3;">'+l.title+'</span>'+
+        '</button>'+(i<list.length-1?'<div style="width:28px;height:2px;background:var(--line);margin-bottom:20px;flex-shrink:0;"></div>':'');
+      }).join('')+'</div>';
+  }
+  function cHtml(l,i){
+    return '<div style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;">'+
+        '<div style="width:44px;height:44px;border-radius:10px;background:var(--blueprint-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">'+
+          '<span style="font-size:9px;color:var(--blueprint);font-weight:700;">'+l.lv+'</span><span style="font-size:18px;">'+l.icon+'</span></div>'+
+        '<div style="flex:1;"><div style="font-size:16px;font-weight:700;color:var(--ink);">'+l.title+'</div>'+
+          '<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:2px;">'+l.q+'</div></div>'+
+        '<span style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;">'+
+        '<div style="padding:16px 20px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);">'+
+          '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);margin-bottom:8px;">배우는 것</div>'+
+          l.learn.map(t=>'<div style="font-size:12px;line-height:1.7;color:var(--ink);padding-left:12px;position:relative;"><span style="position:absolute;left:3px;color:var(--ink-soft);">·</span>'+t+'</div>').join('')+
+        '</div>'+
+        '<div style="padding:16px 20px;border-bottom:1px solid var(--line);">'+
+          '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);margin-bottom:8px;">용어 풀어쓰기</div>'+
+          l.terms.map(([k,v])=>'<div style="font-size:12px;line-height:1.7;color:var(--ink);padding-left:12px;position:relative;"><span style="position:absolute;left:3px;color:var(--ink-soft);">·</span><b>'+k+'</b> = '+v+'</div>').join('')+
+        '</div>'+
+      '</div>'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--line);">'+
+        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);margin-bottom:10px;">실제 사례</div>'+
+        l.cases.map(c=>'<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px;line-height:1.6;">'+
+          '<div style="font-size:10px;font-weight:700;color:var(--ink-soft);margin-bottom:3px;">'+c.who+'</div>'+
+          '<div style="color:var(--ink);">'+c.what+'</div>'+
+          '<div style="margin-top:4px;font-size:11px;">→ <b style="color:var(--blueprint);">'+c.result+'</b></div></div>').join('')+
+      '</div>'+
+      (l.mission ?
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--line);background:var(--blueprint-soft);">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
+          '<span style="font-size:13px;">🎯</span>'+
+          '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--blueprint);">이번 미션</span>'+
+          '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--blueprint);color:#fff;font-weight:600;">⏱ '+l.mission.time+'</span>'+
+        '</div>'+
+        '<div style="font-size:13px;color:var(--ink);line-height:1.8;white-space:pre-line;margin-bottom:10px;">'+l.mission.task+'</div>'+
+        '<div style="font-size:12px;color:var(--blueprint);font-weight:600;">✅ 완료 기준: '+l.mission.check+'</div>'+
+        (l.mission.link ? '<div style="margin-top:10px;"><button type="button" onclick="curricGoto(\'s1\')" style="font-size:12px;padding:7px 16px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;cursor:pointer;font-weight:600;">→ ddugi에서 씨앗 심으러 가기</button></div>' : '')+
+      '</div>'
+      : '')+
+      '<div style="padding:12px 20px;background:var(--panel);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
+        '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);">'+(l.nextLv?'다음 레벨 조건':'이후')+'</span>'+
+        '<span style="font-size:12px;color:var(--ink);flex:1;">'+l.next+'</span>'+
+        (l.nextLv?'<button type="button" onclick="curricSelect2('+(i+1)+')" style="font-size:12px;padding:5px 14px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--blueprint);font-weight:600;cursor:pointer;">'+l.nextLv+'</button>':'')+
+      '</div></div>';
+  }
+
+  window.curricGoto = function(target){
+    if(typeof goto === 'function') goto(target);
+    else { state.cur = target; renderSheet(); }
+  };
+  window.curricTab2 = function(id){
+    window._curriculumTab=id; window._curriculumIdx=0;
+    const el=document.getElementById('curricWrap2'); if(el) el.innerHTML=buildC();
+  };
+  window.curricSelect2 = function(idx){
+    window._curriculumIdx=idx;
+    const el=document.getElementById('curricWrap2'); if(el) el.innerHTML=buildC();
+  };
+  function buildC(){
+    const tab=window._curriculumTab||'easy', list=levels[tab];
+    const idx=Math.min(window._curriculumIdx||0, list.length-1);
+    window._curriculumIdx=idx;
+    return tHtml()+fHtml(list)+cHtml(list[idx],idx);
+  }
+  return '<div id="curricWrap2">'+buildC()+'</div>';
 }
 
 
@@ -4306,155 +4465,12 @@ function renderLandingSection(){
   </div>`;
 }
 
-// ── 인트로 자동채우기 기능 ──────────────────────────────
-window.introGenPrompt = function(){
-  const text = (document.getElementById('introFreeText')||{}).value||'';
-  if(!text.trim()){ alert('먼저 상황을 적어줘!'); return; }
-  const prompt = `아래 상황을 분석해서 항목을 채워줘.
-반드시 아래 형식 그대로만 답해줘. 번호와 레이블은 그대로 두고 콜론 뒤만 채워줘.
-
-상황: "${text.trim()}"
-
-1. 씨앗 이름: (핵심 문제 한 줄, 15자 이내)
-2. 업무 목적: (이 업무는 왜 하는가? 어떤 목적으로 하는 일인가?)
-3. 현재 프로세스: (지금 어떻게 하고 있는지 순서대로. 예: 1) 자료 수집 2) 정리 3) 보고)
-4. 발생 빈도: 매일 또는 주 단위 또는 월 단위 또는 비정기 중 해당하는 것
-5. 시간이 많이 드는 단계: (가장 귀찮거나 오래 걸리는 단계가 어디인지)
-6. 핵심 문제: (진짜 해결하고 싶은 문제. 표면 말고 본질)
-7. 개선 기준: (뭐가 달라지면 이 업무가 좋아졌다고 할 수 있는지)
-8. 해결 방향 가설: (내가 생각하는 해결 방향, 첫 번째 시도 방향)
-9. AI 없이 가능한 것: (AI 없어도 할 수 있는 부분)
-10. AI가 도움될 부분: (AI가 실제로 도움될 수 있는 부분)`;
-  const box = document.getElementById('introStep2');
-  const step3 = document.getElementById('introStep3');
-  const pt = document.getElementById('introPromptText');
-  const pd = document.getElementById('introPromptDisplay');
-  if(box) box.style.display='block';
-  if(step3) step3.style.display='block';
-  if(pt) pt.value = prompt;
-  if(pd) pd.textContent = prompt;
-};
-
-window.introCopyPrompt = function(){
-  const pt = document.getElementById('introPromptText');
-  if(!pt) return;
-  navigator.clipboard.writeText(pt.value).then(()=>{
-    const btn = document.getElementById('introCopyBtn');
-    if(btn){ btn.textContent='✅ 복사됨'; setTimeout(()=>btn.textContent='복사',1500); }
-  });
-};
-
-window.introAutoFill = function(){
-  const raw = (document.getElementById('introAIResult')||{}).value||'';
-  const msg = document.getElementById('introFillMsg');
-  if(!raw.trim()){
-    if(msg){ msg.style.display='block'; msg.style.background='rgba(239,68,68,.1)'; msg.style.color='#ef4444'; msg.textContent='AI 답변을 먼저 붙여넣어줘!'; }
-    return;
-  }
-
-  // 번호:레이블: 값 형식 파싱
-  function extract(num){
-    const re = new RegExp(num+'\\.\\s*[^:：]+[:：]\\s*(.+)');
-    const m = raw.match(re);
-    return m ? m[1].trim() : '';
-  }
-
-  const seedName   = extract('1');
-  const purpose    = extract('2');
-  const flow       = extract('3');
-  const freq       = extract('4');
-  const slow       = extract('5');
-  const core       = extract('6');
-  const goal       = extract('7');
-  const hypothesis = extract('8');
-  const withoutAI  = extract('9');
-  const withAI     = extract('10');
-
-  if(!seedName && !core){
-    if(msg){ msg.style.display='block'; msg.style.background='rgba(239,68,68,.1)'; msg.style.color='#ef4444'; msg.textContent='형식이 맞지 않아. AI한테 "번호: 레이블: 답변" 형식 그대로 답해달라고 다시 요청해봐.'; }
-    return;
-  }
-
-  // 필드 채우기
-  const fill = (id, val) => { if(val){ window._setV(id, val); } };
-  fill('s1_name',    seedName);
-  fill('s1_purpose', purpose);
-  fill('s2_flow',    flow);
-  fill('s2_slow',    slow);
-  fill('s2_core',    core);
-  fill('s1_goal',    goal);
-  fill('s1_hypo',    hypothesis);
-  // 발생 빈도는 체크박스라 직접 설정
-  if(freq){
-    const freqMap = {'매일':'매일','주 단위':'주 단위','월 단위':'월 단위','비정기':'비정기'};
-    const matched = Object.keys(freqMap).find(k => freq.includes(k));
-    if(matched) window._setV('s2_freq', [matched]);
-  }
-  window._persist();
-
-  // 결과 요약
-  let summary = '<b>🌱 채워진 내용</b><br><br>';
-  if(seedName)   summary += '📌 <b>씨앗 이름:</b> '+esc(seedName)+'<br>';
-  if(core)       summary += '🔍 <b>핵심 문제:</b> '+esc(core)+'<br>';
-  if(freq)       summary += '⏱ <b>발생 빈도:</b> '+esc(freq)+'<br>';
-  if(slow)       summary += '🐢 <b>시간 많이 드는 단계:</b> '+esc(slow)+'<br>';
-  if(withoutAI)  summary += '✅ <b>AI 없이 가능:</b> '+esc(withoutAI)+'<br>';
-  if(withAI)     summary += '🤖 <b>AI 도움될 부분:</b> '+esc(withAI)+'<br>';
-  summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>맞는지 꼭 확인하고 수정해줘!</b>';
-
-  if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
-
-  setTimeout(()=>{ window._state.cur='s1'; window._renderSheet(); document.getElementById('main').scrollTo(0,0); }, 2500);
-};
-
 function renderIntroSection(){
   const editBtn = isMaster ? '<div class="exportbar"><button type="button" class="secondary" data-action="intro-edit" data-target="'+(introEditing?'off':'on')+'">'+(introEditing?'편집 닫기':'✎ 안내문 편집 (마스터)')+'</button></div>' : '';
   const body = introEditing
     ? taxBlockHtml('intro_html','시작하기(00) 안내문 — HTML', INTRO_HTML, 'HTML 태그 그대로 적으세요. 비워두고 저장하면 기본 안내문으로 돌아가요.')
     : INTRO_HTML;
-
-  const autoFillHtml = `
-<div style="border:1px solid var(--line-soft);border-radius:14px;overflow:hidden;margin-bottom:20px;">
-
-  <!-- STEP 1 -->
-  <div style="padding:18px 20px;border-bottom:1px solid var(--line-soft);">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>
-      <span style="font-size:14px;font-weight:700;color:var(--ink);">뭘 만들고 싶은지 말해봐</span>
-      <span style="font-size:12px;color:var(--ink-soft);">막막한 상황, 해결하고 싶은 문제 — 뭐든</span>
-    </div>
-    <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:80px;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;"></textarea>
-    <button type="button" onclick="introGenPrompt()" style="margin-top:10px;padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📋 프롬프트 만들기 →</button>
-  </div>
-
-  <!-- STEP 2 -->
-  <div id="introStep2" style="display:none;padding:18px 20px;border-bottom:1px solid var(--line-soft);background:var(--blueprint-soft);">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>
-      <span style="font-size:14px;font-weight:700;color:var(--blueprint);">이 프롬프트를 ChatGPT / Claude에 붙여넣어봐</span>
-    </div>
-    <div style="position:relative;background:var(--paper);border:1px solid var(--blueprint-2);border-radius:8px;padding:12px 52px 12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;" id="introPromptDisplay"></div>
-    <button type="button" onclick="introCopyPrompt()" id="introCopyBtn" style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:12px;font-weight:600;cursor:pointer;">📎 전체 복사</button>
-    <textarea id="introPromptText" style="display:none;"></textarea>
-  </div>
-
-  <!-- STEP 3 -->
-  <div id="introStep3" style="display:none;padding:18px 20px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
-      <span style="font-size:14px;font-weight:700;color:var(--ink);">AI 답변을 여기에 붙여넣어봐</span>
-    </div>
-    <textarea id="introAIResult" placeholder="AI가 답변한 JSON을 여기에 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
-      <button type="button" onclick="introAutoFill()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--ok);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">🌱 씨앗 정의서 자동채우기</button>
-      <span style="font-size:12px;color:var(--ink-soft);">AI가 채운 거니까 맞는지 꼭 확인해줘</span>
-    </div>
-    <div id="introFillMsg" style="display:none;margin-top:10px;font-size:12px;padding:10px 14px;border-radius:8px;line-height:1.7;"></div>
-  </div>
-
-</div>`;
-
-  return '<div class="frame intro">'+editBtn+autoFillHtml+body+
+  return '<div class="frame intro">'+editBtn+body+
     (introEditing ? '' : '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>'+
       '<button type="button" class="secondary" onclick="goToConv()">🌱 대화로 시작하기</button>'+
       '<button type="button" class="secondary" data-action="goto" data-target="example">🥔 먼저 온 포테이토 보기</button></div>')+
@@ -4513,8 +4529,15 @@ function renderPromptKitSection(){
               '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;">'+p.title+'</div>'+
               '<div style="font-size:12px;color:var(--ink-soft);">'+p.desc+'</div>'+
             '</div>'+
-            '<span style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);color:var(--ink-soft);font-weight:600;white-space:nowrap;">✏️ 준비 중</span>'+
+            '<button type="button" onclick="promptKitOpen('+i+')" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--blueprint);font-weight:600;cursor:pointer;white-space:nowrap;">'+
+              (p.template ? '복사하기' : '✏️ 준비 중')+
+            '</button>'+
           '</div>'+
+          (p.template ?
+            '<div style="padding:0 18px 14px;">'+
+              '<textarea id="pt-'+i+'" readonly style="width:100%;min-height:80px;font-size:12px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;resize:none;font-family:inherit;line-height:1.6;">'+p.template+'</textarea>'+
+            '</div>'
+          : '') +
         '</div>'
       ).join('') +
     '</div>';
@@ -4524,6 +4547,14 @@ function renderPromptKitSection(){
     window._promptTab = id;
     const el = document.getElementById('promptKitWrap');
     if(el) el.innerHTML = tabHtml() + listHtml();
+  };
+  window.promptKitOpen = function(i){
+    const p = (prompts[window._promptTab]||[])[i];
+    if(!p || !p.template) return;
+    navigator.clipboard.writeText(p.template).then(()=>{
+      const btn = document.querySelectorAll('#promptKitWrap button')[i+tabs.length];
+      if(btn){ const orig = btn.textContent; btn.textContent='✅ 복사됨'; setTimeout(()=>btn.textContent=orig,1500); }
+    });
   };
 
   return '<div class="frame">'+
