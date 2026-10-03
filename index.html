@@ -378,7 +378,7 @@
   .lvrec-head b{ color:var(--blueprint); }
   .lvrec-head span{ color:var(--ink-soft); }
   .lvrec-items{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 2px; }
-  .lvrec-chip{ font-size:13px; border:1px solid var(--blueprint-2); color:var(--blueprint); background:var(--blueprint-soft); border-radius:var(--radius); padding:3px 9px; }
+  .lvrec-chip{ font-size:13px; border:1px solid var(--blueprint-2); color:var(--blueprint); background:var(--blueprint-soft); border-radius:9999px; padding:4px 14px; white-space:nowrap; }
   .linkbtn{ margin-left:auto; background:none; border:none; color:var(--blueprint-2); text-decoration:underline; cursor:pointer; font-size:12.5px; font-family:var(--serif); }
   .intro-core{ flex-direction:column; margin-bottom:6px; }
   .intro-core li{ font-weight:600; color:var(--blueprint); background:var(--panel); }
@@ -1759,9 +1759,9 @@ function updateTopActions(){
   const badge = document.getElementById('statusBadge');
   const topbar = document.getElementById('topbar');
   if(!btn) return;
-  // 작성 섹션이 아닌 곳은 topbar 숨기기
+  // 작성 섹션이 아닌 곳은 topbar 숨기기 (단, landing은 모바일 메뉴를 위해 유지)
   const cur = SECTIONS.find(s=>s.id===state.cur)||{};
-  const hideTopbar = !!cur.special;
+  const hideTopbar = !!cur.special && cur.special !== 'landing';
   if(topbar) topbar.style.display = hideTopbar ? 'none' : '';
   btn.textContent = state.locked ? '수정' : '저장';
   comp.textContent = state.completed ? '완료 취소' : '완료';
@@ -4302,6 +4302,9 @@ function renderLandingSection(){
         <p style="font-size:13px;color:var(--ink-soft);margin:0;line-height:1.8;">AI를 쓰지 않기로 판단한 것도 능력입니다.<br>필요 없는 곳에 AI를 안 쓰는 것이 지구를 지키는 첫걸음.</p>
       </div>
     </div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <button type="button" onclick="window._state.cur='curriculum';window._renderSheet();" style="font-size:16px;font-weight:700;padding:14px 48px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(139,92,246,.3);">🥔 시작하기</button>
+    </div>
     <p style="font-size:12px;color:var(--placeholder);text-align:center;line-height:1.8;margin:0;">현재 버전은 교육 목적으로 만들어졌으며, 씨앗·감자밭 등 새싹 세계관 언어로 구성되어 있습니다.<br>향후 대상(학생 / 취준생 / 기업)에 따라 언어와 스킨을 선택할 수 있도록 확장할 예정입니다.</p>
   </div>`;
 }
@@ -4322,9 +4325,7 @@ window.introGenPrompt = function(){
 5. 시간이 많이 드는 단계: (가장 귀찮거나 오래 걸리는 단계가 어디인지)
 6. 핵심 문제: (진짜 해결하고 싶은 문제. 표면 말고 본질)
 7. 개선 기준: (뭐가 달라지면 이 업무가 좋아졌다고 할 수 있는지)
-8. 해결 방향 가설: (내가 생각하는 해결 방향, 첫 번째 시도 방향)
-9. AI 없이 가능한 것: (AI 없어도 할 수 있는 부분)
-10. AI가 도움될 부분: (AI가 실제로 도움될 수 있는 부분)`;
+8. 해결 방향 가설: (내가 생각하는 해결 방향, 첫 번째 시도 방향)`;
   const box = document.getElementById('introStep2');
   const step3 = document.getElementById('introStep3');
   const pt = document.getElementById('introPromptText');
@@ -4352,23 +4353,31 @@ window.introAutoFill = function(){
     return;
   }
 
-  // 번호:레이블: 값 형식 파싱
-  function extract(num){
+  // 번호:레이블: 값 형식 파싱 (번호 없는 경우 레이블로 폴백)
+  function extract(num, labels){
+    // 1차: 번호 기반 ("1. 씨앗 이름: ...")
     const re = new RegExp(num+'\\.\\s*[^:：]+[:：]\\s*(.+)');
     const m = raw.match(re);
-    return m ? m[1].trim() : '';
+    if(m) return m[1].trim();
+    // 2차: 레이블 기반 폴백 ("씨앗 이름: ..." 또는 "씨앗 이름 : ...")
+    if(labels){
+      for(const lbl of labels){
+        const re2 = new RegExp(lbl+'\\s*[:：]\\s*(.+)');
+        const m2 = raw.match(re2);
+        if(m2) return m2[1].trim();
+      }
+    }
+    return '';
   }
 
-  const seedName   = extract('1');
-  const purpose    = extract('2');
-  const flow       = extract('3');
-  const freq       = extract('4');
-  const slow       = extract('5');
-  const core       = extract('6');
-  const goal       = extract('7');
-  const hypothesis = extract('8');
-  const withoutAI  = extract('9');
-  const withAI     = extract('10');
+  const seedName   = extract('1',  ['씨앗 이름','씨앗이름']);
+  const purpose    = extract('2',  ['업무 목적','업무목적']);
+  const flow       = extract('3',  ['현재 프로세스','현재프로세스','프로세스']);
+  const freq       = extract('4',  ['발생 빈도','발생빈도','빈도']);
+  const slow       = extract('5',  ['시간이 많이 드는 단계','시간이 많이 걸리는 단계','느린 단계']);
+  const core       = extract('6',  ['핵심 문제','핵심문제']);
+  const goal       = extract('7',  ['개선 기준','개선기준']);
+  const hypothesis = extract('8',  ['해결 방향 가설','해결방향 가설','해결 방향','가설']);
 
   if(!seedName && !core){
     if(msg){ msg.style.display='block'; msg.style.background='rgba(239,68,68,.1)'; msg.style.color='#ef4444'; msg.textContent='형식이 맞지 않아. AI한테 "번호: 레이블: 답변" 형식 그대로 답해달라고 다시 요청해봐.'; }
@@ -4398,8 +4407,7 @@ window.introAutoFill = function(){
   if(core)       summary += '🔍 <b>핵심 문제:</b> '+esc(core)+'<br>';
   if(freq)       summary += '⏱ <b>발생 빈도:</b> '+esc(freq)+'<br>';
   if(slow)       summary += '🐢 <b>시간 많이 드는 단계:</b> '+esc(slow)+'<br>';
-  if(withoutAI)  summary += '✅ <b>AI 없이 가능:</b> '+esc(withoutAI)+'<br>';
-  if(withAI)     summary += '🤖 <b>AI 도움될 부분:</b> '+esc(withAI)+'<br>';
+  if(hypothesis) summary += '💡 <b>해결 방향 가설:</b> '+esc(hypothesis)+'<br>';
   summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>맞는지 꼭 확인하고 수정해줘!</b>';
 
   if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
@@ -4444,7 +4452,12 @@ function renderIntroSection(){
       <span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
       <span style="font-size:14px;font-weight:700;color:var(--ink);">AI 답변을 여기에 붙여넣어봐</span>
     </div>
-    <textarea id="introAIResult" placeholder="AI가 답변한 JSON을 여기에 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
+    <div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--ink-soft);line-height:1.8;">
+      💡 <b>AI가 이런 형식으로 답할 거야:</b><br>
+      <code style="display:block;margin-top:6px;background:var(--panel);border-radius:6px;padding:8px 10px;font-size:11px;line-height:1.8;color:var(--ink);">1. 씨앗 이름: 보고서 취합 자동화<br>2. 업무 목적: 매주 5개 팀 자료를 모아 보고서 작성<br>3. 현재 프로세스: 1) 팀별 파일 수신 2) 수동 취합 3) 보고서 작성<br>...</code>
+      이 형식 그대로 복사해서 붙여넣으면 돼. JSON이나 코드 블록이 섞여 있어도 괜찮아.
+    </div>
+    <textarea id="introAIResult" placeholder="AI 답변을 여기에 그대로 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
       <button type="button" onclick="introAutoFill()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--ok);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">🌱 씨앗 정의서 자동채우기</button>
       <span style="font-size:12px;color:var(--ink-soft);">AI가 채운 거니까 맞는지 꼭 확인해줘</span>
