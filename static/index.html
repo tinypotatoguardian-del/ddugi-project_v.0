@@ -1761,7 +1761,7 @@ function updateTopActions(){
   if(!btn) return;
   // 작성 섹션이 아닌 곳은 topbar 숨기기 (단, landing은 모바일 메뉴를 위해 유지)
   const cur = SECTIONS.find(s=>s.id===state.cur)||{};
-  const hideTopbar = !!cur.special && cur.special !== 'landing';
+  const hideTopbar = !!cur.special;
   if(topbar) topbar.style.display = hideTopbar ? 'none' : '';
   btn.textContent = state.locked ? '수정' : '저장';
   comp.textContent = state.completed ? '완료 취소' : '완료';
