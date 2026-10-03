@@ -520,11 +520,11 @@ let CATEGORIES = {
   '⑤ 업무 프로세스 자동화형': ['반복 입력','자료 취합','데이터 정리','검토/분류','여러 시스템 간 정보 전달']
 };
 // 업무 영역: 이 고민거리가 내 삶의 어느 영역 일인지 (기타는 직접 입력)
-let WORK_AREAS = ['직장 업무','개인 사업/부업','학업','집안일/개인 생활','기타'];
+let WORK_AREAS = ['직장 업무','개인 사업/부업','학업','집안일/개인 생활','기타 (직접 입력)'];
 // 고민거리 카테고리(문제의 종류)와 별개인 두 축: 무엇을 다루나(대상) × 어떤 일인가(업무 유형)
 // 업계 안 가리게 범용으로: 제조업 전용 용어(소재/공정/양산 등) 빼고 어디서나 쓸 수 있는 말로
 let TARGETS = ['고객/문의','상품·서비스','데이터·자료','문서·보고','시설·재고','사람·일정','기타'];
-let WORK_TYPES = ['접수·처리','조회·검색','분석·보고','승인·검토','일정·재고 관리','고객 응대','품질·점검','기타'];
+let WORK_TYPES = ['반복·자동화','분석·판단','문서·보고','검색·조사','커뮤니케이션','기획·설계','기타'];
 let TOOLS = ['기존 시스템','웹·모바일 서비스','Office (Excel 등)','스프레드시트/BI','스크립트/매크로','생성형 AI','기타'];
 // 참조를 유지해야 하는 배열/객체를 서버 값으로 갈아끼움 (재할당하면 이미 SECTIONS에 박힌 참조가 끊어짐)
 function replaceArrayContents(arr, next){ if(Array.isArray(next) && next.length){ arr.length=0; arr.push(...next); } }
@@ -718,20 +718,20 @@ const SECTIONS = [
 {id:'ai-tools',   num:'🗺️', title:'AI 도구 가이드', special:'aitools'},
 {id:'prompt-kit', num:'📋', title:'프롬프트 모음', special:'promptkit'},
 /* ── 씨앗 정의서 ──────────────────────── */
-{id:'mydash',  num:'☆',  title:'나의 마음의 방', special:'mydash'},
 {id:'intro',   num:'',   title:'마음의 방 입구', special:'intro'},
+{id:'mydash',  num:'☆',  title:'나의 마음의 방', special:'mydash'},
 {id:'example', num:'EX', title:'먼저 온 포테이토', special:'example'},
 {id:'discover', num:'00', title:'씨앗 찾기 (선택)', special:'discover'},
 {id:'s1', num:'01', title:'씨앗 심기 · 지금의 일상', fields:[
   HINT('당신이 바꾸고 싶은 업무는 무엇인가요? 01~02는 AI에게 묻기 전에 직접 생각해서 적는 단계입니다.'),
   SUBHEAD('기본 정보'),
   T('s1_name','씨앗 이름','예: 매장 재고 확인·발주 자동화 검토 / 예약 노쇼 알림 / 문의 답변 초안 작성', true),
-  RW([ T('s1_owner','담당자'), T('s1_dept','소속') ]),
-  Object.assign(CL('s1_workarea','업무 영역', [], true), {optsFn:()=>WORK_AREAS}),
-  Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>Object.keys(CATEGORIES)}),
+  Object.assign(CL('s1_workarea','나의 활동 영역', [], true), {optsFn:()=>WORK_AREAS}),
+  T('s1_workarea_etc','활동 영역 직접 입력 (기타 선택 시)','예: 연구, 창작, 봉사 등'),
+  Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>{ const area=getV('s1_workarea',''); if(!area||area==='직장 업무') return Object.keys(CATEGORIES); if(area==='개인 사업/부업') return ['① 업무관리형','③ 분석·판단지원형','④ 문서·보고 자동화형','⑤ 업무 프로세스 자동화형']; if(area==='학업') return ['② 정보검색·지식형','③ 분석·판단지원형','① 업무관리형']; if(area==='집안일/개인 생활') return ['① 업무관리형','② 정보검색·지식형']; return Object.keys(CATEGORIES); }}),
   Object.assign(CL('s1_catsub','세부 목적 (카테고리를 고르면 나옵니다)', [], true), {optsFn:()=>CATEGORIES[getV('s1_cat','')]||[]}),
   CL('s1_target','대상 (무엇을 다루나)', TARGETS, true),
-  CL('s1_worktype','업무 유형 (중복 선택 가능)', WORK_TYPES, true),
+  CL('s1_worktype','작업 성격 (AI 적합성 판단에 사용)', WORK_TYPES, true),
   RD('s1_difficulty','구현 난이도 (짐작이어도 괜찮음)', DIFFICULTY_LEVELS),
   SUBHEAD('업무 목적 · 현재 프로세스'),
   TA('s1_purpose','1-1. 업무 목적','이 업무는 왜 하는가? 예: 여러 곳에 흩어진 자료를 확인해서 다음 조치가 필요한지 판단한다.', true),
