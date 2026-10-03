@@ -3949,20 +3949,58 @@ function renderAICompanies(){
 
 // ── 상황별 비교 ──
 function renderAICompare(){
+  const rowHtml = (rows) => rows.map((r,i) =>
+    '<div style="display:grid;grid-template-columns:1fr 1.2fr 1.5fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--line-soft);background:'+(i%2===0?'var(--paper)':'var(--panel)')+';">'+
+      '<div style="font-weight:600;color:var(--ink);">'+r.situation+'</div>'+
+      '<div>'+r.tools.map(t=>'<span style="background:var(--blueprint-soft);color:var(--blueprint);padding:1px 7px;border-radius:5px;margin-right:3px;font-size:11px;">'+t+'</span>').join('')+'</div>'+
+      '<div style="color:var(--ink-soft);">'+r.reason+'</div>'+
+    '</div>'
+  ).join('');
+
+  const tableHeader = '<div style="display:grid;grid-template-columns:1fr 1.2fr 1.5fr;background:var(--blueprint-soft);padding:10px 14px;font-size:11px;font-weight:700;color:var(--blueprint);"><div>이럴 때</div><div>추천 도구</div><div>이유</div></div>';
+
+  const mainRows = AI_TOOLS_DATA.comparison;
+
+  const imageRows = [
+    { situation:'캐리커처·얼굴 합성', tools:['Nano Banana'], reason:'얼굴 보존+캐리커처 특화, 4K, 14장 합성 가능' },
+    { situation:'예쁜 이미지·아트워크', tools:['Midjourney'], reason:'미학·조명·구도 최고. 월 $10부터' },
+    { situation:'이미지 안에 글자 넣기', tools:['GPT Image 2','Ideogram'], reason:'텍스트 렌더링 정확도 최강' },
+    { situation:'사실적인 사진 느낌', tools:['Flux 2','Imagen 4'], reason:'포토리얼리즘 최강, API 종량제' },
+    { situation:'무료로 이미지 생성', tools:['Gemini','DALL-E (ChatGPT)'], reason:'Gemini 무료, ChatGPT Plus 번들' },
+    { situation:'커스텀·로컬 실행', tools:['Stable Diffusion'], reason:'오픈소스, GPU만 있으면 무제한' },
+  ];
+
+  const videoRows = [
+    { situation:'고품질 영상 생성', tools:['Sora','Veo 3'], reason:'OpenAI/Google 최고 품질, 최장 1분' },
+    { situation:'영상 편집+생성 통합', tools:['Runway Gen-3'], reason:'편집 기능 포함, 크리에이터용' },
+    { situation:'무료 플랜·한국어', tools:['Kling AI'], reason:'무료 플랜 있음, 한국어 지원' },
+    { situation:'AI 아바타·영상 번역', tools:['HeyGen'], reason:'아바타가 내 목소리로 말하게 설정 가능' },
+  ];
+
+  const musicRows = [
+    { situation:'가사+멜로디 자동 생성', tools:['Suno'], reason:'한국어 가사 지원, 무료 플랜 있음' },
+    { situation:'고품질 음악 생성', tools:['Udio'], reason:'음질·장르 다양성 우수' },
+  ];
+
+  function collapsible(emoji, title, rows){
+    return '<details style="border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:12px;">'+
+      '<summary style="padding:12px 16px;cursor:pointer;font-size:13px;font-weight:700;color:var(--ink);background:var(--panel);display:flex;align-items:center;gap:8px;list-style:none;">'+
+        '<span>'+emoji+' '+title+'</span>'+
+        '<span style="margin-left:auto;font-size:11px;color:var(--ink-soft);">펼치기 ▾</span>'+
+      '</summary>'+
+      '<div>'+tableHeader+rowHtml(rows)+'</div>'+
+    '</details>';
+  }
+
   return '<div>'+
     '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">상황에 따라 더 잘 맞는 도구가 달라요. 참고용이고, 직접 써보고 결정하세요!</p>'+
     '<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;">'+
-      '<div style="display:grid;grid-template-columns:1fr 1.2fr 1.5fr;background:var(--blueprint-soft);padding:10px 14px;font-size:11px;font-weight:700;color:var(--blueprint);">'+
-        '<div>이럴 때</div><div>추천 도구</div><div>이유</div>'+
-      '</div>'+
-      AI_TOOLS_DATA.comparison.map((r, i) =>
-        '<div style="display:grid;grid-template-columns:1fr 1.2fr 1.5fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--line-soft);background:'+(i%2===0?'var(--paper)':'var(--panel)')+';">'+
-          '<div style="font-weight:600;color:var(--ink);">'+r.situation+'</div>'+
-          '<div>'+r.tools.map(t => '<span style="background:var(--blueprint-soft);color:var(--blueprint);padding:1px 7px;border-radius:5px;margin-right:3px;font-size:11px;">'+t+'</span>').join('')+'</div>'+
-          '<div style="color:var(--ink-soft);">'+r.reason+'</div>'+
-        '</div>'
-      ).join('')+
+      tableHeader+
+      rowHtml(mainRows)+
     '</div>'+
+    collapsible('🎨','이미지 생성 도구', imageRows)+
+    collapsible('🎬','영상 생성 도구', videoRows)+
+    collapsible('🎵','음악 생성 도구', musicRows)+
     '<div style="margin-top:16px;padding:14px 16px;background:var(--amber-soft);border:1px solid var(--amber);border-radius:10px;font-size:12px;color:var(--ink);line-height:1.7;">'+
       '💡 <b>정답은 없어요.</b> AI는 빠르게 발전하니까 지금 순위가 6개월 뒤엔 달라질 수 있어요. 무료로 여러 개 써보고 내 스타일에 맞는 걸 찾는 게 제일 좋아요!'+
     '</div>'+
