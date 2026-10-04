@@ -4355,6 +4355,20 @@ function renderLandingSection(){
 }
 
 // ── 인트로 자동채우기 기능 ──────────────────────────────
+window.introUpdateState = function(){
+  // 프롬프트가 이미 생성된 상태면 자동채우기 버튼 활성 유지
+  const fillBtn = document.getElementById('introFillBtn');
+  const aiResult = document.getElementById('introAIResult');
+  if(fillBtn && aiResult && aiResult.value.trim()){
+    fillBtn.disabled=false; fillBtn.style.cursor='pointer'; fillBtn.style.opacity='1';
+    fillBtn.style.background='var(--ok)'; fillBtn.style.color='#fff';
+  }
+};
+window.introGoToSeed = function(){
+  const toast = document.getElementById('introToast');
+  if(toast) toast.style.display='none';
+  window._state.cur='s1'; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
+};
 window.introGenPrompt = function(){
   const text = (document.getElementById('introFreeText')||{}).value||'';
   if(text) setV('intro_freetext', text);
@@ -4372,14 +4386,23 @@ window.introGenPrompt = function(){
 6. 핵심 문제: (진짜 해결하고 싶은 문제. 표면 말고 본질)
 7. 개선 기준: (뭐가 달라지면 이 업무가 좋아졌다고 할 수 있는지)
 8. 해결 방향 가설: (내가 생각하는 해결 방향, 첫 번째 시도 방향)`;
-  const box = document.getElementById('introStep2');
-  const step3 = document.getElementById('introStep3');
+  const skel = document.getElementById('introPromptSkel');
   const pt = document.getElementById('introPromptText');
   const pd = document.getElementById('introPromptDisplay');
-  if(box) box.style.display='block';
-  if(step3) step3.style.display='block';
+  const copyBtn = document.getElementById('introCopyBtn');
+  const fillBtn = document.getElementById('introFillBtn');
+  const step2Num = document.getElementById('introStep2Num');
+  const step2Label = document.getElementById('introStep2Label');
+  if(skel) skel.style.display='none';
+  if(pd){ pd.style.display='block'; pd.textContent = prompt; }
   if(pt) pt.value = prompt;
-  if(pd) pd.textContent = prompt;
+  // 복사 버튼 활성화
+  if(copyBtn){ copyBtn.disabled=false; copyBtn.style.cursor='pointer'; copyBtn.style.opacity='1'; copyBtn.style.border='1px solid var(--blueprint)'; copyBtn.style.background='var(--paper)'; copyBtn.style.color='var(--blueprint)'; }
+  // 자동채우기 버튼 활성화
+  if(fillBtn){ fillBtn.disabled=false; fillBtn.style.cursor='pointer'; fillBtn.style.opacity='1'; fillBtn.style.background='var(--ok)'; fillBtn.style.color='#fff'; }
+  // STEP 2 헤더 색상 활성화
+  if(step2Num) step2Num.style.background='var(--blueprint)';
+  if(step2Label){ step2Label.style.color='var(--blueprint)'; step2Label.style.fontWeight='700'; }
 };
 
 window.introCopyPrompt = function(){
@@ -4458,7 +4481,11 @@ window.introAutoFill = function(){
 
   if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
 
-  setTimeout(()=>{ window._state.cur='s1'; window._renderSheet(); document.getElementById('main').scrollTo(0,0); }, 2500);
+  setTimeout(()=>{ window._state.cur='s1'; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
+    // 토스트 띄우기
+    const toast = document.getElementById('introToast');
+    if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },6000); }
+  }, 2500);
 };
 
 function renderIntroSection(){
@@ -4468,49 +4495,75 @@ function renderIntroSection(){
     : INTRO_HTML;
 
   const autoFillHtml = `
+<style>
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skel{border-radius:6px;background:linear-gradient(90deg,var(--line-soft) 25%,var(--panel) 50%,var(--line-soft) 75%);background-size:400px 100%;animation:shimmer 1.4s infinite;}
+</style>
 <div style="border:1px solid var(--line-soft);border-radius:14px;overflow:hidden;margin-bottom:20px;">
 
   <!-- STEP 1 -->
   <div style="padding:18px 20px;border-bottom:1px solid var(--line-soft);">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
       <span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>
-      <span style="font-size:14px;font-weight:700;color:var(--ink);">뭘 만들고 싶은지 말해봐</span>
-      <span style="font-size:12px;color:var(--ink-soft);">막막한 상황, 해결하고 싶은 문제 — 뭐든</span>
+      <span style="font-size:14px;font-weight:700;color:var(--ink);">뭘 해결하고 싶어?</span>
+      <span style="font-size:12px;color:var(--ink-soft);">막막한 상황, 귀찮은 것, 어려운 것 — 뭐든</span>
     </div>
-    <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:80px;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;" oninput="setV('intro_freetext',this.value)">${esc(getV('intro_freetext',''))}</textarea>
-    <button type="button" onclick="introGenPrompt()" style="margin-top:10px;padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📋 프롬프트 만들기 →</button>
-  </div>
-
-  <!-- STEP 2 -->
-  <div id="introStep2" style="display:none;padding:18px 20px;border-bottom:1px solid var(--line-soft);background:var(--blueprint-soft);">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>
-      <span style="font-size:14px;font-weight:700;color:var(--blueprint);">이 프롬프트를 ChatGPT / Claude에 붙여넣어봐</span>
-    </div>
-    <div style="position:relative;background:var(--paper);border:1px solid var(--blueprint-2);border-radius:8px;padding:12px 52px 12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;" id="introPromptDisplay"></div>
-    <button type="button" onclick="introCopyPrompt()" id="introCopyBtn" style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:12px;font-weight:600;cursor:pointer;">📎 전체 복사</button>
-    <textarea id="introPromptText" style="display:none;"></textarea>
-  </div>
-
-  <!-- STEP 3 -->
-  <div id="introStep3" style="display:none;padding:18px 20px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
-      <span style="font-size:14px;font-weight:700;color:var(--ink);">AI 답변을 여기에 붙여넣어봐</span>
-    </div>
-    <div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--ink-soft);line-height:1.8;">
-      💡 <b>AI가 이런 형식으로 답할 거야:</b><br>
-      <code style="display:block;margin-top:6px;background:var(--panel);border-radius:6px;padding:8px 10px;font-size:11px;line-height:1.8;color:var(--ink);">1. 씨앗 이름: 보고서 취합 자동화<br>2. 업무 목적: 매주 5개 팀 자료를 모아 보고서 작성<br>3. 현재 프로세스: 1) 팀별 파일 수신 2) 수동 취합 3) 보고서 작성<br>...</code>
-      이 형식 그대로 복사해서 붙여넣으면 돼. JSON이나 코드 블록이 섞여 있어도 괜찮아.
-    </div>
-    <textarea id="introAIResult" placeholder="AI 답변을 여기에 그대로 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
+    <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:80px;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;" oninput="setV('intro_freetext',this.value);introUpdateState();">${esc(getV('intro_freetext',''))}</textarea>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
-      <button type="button" onclick="introAutoFill()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--ok);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">🌱 씨앗 정의서 자동채우기</button>
+      <button type="button" onclick="introGenPrompt()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📋 프롬프트 만들기 →</button>
+      <details style="font-size:12px;color:var(--ink-soft);">
+        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:4px;">▶ 이런 상황에서 써봤어요</summary>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+          <div style="background:var(--panel);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.7;">💼 <b>직딩</b> — 매주 팀별 엑셀 취합하는 데 2시간씩 걸려서 자동화하고 싶었어요</div>
+          <div style="background:var(--panel);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.7;">📝 <b>취준</b> — 채용공고 100개 비교하고 싶은데 뭐부터 해야 할지 몰랐어요</div>
+          <div style="background:var(--panel);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.7;">🎓 <b>학생</b> — 수행평가 주제 선정이 막막해서 어디서 시작해야 할지 몰랐어요</div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- STEP 2 — 항상 보임, 스켈레톤 -->
+  <div style="padding:18px 20px;border-bottom:1px solid var(--line-soft);background:var(--blueprint-soft);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="width:22px;height:22px;border-radius:50%;background:var(--line);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="introStep2Num">2</span>
+      <span style="font-size:14px;font-weight:700;color:var(--ink-soft);" id="introStep2Label">이 프롬프트를 ChatGPT / Claude에 붙여넣어봐</span>
+    </div>
+    <div id="introPromptSkel" style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;min-height:80px;justify-content:center;">
+      <div class="skel" style="height:12px;width:88%;"></div>
+      <div class="skel" style="height:12px;width:72%;"></div>
+      <div class="skel" style="height:12px;width:80%;"></div>
+      <div class="skel" style="height:12px;width:55%;"></div>
+      <div style="font-size:11px;color:var(--ink-soft);margin-top:6px;text-align:center;">고민을 입력하면 여기에 프롬프트가 생성돼요</div>
+    </div>
+    <div id="introPromptDisplay" style="display:none;background:var(--paper);border:1px solid var(--blueprint-2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;"></div>
+    <textarea id="introPromptText" style="display:none;"></textarea>
+    <button type="button" onclick="introCopyPrompt()" id="introCopyBtn" disabled style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:12px;font-weight:600;cursor:not-allowed;opacity:0.45;transition:all .2s;">📎 복사</button>
+  </div>
+
+  <!-- STEP 3 — 항상 보임, 비활성 -->
+  <div style="padding:18px 20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="width:22px;height:22px;border-radius:50%;background:var(--line);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
+      <span style="font-size:14px;font-weight:700;color:var(--ink-soft);">AI 답변을 여기에 붙여넣어줘</span>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:11px;color:var(--ink-soft);line-height:1.8;">
+      AI가 이런 형식으로 답할 거야 →
+      <code style="display:block;margin-top:4px;font-size:11px;line-height:1.8;color:var(--ink);">1. 씨앗 이름: 보고서 취합 자동화&#10;2. 업무 목적: 매주 5개 팀 자료를 합쳐 보고서 작성&#10;3. 현재 프로세스: 파일 수신 → 수동 취합 → 보고서 작성</code>
+    </div>
+    <textarea id="introAIResult" placeholder="2번 프롬프트로 받은 AI 답변을 여기에 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+      <button type="button" id="introFillBtn" onclick="introAutoFill()" disabled style="padding:8px 20px;border-radius:8px;border:none;background:var(--line);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;transition:all .2s;">🌱 씨앗 정의서 자동채우기</button>
       <span style="font-size:12px;color:var(--ink-soft);">AI가 채운 거니까 맞는지 꼭 확인해줘</span>
     </div>
     <div id="introFillMsg" style="display:none;margin-top:10px;font-size:12px;padding:10px 14px;border-radius:8px;line-height:1.7;"></div>
   </div>
 
+</div>
+<!-- 자동채우기 완료 토스트 -->
+<div id="introToast" style="display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:14px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);align-items:center;gap:12px;">
+  <span>🌱 씨앗 정의서에 채워뒀어! 확인하고 수정해줘</span>
+  <button type="button" onclick="introGoToSeed()" style="padding:6px 14px;border-radius:8px;border:none;background:#fff;color:var(--ok);font-size:13px;font-weight:700;cursor:pointer;">씨앗 정의서로 →</button>
+  <button type="button" onclick="document.getElementById('introToast').style.display='none'" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px;">✕</button>
 </div>`;
 
   return '<div class="frame intro">'+editBtn+autoFillHtml+body+
