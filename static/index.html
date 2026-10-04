@@ -893,7 +893,7 @@ function isSectionLocked(sec){
 }
 const DOCID_KEY = 'ai_task_docid_v1';
 const EMPID_KEY = 'ai_task_empid_v1';
-const EMPCODE_KEY = 'ai_task_empcode_v1';
+const ADMIN_TOKEN_KEY = 'ai_task_admintoken_v1';
 const ROLE_KEY = 'ai_task_role_v1';
 
 /* ============== state ============== */
@@ -932,16 +932,16 @@ function persist(){
 }
 
 /* ============== 계정: 마스터 · 관리자 (아이디 + 비밀번호) ============== */
-let empId = '', empCode = '', role = '';
+let empId = '', adminToken = '', role = '';
 try{
   empId = localStorage.getItem(EMPID_KEY) || '';
-  empCode = localStorage.getItem(EMPCODE_KEY) || '';
+  adminToken = localStorage.getItem(ADMIN_TOKEN_KEY) || '';
   role = localStorage.getItem(ROLE_KEY) || '';
 }catch(e){}
-if(!empId || !empCode) role = '';
+if(!empId || !adminToken) role = '';
 let isMaster = role === 'master';
 let isAdmin = isMaster || role === 'admin';
-function authHeaders(){ return {'X-Emp-Id': empId, 'X-Emp-Code': empCode}; }
+function authHeaders(){ return {'X-Admin-Token': adminToken}; }
 // 브라우저별 고유 문서 ID (팀/이름은 고민거리 기본정보의 소속/담당자에서 가져옴)
 let docId = null;
 try{ docId = localStorage.getItem(DOCID_KEY); }catch(e){}
@@ -972,7 +972,7 @@ function buildRemoteDoc(){
   const status = state.completed ? '완료' : (state.locked ? '저장됨' : '작성중');
   return {
     team: getV('s1_dept',''),
-    name: getV('s1_owner',''),
+    name: (currentUser && (currentUser.nickname || currentUser.username)) || getV('s1_owner',''),
     fields: state.fields,
     locked: !!state.locked,
     completed: !!state.completed,
@@ -988,16 +988,62 @@ function syncToDb(){
   dbWriteQueue = buildRemoteDoc();
   flushDbQueue();
 }
+// 지금 씨앗은 서버에 그대로 두고(로그인했으면 /api/user/submissions에서 계속 보임),
+// 이 브라우저만 새 docId로 바꿔서 빈 씨앗을 새로 시작한다.
+function startNewSeed(){
+  if(!confirm('새 씨앗을 시작할까요? 지금 씨앗은 서버에 그대로 남고, 화면만 새로 시작해요.')) return;
+  docId = Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+  try{ localStorage.setItem(DOCID_KEY, docId); }catch(e){}
+  state.fields = {}; state.locked = false; state.completed = false; state.cur = 's1';
+  gateReview = null;
+  persist();
+  renderSheet();
+}
+// 로그인 유저의 내 씨앗 목록 (전환용)
+async function loadMySeeds(){
+  if(!currentUser) return [];
+  try{
+    const res = await fetch('/api/user/submissions', {headers:_authHeaders()});
+    if(!res.ok) return [];
+    return await res.json();
+  }catch(e){ return []; }
+}
+async function renderMySeedsList(){
+  const el = document.getElementById('mySeedsList');
+  if(!el) return;
+  const seeds = await loadMySeeds();
+  if(!document.getElementById('mySeedsList')) return; // 그 사이 화면이 바뀌었으면 그만
+  if(!seeds.length){ el.textContent = '아직 다른 씨앗이 없어요.'; return; }
+  el.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + seeds.map(s=>{
+    const name = s.seedName || '(제목 없음)';
+    const when = s.updatedAt ? new Date(s.updatedAt).toLocaleString('ko-KR') : '-';
+    const active = s.docId===docId;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:8px;'+(active?'background:var(--blueprint-soft);':'')+'">'+
+      '<span style="flex:1;font-size:12.5px;">'+esc(name)+(active?' <b>(지금 보는 중)</b>':'')+'<br><small style="color:var(--ink-soft);">'+when+'</small></span>'+
+      (active?'':'<button type="button" class="secondary" onclick="switchSeed(\''+esc(s.docId)+'\')">전환</button>')+
+    '</div>';
+  }).join('') + '</div>';
+}
+async function switchSeed(targetDocId){
+  if(targetDocId === docId) return;
+  docId = targetDocId;
+  try{ localStorage.setItem(DOCID_KEY, docId); }catch(e){}
+  state.fields = {}; state.locked = false; state.completed = false;
+  gateReview = null;
+  await loadRemote();
+  state.cur = 's1';
+  persist();
+  renderSheet();
+}
 async function flushDbQueue(){
   if(dbWriting || !dbWriteQueue) return;
   dbWriting = true;
   const data = dbWriteQueue; dbWriteQueue = null;
   try{
-    await fetch('/api/submissions/'+encodeURIComponent(docId), {
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(data)
-    });
+    // 로그인 상태면 user_id가 계속 붙어있도록 유저용 엔드포인트로 저장 (그래야 "내 씨앗 목록"/관리자 화면에 보임)
+    const url = currentUser ? '/api/user/submissions/'+encodeURIComponent(docId) : '/api/submissions/'+encodeURIComponent(docId);
+    const headers = currentUser ? _authHeaders() : {'Content-Type':'application/json'};
+    await fetch(url, { method:'PUT', headers, body: JSON.stringify(data) });
   }catch(e){ /* stays saved locally regardless */ }
   dbWriting = false;
   if(dbWriteQueue) flushDbQueue();
@@ -1052,19 +1098,12 @@ async function tryAutoLogin(){
 }
 
 async function syncSeedToServer(){
-  if(!currentUser) return;
-  const docId = state.docId || localStorage.getItem('ddugi_doc_id');
-  if(!docId || !state.fields || !Object.keys(state.fields).length) return;
+  if(!currentUser || !docId || !state.fields || !Object.keys(state.fields).length) return;
   try{
-    await fetch('/api/user/submissions/'+docId, {
+    await fetch('/api/user/submissions/'+encodeURIComponent(docId), {
       method:'PUT',
       headers:_authHeaders(),
-      body: JSON.stringify({
-        team:'', name: currentUser.nickname||'',
-        fields: state.fields, locked: state.locked?1:0,
-        completed: state.completed?1:0, status:'active',
-        filledCount: 0, totalSections: 0, recommendedType:''
-      })
+      body: JSON.stringify(buildRemoteDoc())
     });
   }catch(e){}
 }
@@ -1088,6 +1127,7 @@ function openAuthModal(mode){
     html =
       '<h2 style="margin:0 0 4px;font-size:17px;">🔒 비밀번호 변경</h2>'+
       '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">8자 이상, 영문+숫자 포함</p>'+
+      '<div class="field"><label>닉네임 (바꾸고 싶으면 입력, 비우면 그대로)</label><input type="text" id="authPwNick" placeholder="'+esc((currentUser&&currentUser.nickname)||'')+'" maxlength="20"></div>'+
       '<div class="field"><label>현재 비밀번호</label><input type="password" id="authPwOld" placeholder="현재 비밀번호" autocomplete="current-password"></div>'+
       '<div class="field"><label>새 비밀번호</label><input type="password" id="authPwNew" placeholder="8자 이상, 영문+숫자" autocomplete="new-password">'+
         '<div id="pwStrength" style="font-size:11px;margin-top:4px;height:14px;"></div>'+
@@ -1154,6 +1194,7 @@ function openAuthModal(mode){
         const oldPw = (document.getElementById('authPwOld')?.value||'');
         const newPw = (document.getElementById('authPwNew')?.value||'');
         const confirmPw = (document.getElementById('authPwConfirm')?.value||'');
+        const newNick = (document.getElementById('authPwNick')?.value||'').trim();
         if(!oldPw||!newPw||!confirmPw){ showErr('모든 항목을 입력해주세요.'); return; }
         const pwErr = validatePassword(newPw);
         if(pwErr){ showErr(pwErr); return; }
@@ -1161,9 +1202,10 @@ function openAuthModal(mode){
         if(btn) btn.disabled=true;
         try{
           const token = localStorage.getItem('ddugi_token');
-          const res = await fetch('/api/user/password',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({old_password:oldPw,new_password:newPw})});
+          const res = await fetch('/api/user/password',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({old_password:oldPw,new_password:newPw,nickname:newNick})});
           const d = await res.json();
           if(!res.ok){ showErr(d.detail||'오류가 발생했어요.'); return; }
+          if(currentUser) currentUser.nickname = d.nickname;
           hideModal();
           showModal('<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🔒</div><h3 style="margin:0 0 6px;">비밀번호 변경 완료!</h3><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">확인</button></div>');
         }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
@@ -1217,7 +1259,7 @@ function openAuthModal(mode){
     }
 
     if(btn) btn.onclick = doAuth;
-    ['authUsername','authPw','authPwConfirm','authNick','authInvite','authPwOld','authPwNew'].forEach(id=>{
+    ['authUsername','authPw','authPwConfirm','authNick','authInvite','authPwOld','authPwNew','authPwNick'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') doAuth(); });
     });
@@ -1402,8 +1444,8 @@ function submitAdminLogin(){
   }).then(async r=>{
     if(r.ok){
       const d = await r.json();
-      empId = id; empCode = code; role = d.role; isMaster = role==='master'; isAdmin = true;
-      try{ localStorage.setItem(EMPID_KEY, empId); localStorage.setItem(EMPCODE_KEY, empCode); localStorage.setItem(ROLE_KEY, role); }catch(err){}
+      empId = id; adminToken = d.token; role = d.role; isMaster = role==='master'; isAdmin = true;
+      try{ localStorage.setItem(EMPID_KEY, empId); localStorage.setItem(ADMIN_TOKEN_KEY, adminToken); localStorage.setItem(ROLE_KEY, role); }catch(err){}
       hideModal();
       renderAdminSlot();
       updateRulerAndNav();
@@ -1416,11 +1458,17 @@ document.addEventListener('keydown', function(e){
   if(e.key==='Enter' && (e.target.id==='loginEmpId' || e.target.id==='loginCode')){ e.preventDefault(); submitAdminLogin(); }
 });
 function doAdminLogout(){
-  isAdmin = false; isMaster = false; empId = ''; empCode = ''; role = '';
-  try{ localStorage.removeItem(EMPID_KEY); localStorage.removeItem(EMPCODE_KEY); localStorage.removeItem(ROLE_KEY); }catch(e){}
+  const tok = adminToken;
+  isAdmin = false; isMaster = false; empId = ''; adminToken = ''; role = '';
+  try{ localStorage.removeItem(EMPID_KEY); localStorage.removeItem(ADMIN_TOKEN_KEY); localStorage.removeItem(ROLE_KEY); }catch(e){}
   if(['dashboard','tasklist','accounts','taxonomy','visits'].indexOf(state.cur)>-1){ state.cur='s1'; persist(); }
   renderAdminSlot();
   renderSheet();
+  if(tok){
+    fetch('/api/auth/logout', {method:'POST', headers:{'X-Admin-Token':tok}})
+      .then(()=>showModal('<h2 style="margin-top:0;font-size:16px;">로그아웃됐어요</h2><div class="fhint" style="margin-bottom:14px;">이 출입증은 더 이상 쓸 수 없어요.</div><button type="button" id="adminCancel" class="addbtn" style="width:100%;text-align:center;">닫기</button>'))
+      .catch(()=>showModal('<h2 style="margin-top:0;font-size:16px;">로그아웃됐어요</h2><div class="fhint" style="margin-bottom:14px;">화면에서는 로그아웃됐지만, 서버에 무효화 요청을 보내지 못했어요. (서버 연결 확인 필요)</div><button type="button" id="adminCancel" class="addbtn" style="width:100%;text-align:center;">닫기</button>'));
+  }
 }
 document.addEventListener('click', function(e){
   if(e.target.id==='adminLoginBtn'){ showModal(adminModalHtml()); }
@@ -1435,11 +1483,12 @@ document.addEventListener('click', function(e){
     if(newPw !== newPw2){ msg.textContent = '새 비밀번호와 확인이 달라요.'; return; }
     if(newPw === oldPw){ msg.textContent = '새 비밀번호가 기존 비밀번호와 같아요.'; return; }
     fetch('/api/account/password', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({empId, old:oldPw, new:newPw})
+      method:'POST', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({old:oldPw, new:newPw})
     }).then(async r=>{
       if(r.ok){
-        empCode = newPw;
-        try{ localStorage.setItem(EMPCODE_KEY, newPw); }catch(err){}
+        const d = await r.json();
+        adminToken = d.token;
+        try{ localStorage.setItem(ADMIN_TOKEN_KEY, adminToken); }catch(err){}
         document.getElementById('modalBox').innerHTML = '<h2 style="margin-top:0;font-size:16px;">비밀번호를 바꿨어요</h2>'+
           '<button type="button" id="adminCancel" class="addbtn" style="width:100%;text-align:center;">닫기</button>';
       } else {
@@ -1839,6 +1888,7 @@ function renderSheet(){
     renderVisitsData();
   } else if(sec.special==='mydash'){
     sheet.innerHTML = renderMyDashSection() + navFootHtml(sec);
+    renderMySeedsList();
   } else {
     let bodyHtml = sec.fields.map(renderField).join('');
     sheet.innerHTML =
@@ -1950,12 +2000,12 @@ async function renderTaskList(){
     body.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
   }
 }
-// 작성자(이름) 기준으로 하나만: 이름이 있으면 그 이름의 가장 최근 것만 남기고, 이름이 비어 있으면
-// 서로 다른 사람일 수 있어 함부로 합치지 않고 문서(docId)별로 각각 둠
+// 작성자(이름) 기준으로 하나만: 이름이 있으면 그 이름의 가장 최근 것만 남기고,
+// 이름이 비어 있으면(로그인 안 한 경우) 같은 IP끼리만 묶고, IP도 없으면 문서(docId)별로 각각 둠
 function dedupeByAuthor(list){
   const groups = {};
   list.forEach(v=>{
-    const key = String(v.name||'').trim() || ('__doc__'+v.docId);
+    const key = String(v.name||'').trim() || (v.ip ? '__ip__'+v.ip : '__doc__'+v.docId);
     (groups[key] = groups[key]||[]).push(v);
   });
   return Object.values(groups).map(arr=>{
@@ -1974,7 +2024,7 @@ function renderTaskListBody(){
   const counts = TASK_STAGE_LABELS.map((l,i)=>rows.filter(r=>r.stageIdx===i).length);
   sum.innerHTML = rows.length ? '<div class="lvcard"><div class="lvnow">완료 <b>'+counts[4]+'</b> / 전체 <b>'+rows.length+'</b> <span>('+Math.round(100*counts[4]/rows.length)+'%)</span></div>'+
     '<div class="lvnext">'+TASK_STAGE_LABELS.map((l,i)=>esc(l)+' '+counts[i]+'명').join(' · ')+'</div></div>' : '';
-  if(qq) rows = rows.filter(r=>[r.team, r.name, (r.task||{}).name].some(x=>String(x||'').toLowerCase().indexOf(qq)>-1));
+  if(qq) rows = rows.filter(r=>[r.team, r.name, r.ip, (r.task||{}).name].some(x=>String(x||'').toLowerCase().indexOf(qq)>-1));
   if(stageF!=='') rows = rows.filter(r=>r.stageIdx===+stageF);
   if(sortBy==='stage') rows.sort((a,b)=>a.stageIdx-b.stageIdx || String((b.updatedAt||'')).localeCompare(a.updatedAt||''));
   else if(sortBy==='name') rows.sort((a,b)=>String((a.task||{}).name||'').localeCompare(String((b.task||{}).name||''),'ko'));
@@ -1988,10 +2038,11 @@ function renderTaskListBody(){
     const rec = v.gateReview && v.gateReview.decision==='인정' ? lvLabel(gateLevelNum(v.gateReview.level)) : '없음';
     const extra = v._extraCount>0 ? '<br><small>(그 외 '+v._extraCount+'건 더 있음)</small>' : '';
     return '<tr><td>'+esc(t.name||'(제목 없음)')+'</td><td>'+esc(v.team||'-')+' · '+esc(v.name||'-')+extra+'</td>'+
+      '<td>'+esc(v.ip||'-')+'</td>'+
       '<td>'+esc(t.cat||'-')+(t.target&&t.target.length ? '<br><small>'+esc(t.target.join(', '))+'</small>' : '')+'</td>'+
       '<td>'+esc(TASK_STAGE_LABELS[v.stageIdx])+'</td><td>'+esc(learn)+'</td><td>'+esc(rec)+'</td><td>'+esc(when)+'</td></tr>';
   }).join('');
-  body.innerHTML = '<table class="dtable"><thead><tr><th>씨앗 이름</th><th>부서·담당자</th><th>카테고리·대상</th><th>진행 단계</th><th>학습 레벨</th><th>인정 레벨</th><th>마지막 저장</th></tr></thead><tbody>'+trs+'</tbody></table>';
+  body.innerHTML = '<table class="dtable"><thead><tr><th>씨앗 이름</th><th>부서·담당자</th><th>IP</th><th>카테고리·대상</th><th>진행 단계</th><th>학습 레벨</th><th>인정 레벨</th><th>마지막 저장</th></tr></thead><tbody>'+trs+'</tbody></table>';
 }
 
 /* ============== 나의 대시보드 (일반, 로그인 없음 — 이 브라우저의 지금 고민거리 기준) ============== */
@@ -2016,8 +2067,10 @@ function renderMyDashSection(){
     (done.length ? '<div class="lvrec-items">'+done.map(i=>'<span class="lvrec-chip">'+esc(i)+'</span>').join('')+'</div>'
       : '<div class="hint">12 AI 역량 학습 포인트에서 체크하면 여기 보여요.</div>')+
     '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">씨앗 이어서 쓰기</button>'+
+    '<button type="button" class="secondary" onclick="startNewSeed()">🌱 새 씨앗 시작하기</button>'+
     (hasAnyData ? '<button type="button" class="secondary" onclick="if(confirm(\'저장된 씨앗 내용을 전부 지울까요? 되돌릴 수 없어요.\')){'+'localStorage.clear();location.reload();'+'}">🗑️ 저장 데이터 초기화</button>' : '')+
     '</div>'+
+    (currentUser ? '<h3 style="margin-top:24px;">내 씨앗 목록</h3><div id="mySeedsList" class="hint">불러오는 중…</div>' : '')+
   '</div>';
 }
 
@@ -2259,7 +2312,7 @@ async function loadInviteCodes(){
           '<td style="padding:6px 8px;font-size:12px;font-weight:600;letter-spacing:1px;color:'+statusColor(c.status)+';">'+esc(c.code)+'</td>'+
           '<td style="padding:6px 8px;"><span style="padding:2px 8px;border-radius:999px;font-size:11px;background:'+statusBg(c.status)+';color:'+statusColor(c.status)+';">'+esc(c.status)+'</span></td>'+
           '<td style="padding:6px 8px;font-size:12px;color:var(--ink-soft);">'+(c.expires_at?c.expires_at.slice(0,16):'-')+'</td>'+
-          '<td style="padding:6px 8px;font-size:12px;color:var(--ink-soft);">'+(c.used_by||'-')+'</td>'+
+          '<td style="padding:6px 8px;font-size:12px;color:var(--ink-soft);">'+esc(c.used_by||'-')+'</td>'+
         '</tr>'
       ).join('')+
     '</table>';
@@ -3423,7 +3476,7 @@ let feedbackCache = [];
 async function loadFeedback(admin){
   try{
     const url = admin ? '/api/feedback/all' : '/api/feedback';
-    const headers = admin ? {'x-emp-id':empId,'x-emp-code':empCode} : {};
+    const headers = admin ? authHeaders() : {};
     const res = await fetch(url,{headers});
     if(!res.ok) return [];
     return await res.json();
@@ -3546,7 +3599,7 @@ function renderFeedbackAdminTable(){
       }
       this.disabled=true;
       try{
-        const res=await fetch('/api/feedback/'+fb.id,{method:'PUT',headers:{'Content-Type':'application/json','x-emp-id':empId,'x-emp-code':empCode},body:JSON.stringify({status:act,admin_note:note})});
+        const res=await fetch('/api/feedback/'+fb.id,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'}, authHeaders()),body:JSON.stringify({status:act,admin_note:note})});
         if(!res.ok){ const e=await res.json(); alert(e.detail||'오류'); return; }
         feedbackCache=await loadFeedback(true);
         renderFeedbackAdminTable();

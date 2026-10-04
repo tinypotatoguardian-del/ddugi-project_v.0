@@ -247,6 +247,14 @@ def init_db() -> None:
     except Exception:
         if USE_PG:
             conn.rollback()
+    # submissions에 ip 컬럼 추가 (마이그레이션) — 씨앗목록에서 제출자를 구분하기 위해
+    try:
+        db_execute(conn, "ALTER TABLE submissions ADD COLUMN ip TEXT")
+        if USE_PG:
+            conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
     # 마스터·관리자 계정 (사번 + 비밀번호 해시 + 역할)
     db_execute(conn,
         """
@@ -370,6 +378,32 @@ def get_role(conn, emp_id: str) -> Optional[str]:
 # ponytail: 메모리 보관이라 서버를 다시 켜면 초기화됨. 사내 SSO 연동 시 이 방식은 대체
 FAILS: Dict[str, list] = {}
 
+# 관리자 로그인 세션 (토큰 -> {emp_id, role}). 비밀번호를 매 요청마다
+# 보내지 않고, 로그인 1회로 만든 토큰만 보내게 하기 위한 저장소.
+# 시간 만료는 없음 — 로그아웃, 비밀번호 변경, 계정 삭제로만 무효화된다.
+# ponytail: 메모리 보관이라 서버를 다시 켜면 전부 로그아웃됨. 여러 서버로 늘리면 DB/Redis로 교체
+ADMIN_SESSIONS: Dict[str, dict] = {}
+
+
+def make_admin_session(emp_id: str, role: str) -> str:
+    token = secrets.token_hex(32)
+    ADMIN_SESSIONS[token] = {"emp_id": emp_id, "role": role}
+    return token
+
+
+def revoke_admin_sessions(emp_id: str):
+    for t in [t for t, s in ADMIN_SESSIONS.items() if s["emp_id"] == emp_id]:
+        ADMIN_SESSIONS.pop(t, None)
+
+
+def require_admin_token(token: str, allowed: set) -> dict:
+    sess = ADMIN_SESSIONS.get(token or "")
+    if not sess:
+        raise HTTPException(status_code=401, detail="로그인이 필요해요. 다시 로그인해주세요.")
+    if sess["role"] not in allowed:
+        raise HTTPException(status_code=403, detail="이 계정은 이 화면을 볼 권한이 없습니다.")
+    return sess
+
 
 def require_role(emp_id: str, code: str, allowed: set) -> str:
     """사번+비밀번호를 확인하고 역할을 돌려준다.
@@ -403,6 +437,11 @@ init_db()
 app = FastAPI(title="ddugi Project")
 
 
+def get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for", "")
+    return forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+
+
 @app.middleware("http")
 async def log_visit(request: Request, call_next):
     """Log page visits to DB (skip API calls and static assets)."""
@@ -418,9 +457,7 @@ async def log_visit(request: Request, call_next):
     )
     if should_log:
         try:
-            # Railway 리버스 프록시 뒤에서 실제 IP 가져오기
-            forwarded = request.headers.get("x-forwarded-for", "")
-            ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+            ip = get_client_ip(request)  # Railway 리버스 프록시 뒤에서 실제 IP 가져오기
             if ip in SKIP_IPS:
                 should_log = False
             if should_log:
@@ -463,6 +500,7 @@ def row_to_summary(row) -> Dict[str, Any]:
         "docId": row["doc_id"],
         "team": row["team"],
         "name": row["name"],
+        "ip": row["ip"],
         "locked": bool(row["locked"]),
         "completed": bool(row["completed"]),
         "status": row["status"],
@@ -475,23 +513,18 @@ def row_to_summary(row) -> Dict[str, Any]:
 
 
 @app.get("/api/submissions")
-def list_submissions(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
+def list_submissions(x_admin_token: str = Header(default="")):
     # 전체 현황(팀 역량 포함)은 관리자·마스터 계정만 조회
-    require_role(x_emp_id, x_emp_code, {"admin", "master"})
+    require_admin_token(x_admin_token, {"admin", "master"})
     conn = get_db()
     rows = db_fetchall(conn,
         "SELECT * FROM submissions ORDER BY updated_at DESC"
     )
     conn.close()
-    # doc_id 기준 중복 제거 (이미 PRIMARY KEY라 없음)
-    # user_id 기준 최신 1개만 — 같은 유저가 여러 기기에서 접근해도 최신 1개만
-    seen_users = set()
+    # 한 사람이 씨앗을 여러 개 만들 수 있어서, 여기선 doc_id 하나당 한 줄 그대로 내려준다.
+    # (이름/IP로 같은 사람 것끼리 묶어서 보여주는 건 화면 쪽 dedupeByAuthor()가 한다)
     out = []
     for r in rows:
-        uid = r.get("user_id") or r["doc_id"]  # 로그인 전이면 doc_id 사용
-        if uid in seen_users:
-            continue
-        seen_users.add(uid)
         item = row_to_summary(r)
         f = json.loads(r["fields"] or "{}")
         item["gate"] = {
@@ -528,15 +561,15 @@ def get_submission(doc_id: str):
 
 
 @app.put("/api/submissions/{doc_id}")
-def put_submission(doc_id: str, body: SubmissionIn):
+def put_submission(doc_id: str, body: SubmissionIn, request: Request):
     conn = get_db()
     now = datetime.datetime.utcnow().isoformat()
     db_execute(conn,
         """
         INSERT INTO submissions
             (doc_id, team, name, fields, locked, completed, status,
-             filled_count, total_sections, recommended_type, updated_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+             filled_count, total_sections, recommended_type, updated_at, ip)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(doc_id) DO UPDATE SET
             team=excluded.team,
             name=excluded.name,
@@ -547,7 +580,8 @@ def put_submission(doc_id: str, body: SubmissionIn):
             filled_count=excluded.filled_count,
             total_sections=excluded.total_sections,
             recommended_type=excluded.recommended_type,
-            updated_at=excluded.updated_at
+            updated_at=excluded.updated_at,
+            ip=excluded.ip
         """,
         (
             doc_id,
@@ -561,6 +595,7 @@ def put_submission(doc_id: str, body: SubmissionIn):
             body.totalSections,
             body.recommendedType,
             now,
+            get_client_ip(request),
         ),
     )
     conn.commit()
@@ -576,7 +611,14 @@ class LoginIn(BaseModel):
 @app.post("/api/auth/login")
 def login(body: LoginIn):
     role = require_role(body.empId, body.code, {"master", "admin"})
-    return {"role": role}
+    token = make_admin_session(body.empId, role)
+    return {"role": role, "token": token}
+
+
+@app.post("/api/auth/logout")
+def logout(x_admin_token: str = Header(default="")):
+    ADMIN_SESSIONS.pop(x_admin_token or "", None)
+    return {"ok": True}
 
 
 def account_out(row) -> Dict[str, Any]:
@@ -584,8 +626,8 @@ def account_out(row) -> Dict[str, Any]:
 
 
 @app.get("/api/master/accounts")
-def list_accounts(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
-    require_role(x_emp_id, x_emp_code, {"master"})
+def list_accounts(x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"master"})
     conn = get_db()
     rows = db_fetchall(conn, "SELECT * FROM accounts ORDER BY created_at")
     conn.close()
@@ -599,9 +641,9 @@ class AccountIn(BaseModel):
 
 
 @app.post("/api/master/accounts")
-def add_account(body: AccountIn, x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
+def add_account(body: AccountIn, x_admin_token: str = Header(default="")):
     # 마스터가 관리자 계정을 직접 만들어준다 (자유 가입이 아니라 마스터의 권한 부여)
-    require_role(x_emp_id, x_emp_code, {"master"})
+    require_admin_token(x_admin_token, {"master"})
     emp_id = body.empId.strip()
     if not emp_id:
         raise HTTPException(status_code=400, detail="사번을 입력하세요.")
@@ -621,9 +663,9 @@ def add_account(body: AccountIn, x_emp_id: str = Header(default=""), x_emp_code:
 
 
 @app.delete("/api/master/accounts/{emp_id}")
-def remove_account(emp_id: str, x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
-    require_role(x_emp_id, x_emp_code, {"master"})
-    if emp_id == x_emp_id:
+def remove_account(emp_id: str, x_admin_token: str = Header(default="")):
+    sess = require_admin_token(x_admin_token, {"master"})
+    if emp_id == sess["emp_id"]:
         raise HTTPException(status_code=400, detail="자기 자신(마스터) 계정은 지울 수 없습니다.")
     conn = get_db()
     cur = db_execute(conn, "DELETE FROM accounts WHERE emp_id=? AND role='admin'", (emp_id,))
@@ -631,6 +673,7 @@ def remove_account(emp_id: str, x_emp_id: str = Header(default=""), x_emp_code: 
     conn.close()
     if not cur.rowcount:
         raise HTTPException(status_code=404, detail="관리자 계정을 찾을 수 없습니다.")
+    revoke_admin_sessions(emp_id)
     return {"ok": True}
 
 
@@ -641,9 +684,9 @@ class GateReviewIn(BaseModel):
 
 
 @app.post("/api/admin/gate/{doc_id}")
-def review_gate(doc_id: str, body: GateReviewIn, x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
+def review_gate(doc_id: str, body: GateReviewIn, x_admin_token: str = Header(default="")):
     # 레벨 인정은 관리자·마스터만 (AI 판정은 1차 참고)
-    require_role(x_emp_id, x_emp_code, {"admin", "master"})
+    require_admin_token(x_admin_token, {"admin", "master"})
     if body.decision not in ("인정", "보완 요청"):
         raise HTTPException(status_code=400, detail="decision은 '인정' 또는 '보완 요청'")
     review = {"level": body.level, "decision": body.decision, "note": body.note[:500],
@@ -659,24 +702,28 @@ def review_gate(doc_id: str, body: GateReviewIn, x_emp_id: str = Header(default=
 
 
 class PasswordChangeIn(BaseModel):
-    empId: str
     old: str
     new: str
 
 
 @app.post("/api/account/password")
-def change_password(body: PasswordChangeIn):
+def change_password(body: PasswordChangeIn, x_admin_token: str = Header(default="")):
     # 마스터든 관리자든 자기 비밀번호는 스스로 바꾼다
-    require_role(body.empId, body.old, {"master", "admin"})
+    sess = require_admin_token(x_admin_token, {"master", "admin"})
+    emp_id = sess["emp_id"]
+    require_role(emp_id, body.old, {"master", "admin"})
     if len(body.new) < MIN_CODE_LEN:
         raise HTTPException(status_code=400, detail=f"새 비밀번호는 {MIN_CODE_LEN}자 이상이어야 합니다.")
     if body.new == body.old:
         raise HTTPException(status_code=400, detail="새 비밀번호가 기존 비밀번호와 같습니다.")
     conn = get_db()
-    db_execute(conn, "UPDATE accounts SET password_hash=? WHERE emp_id=?", (hash_code(body.new), body.empId))
+    db_execute(conn, "UPDATE accounts SET password_hash=? WHERE emp_id=?", (hash_code(body.new), emp_id))
     conn.commit()
     conn.close()
-    return {"ok": True}
+    # 비밀번호를 바꿨으니 기존 토큰은 전부 무효화하고, 새 토큰을 하나 내려준다
+    revoke_admin_sessions(emp_id)
+    new_token = make_admin_session(emp_id, sess["role"])
+    return {"ok": True, "token": new_token}
 
 
 TAXONOMY_KEYS = set(DEFAULT_TAXONOMY.keys())
@@ -699,8 +746,8 @@ class TaxonomyIn(BaseModel):
 
 
 @app.put("/api/admin/taxonomy/{key}")
-def put_taxonomy(key: str, body: TaxonomyIn, x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
-    role = require_role(x_emp_id, x_emp_code, {"admin", "master"})
+def put_taxonomy(key: str, body: TaxonomyIn, x_admin_token: str = Header(default="")):
+    role = require_admin_token(x_admin_token, {"admin", "master"})["role"]
     if key not in TAXONOMY_KEYS:
         raise HTTPException(status_code=400, detail="알 수 없는 분류입니다.")
     if key == "intro_html":
@@ -769,8 +816,8 @@ def list_feedback():
 
 
 @app.get("/api/feedback/all")
-def list_all_feedback(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
-    require_role(x_emp_id, x_emp_code, {"admin", "master"})
+def list_all_feedback(x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"admin", "master"})
     conn = get_db()
     rows = db_fetchall(conn, "SELECT * FROM feedback ORDER BY created_at DESC")
     conn.close()
@@ -778,8 +825,8 @@ def list_all_feedback(x_emp_id: str = Header(default=""), x_emp_code: str = Head
 
 
 @app.put("/api/feedback/{fb_id}")
-def update_feedback(fb_id: int, body: FeedbackUpdateIn, x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
-    require_role(x_emp_id, x_emp_code, {"admin", "master"})
+def update_feedback(fb_id: int, body: FeedbackUpdateIn, x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"admin", "master"})
     if body.status not in ("planted", "growing", "harvested"):
         raise HTTPException(status_code=400, detail="status는 planted/growing/harvested 중 하나여야 합니다.")
     conn = get_db()
@@ -817,8 +864,8 @@ def visit_stats_public():
     }
 
 @app.get("/api/visits/stats")
-def visit_stats(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
-    require_role(x_emp_id, x_emp_code, {"master"})
+def visit_stats(x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"master"})
     conn = get_db()
     today = datetime.datetime.now(KST).strftime("%Y-%m-%d")
     total = db_fetchone(conn, "SELECT COUNT(*) AS cnt FROM visits")
@@ -880,6 +927,7 @@ class UserLoginIn(BaseModel):
 class UserPasswordIn(BaseModel):
     old_password: str
     new_password: str
+    nickname: str = ""
 
 import secrets
 import string
@@ -997,16 +1045,21 @@ def user_change_password(body: UserPasswordIn, authorization: str = Header(defau
         conn.close()
         raise HTTPException(status_code=400, detail="새 비밀번호: 8자 이상, 영문+숫자 포함해야 해요.")
     ph = hash_code(body.new_password)
-    q = "UPDATE users SET password_hash=%s WHERE id=%s" if USE_PG else "UPDATE users SET password_hash=? WHERE id=?"
-    db_execute(conn, q, (ph, uid))
+    new_nick = body.nickname.strip()[:20]
+    if new_nick:
+        q = "UPDATE users SET password_hash=%s, nickname=%s WHERE id=%s" if USE_PG else "UPDATE users SET password_hash=?, nickname=? WHERE id=?"
+        db_execute(conn, q, (ph, new_nick, uid))
+    else:
+        q = "UPDATE users SET password_hash=%s WHERE id=%s" if USE_PG else "UPDATE users SET password_hash=? WHERE id=?"
+        db_execute(conn, q, (ph, uid))
     if USE_PG: conn.commit()
     conn.close()
-    return {"ok": True}
+    return {"ok": True, "nickname": new_nick or row["nickname"]}
 
 # ── 초대코드 관리 (마스터 전용)
 @app.post("/api/admin/invite")
-def create_invite(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
-    require_role(x_emp_id, x_emp_code, {"master", "admin"})
+def create_invite(x_admin_token: str = Header(default="")):
+    sess = require_admin_token(x_admin_token, {"master", "admin"})
     conn = get_db()
     # 고유 코드 생성
     for _ in range(10):
@@ -1016,14 +1069,14 @@ def create_invite(x_emp_id: str = Header(default=""), x_emp_code: str = Header(d
             break
     expires_at = (datetime.datetime.now(KST) + datetime.timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
     q2 = "INSERT INTO invite_codes (code,created_by,plan,expires_at) VALUES (%s,%s,'free',%s)" if USE_PG else          "INSERT INTO invite_codes (code,created_by,plan,expires_at) VALUES (?,?,'free',?)"
-    db_execute(conn, q2, (code, x_emp_id, expires_at))
+    db_execute(conn, q2, (code, sess["emp_id"], expires_at))
     if USE_PG: conn.commit()
     conn.close()
     return {"code": code, "expires_at": expires_at}
 
 @app.get("/api/admin/invites")
-def list_invites(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
-    require_role(x_emp_id, x_emp_code, {"master", "admin"})
+def list_invites(x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"master", "admin"})
     conn = get_db()
     rows = db_fetchall(conn, "SELECT * FROM invite_codes ORDER BY expires_at DESC")
     conn.close()
@@ -1060,49 +1113,55 @@ def user_submissions(authorization: str = Header(default="")):
         rows = db_fetchall(conn, "SELECT * FROM submissions WHERE user_id=%s ORDER BY updated_at DESC", (uid,))
     else:
         rows = db_fetchall(conn, "SELECT * FROM submissions WHERE user_id=? ORDER BY updated_at DESC", (uid,))
-    return [row_to_summary(r) for r in rows]
+    out = []
+    for r in rows:
+        item = row_to_summary(r)
+        item["seedName"] = json.loads(r["fields"] or "{}").get("s1_name", "")
+        out.append(item)
+    return out
 
 # 씨앗 저장 시 user_id 연결 (기존 PUT에 user_id 추가)
 # → 기존 /api/submissions/{doc_id} PUT에서 토큰 있으면 user_id 저장
 @app.put("/api/user/submissions/{doc_id}")
-def put_user_submission(doc_id: str, body: "SubmissionIn", authorization: str = Header(default="")):
+def put_user_submission(doc_id: str, body: "SubmissionIn", request: Request, authorization: str = Header(default="")):
     """로그인 유저의 씨앗 저장 — user_id 자동 연결"""
     payload = get_current_user(authorization)
     uid = payload["sub"]
+    ip = get_client_ip(request)
     conn = get_db()
     now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
     fields_json = json.dumps(body.fields, ensure_ascii=False)
     if USE_PG:
         db_execute(conn, """
-            INSERT INTO submissions (doc_id,team,name,fields,locked,completed,status,filled_count,total_sections,recommended_type,updated_at,user_id)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            INSERT INTO submissions (doc_id,team,name,fields,locked,completed,status,filled_count,total_sections,recommended_type,updated_at,user_id,ip)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             ON CONFLICT(doc_id) DO UPDATE SET
                 team=EXCLUDED.team, name=EXCLUDED.name, fields=EXCLUDED.fields,
                 locked=EXCLUDED.locked, completed=EXCLUDED.completed, status=EXCLUDED.status,
                 filled_count=EXCLUDED.filled_count, total_sections=EXCLUDED.total_sections,
                 recommended_type=EXCLUDED.recommended_type, updated_at=EXCLUDED.updated_at,
-                user_id=EXCLUDED.user_id
+                user_id=EXCLUDED.user_id, ip=EXCLUDED.ip
         """, (doc_id, body.team, body.name, fields_json, body.locked, body.completed, body.status,
-              body.filledCount, body.totalSections, body.recommendedType, now, uid))
+              body.filledCount, body.totalSections, body.recommendedType, now, uid, ip))
         conn.commit()
     else:
         db_execute(conn, """
-            INSERT INTO submissions (doc_id,team,name,fields,locked,completed,status,filled_count,total_sections,recommended_type,updated_at,user_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO submissions (doc_id,team,name,fields,locked,completed,status,filled_count,total_sections,recommended_type,updated_at,user_id,ip)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
             ON CONFLICT(doc_id) DO UPDATE SET
                 team=excluded.team, name=excluded.name, fields=excluded.fields,
                 locked=excluded.locked, completed=excluded.completed, status=excluded.status,
                 filled_count=excluded.filled_count, total_sections=excluded.total_sections,
                 recommended_type=excluded.recommended_type, updated_at=excluded.updated_at,
-                user_id=excluded.user_id
+                user_id=excluded.user_id, ip=excluded.ip
         """, (doc_id, body.team, body.name, fields_json, body.locked, body.completed, body.status,
-              body.filledCount, body.totalSections, body.recommendedType, now, uid))
+              body.filledCount, body.totalSections, body.recommendedType, now, uid, ip))
     return {"ok": True}
 
 # 관리자: 유저 목록 + 씨앗 현황
 @app.get("/api/admin/users")
-def admin_users(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
-    require_role(x_emp_id, x_emp_code, {"admin", "master"})
+def admin_users(x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"admin", "master"})
     conn = get_db()
     users = db_fetchall(conn, "SELECT id,email,nickname,plan,plan_expires_at,created_at,last_login_at FROM users ORDER BY created_at DESC")
     result = []
