@@ -160,6 +160,7 @@ def init_db() -> None:
         )
         """
     )
+    conn.commit()  # 아래 마이그레이션 ALTER가 실패해서 rollback해도 이 CREATE TABLE은 지워지지 않도록
     # 관리자 Gate 확인 결과. 작성자 저장(PUT)으로는 바뀌지 않도록 fields와 따로 둔다
     if USE_PG:
         cols = [r["column_name"] for r in db_fetchall(conn,
@@ -187,7 +188,8 @@ def init_db() -> None:
                 last_login_at TEXT
             )
         """)
-        # 마이그레이션: username 컬럼 없으면 추가
+        conn.commit()  # 아래 마이그레이션 ALTER가 실패해서 rollback해도 이 CREATE TABLE은 지워지지 않도록
+        # 마이그레이션: username 컬럼 없으면 추가 (옛날 DB용. 이미 있으면 그냥 실패하고 넘어감)
         try:
             db_execute(conn, "ALTER TABLE users ADD COLUMN username TEXT")
             conn.commit()
@@ -207,9 +209,11 @@ def init_db() -> None:
                 last_login_at TEXT
             )
         """)
+        conn.commit()
         # 마이그레이션: username 컬럼 없으면 추가
         try:
             db_execute(conn, "ALTER TABLE users ADD COLUMN username TEXT")
+            conn.commit()
         except Exception:
             pass
 
@@ -236,6 +240,7 @@ def init_db() -> None:
                 used_by TEXT
             )
         """)
+    conn.commit()  # 아래 submissions 마이그레이션 ALTER가 실패해서 rollback해도 이 CREATE TABLE은 지워지지 않도록
     # submissions에 user_id 컬럼 추가 (마이그레이션)
     try:
         if USE_PG:
