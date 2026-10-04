@@ -1760,8 +1760,9 @@ function sectionStatus(sec){
   if(sec.special || !sec.fields) return null;
   const req = sec.fields.filter(f=>f.required);
   if(!sec.fields.some(fieldHasValue)) return 'empty';
+  // required 필드가 있으면 그걸로 판단, 없으면 하나라도 채워지면 done
   if(req.length) return req.every(fieldHasValue) ? 'done' : 'partial';
-  return 'partial';
+  return sec.fields.filter(f=>!f.type||!['hint','static','diffhint','subhead','ailevel','lpresult','redefref','gate'].includes(f.type)).every(fieldHasValue) ? 'done' : 'partial';
 }
 function fieldHasValue(f){
   if(f.type==='hint' || f.type==='static' || f.type==='diffhint' || f.type==='designreview' || f.type==='datacandidates' || f.type==='codetest' || f.type==='glossary07' || f.type==='example05' || f.type==='subhead') return false;
