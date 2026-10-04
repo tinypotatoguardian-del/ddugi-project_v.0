@@ -1899,15 +1899,20 @@ function renderMyDashSection(){
   const filled = SECTIONS.filter(s=>!s.special && sectionFilled(s)).length;
   const pct = TOTAL_SECTIONS ? Math.round(100*filled/TOTAL_SECTIONS) : 0;
   const done = getV('lp_done', []);
+  const seedName = getV('s1_name','') || '(아직 씨앗 이름을 안 썼어요)';
+  const hasAnyData = SECTIONS.some(s=>!s.special && sectionFilled(s));
+
   return '<div class="frame intro"><h2>☆ 나의 마음의 방</h2><div class="sub">지금 작성 중인 씨앗 기준</div>'+
-    '<div class="hint">아직 로그인이 없어서, 이 브라우저에 저장된 지금 씨앗 하나를 기준으로 보여줘요. 아이디로 로그인해서 여러 씨앗을 모아보는 기능은 밭 넓히기에 있어요.</div>'+
-    '<h3>'+esc(getV('s1_name','') || '(아직 씨앗 이름을 안 썼어요)')+'</h3>'+
+    '<div class="hint">아직 로그인이 없어서, 이 브라우저에 저장된 지금 씨앗 하나를 기준으로 보여줘요.</div>'+
+    '<h3>'+esc(seedName)+'</h3>'+
     '<p>진척도: '+filled+' / '+TOTAL_SECTIONS+' 섹션 ('+pct+'%)</p>'+
     aiLevelCardHtml(true)+
     '<h3>이번 씨앗에서 경험한 AI 역량</h3>'+
     (done.length ? '<div class="lvrec-items">'+done.map(i=>'<span class="lvrec-chip">'+esc(i)+'</span>').join('')+'</div>'
       : '<div class="hint">12 AI 역량 학습 포인트에서 체크하면 여기 보여요.</div>')+
-    '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">씨앗 이어서 쓰기</button></div>'+
+    '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">씨앗 이어서 쓰기</button>'+
+    (hasAnyData ? '<button type="button" class="secondary" onclick="if(confirm(\'저장된 씨앗 내용을 전부 지울까요? 되돌릴 수 없어요.\')){'+'localStorage.clear();location.reload();'+'}">🗑️ 저장 데이터 초기화</button>' : '')+
+    '</div>'+
   '</div>';
 }
 

@@ -372,6 +372,8 @@ async def log_visit(request: Request, call_next):
     path = request.url.path
     skip_prefixes = ("/api/",)
     static_exts = (".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".map")
+    # 운영자 IP — 방문 기록 제외
+    SKIP_IPS = {"211.37.81.27"}
     should_log = (
         not any(path.startswith(p) for p in skip_prefixes)
         and not any(path.endswith(ext) for ext in static_exts)
@@ -382,13 +384,16 @@ async def log_visit(request: Request, call_next):
             # Railway 리버스 프록시 뒤에서 실제 IP 가져오기
             forwarded = request.headers.get("x-forwarded-for", "")
             ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
-            ua = request.headers.get("user-agent", "")
-            now = datetime.datetime.utcnow().isoformat()
-            conn = get_db()
-            db_execute(conn, "INSERT INTO visits (ip, user_agent, path, visited_at) VALUES (?,?,?,?)",
-                       (ip, ua, path, now))
-            conn.commit()
-            conn.close()
+            if ip in SKIP_IPS:
+                should_log = False
+            if should_log:
+                ua = request.headers.get("user-agent", "")
+                now = datetime.datetime.utcnow().isoformat()
+                conn = get_db()
+                db_execute(conn, "INSERT INTO visits (ip, user_agent, path, visited_at) VALUES (?,?,?,?)",
+                           (ip, ua, path, now))
+                conn.commit()
+                conn.close()
         except Exception:
             pass  # 방문 기록 실패가 요청을 막지 않도록
     response = await call_next(request)
