@@ -490,6 +490,16 @@
 (function(){
 "use strict";
 
+// HTML onclick="" 속성은 전역(window)에서 함수를 찾기 때문에, 이 IIFE 안에만 있는
+// 함수들을 호출하려면 명시적으로 window에 걸어줘야 한다. (안 걸면 클릭해도 조용히 아무 일도 안 일어남)
+window.openAuthModal = (...a) => openAuthModal(...a);
+window.userLogout = (...a) => userLogout(...a);
+window.showChangelog = (...a) => showChangelog(...a);
+window.createInviteCode = (...a) => createInviteCode(...a);
+window.loadInviteCodes = (...a) => loadInviteCodes(...a);
+window.startNewSeed = (...a) => startNewSeed(...a);
+window.switchSeed = (...a) => switchSeed(...a);
+
 
 
 /* ============== schema helpers ============== */
