@@ -1166,6 +1166,8 @@ function openAuthModal(mode){
     html =
       '<h2 style="margin:0 0 4px;font-size:17px;">🥔 회원가입</h2>'+
       '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">지금은 초대로만 받고 있어요. 연락 방법을 남겨주시면 연락드릴게요!</p>'+
+      '<div class="field"><label>원하는 아이디</label><input type="text" id="waitlistUsername" placeholder="예: potato1 (영문 소문자/숫자/_)" maxlength="20" style="text-transform:lowercase;"></div>'+
+      '<div class="field"><label>감자명 (닉네임, 선택 — 나중에 바꿀 수 있어요)</label><input type="text" id="waitlistNickname" placeholder="비우면 나중에 정해요" maxlength="20"></div>'+
       '<div class="field"><label>연락 방법</label><select id="waitlistType" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);">'+
         '<option value="kakao">카톡 아이디</option>'+
         '<option value="phone">전화번호</option>'+
@@ -1185,11 +1187,13 @@ function openAuthModal(mode){
     setTimeout(()=>{
       const btn = document.getElementById('authSubmitBtn');
       const errEl = document.getElementById('authErr');
+      const usernameEl = document.getElementById('waitlistUsername');
+      const nicknameEl = document.getElementById('waitlistNickname');
       const contactEl = document.getElementById('waitlistContact');
       const typeEl = document.getElementById('waitlistType');
       const noticeEl = document.getElementById('waitlistPrivacyNotice');
       const labelEl = document.getElementById('waitlistContactLabel');
-      if(contactEl) contactEl.focus();
+      if(usernameEl) usernameEl.focus();
       function syncType(){
         const isPhone = typeEl.value==='phone';
         labelEl.textContent = isPhone ? '전화번호' : '카톡 아이디';
@@ -1198,22 +1202,27 @@ function openAuthModal(mode){
       }
       if(typeEl) typeEl.addEventListener('change', syncType);
       async function submitWaitlist(){
+        const desiredUsername = (usernameEl?.value||'').trim().toLowerCase();
+        const nickname = (nicknameEl?.value||'').trim();
         const contact = (contactEl?.value||'').trim();
         const contactType = typeEl?.value || 'kakao';
+        if(!desiredUsername || desiredUsername.length<2 || !/^[a-z0-9_]+$/.test(desiredUsername)){
+          errEl.style.display=''; errEl.textContent='원하는 아이디는 영문 소문자/숫자/_ 2자 이상이어야 해요.'; return;
+        }
         if(!contact){ errEl.style.display=''; errEl.textContent='연락처를 입력해주세요.'; return; }
         if(contactType==='phone' && !document.getElementById('waitlistConsent')?.checked){
           errEl.style.display=''; errEl.textContent='개인정보 수집·이용에 동의해주세요.'; return;
         }
         if(btn) btn.disabled=true;
         try{
-          const res = await fetch('/api/signup-request', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({contact, contact_type:contactType})});
+          const res = await fetch('/api/signup-request', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({contact, contact_type:contactType, desired_username:desiredUsername, nickname})});
           if(!res.ok){ const d = await res.json(); errEl.style.display=''; errEl.textContent=d.detail||'오류가 발생했어요.'; return; }
           document.getElementById('modalBox').innerHTML = '<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">남겼어요!</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">곧 연락드릴게요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">확인</button></div>';
         }catch(e){ errEl.style.display=''; errEl.textContent='네트워크 오류. 다시 시도해주세요.'; }
         finally{ if(btn) btn.disabled=false; }
       }
       if(btn) btn.onclick = submitWaitlist;
-      if(contactEl) contactEl.addEventListener('keydown', e=>{ if(e.key==='Enter') submitWaitlist(); });
+      [usernameEl, nicknameEl, contactEl].forEach(el=>{ if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') submitWaitlist(); }); });
     }, 50);
     return;
   }
@@ -2267,11 +2276,11 @@ async function renderSignupRequests(){
       const typeLabel = r.contact_type==='phone' ? '📞 전화' : '💬 카톡';
       const idCell = r.created_username
         ? '👤 '+esc(r.created_username)+' <button type="button" class="chip-btn" data-action="signupreq-unlink" data-target="'+r.id+'">해제</button>'
-        : '<input type="text" id="signupreqId-'+r.id+'" placeholder="만든 아이디" style="width:110px;display:inline-block;padding:4px 6px;font-size:12px;"> '+
+        : '<input type="text" id="signupreqId-'+r.id+'" value="'+esc(r.desired_username||'')+'" placeholder="만든 아이디" style="width:110px;display:inline-block;padding:4px 6px;font-size:12px;"> '+
           '<button type="button" class="chip-btn" data-action="signupreq-link" data-target="'+r.id+'">연결</button>';
-      return '<tr><td>'+typeLabel+'</td><td>'+esc(r.contact)+'</td><td>'+esc(when)+'</td><td>'+idCell+'</td></tr>';
+      return '<tr><td>'+typeLabel+'</td><td>'+esc(r.contact)+'</td><td>'+esc(r.desired_username||'-')+'</td><td>'+esc(r.nickname||'-')+'</td><td>'+esc(when)+'</td><td>'+idCell+'</td></tr>';
     }).join('');
-    out.innerHTML = '<table class="dtable"><thead><tr><th>구분</th><th>연락처</th><th>남긴 날짜</th><th>만든 아이디</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    out.innerHTML = '<table class="dtable"><thead><tr><th>구분</th><th>연락처</th><th>희망 아이디</th><th>감자명</th><th>남긴 날짜</th><th>만든 아이디</th></tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
   }

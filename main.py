@@ -406,6 +406,19 @@ def init_db() -> None:
     except Exception:
         if USE_PG:
             conn.rollback()
+    # signup_requests에 희망 아이디·감자명 컬럼 추가 (마이그레이션)
+    try:
+        db_execute(conn, "ALTER TABLE signup_requests ADD COLUMN desired_username TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+    try:
+        db_execute(conn, "ALTER TABLE signup_requests ADD COLUMN nickname TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
     if MASTER_EMP_ID == "master" and MASTER_CODE == "1234":
         print("[경고] 마스터 계정이 기본값(사번 master / 비밀번호 1234)입니다. 로그인 후 비밀번호를 바꾸세요.")
     conn.close()
@@ -1128,19 +1141,25 @@ def user_change_password(body: UserPasswordIn, authorization: str = Header(defau
 class SignupRequestIn(BaseModel):
     contact: str
     contact_type: str = "kakao"  # "kakao" | "phone"
+    desired_username: str
+    nickname: str = ""
     note: str = ""
 
 
 @app.post("/api/signup-request")
 def create_signup_request(body: SignupRequestIn):
+    import re as _re
     contact = body.contact.strip()[:100]
     contact_type = body.contact_type if body.contact_type in ("kakao", "phone") else "kakao"
+    desired_username = body.desired_username.strip().lower()[:20]
     if not contact:
         raise HTTPException(status_code=400, detail="연락처를 입력해주세요.")
+    if not desired_username or len(desired_username) < 2 or not _re.match(r"^[a-z0-9_]+$", desired_username):
+        raise HTTPException(status_code=400, detail="원하는 아이디는 영문 소문자/숫자/_ 2자 이상이어야 해요.")
     conn = get_db()
     now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
-    db_execute(conn, "INSERT INTO signup_requests (contact, contact_type, note, created_at) VALUES (?,?,?,?)",
-               (contact, contact_type, body.note.strip()[:500], now))
+    db_execute(conn, "INSERT INTO signup_requests (contact, contact_type, desired_username, nickname, note, created_at) VALUES (?,?,?,?,?,?)",
+               (contact, contact_type, desired_username, body.nickname.strip()[:20], body.note.strip()[:500], now))
     conn.commit()
     conn.close()
     return {"ok": True}
