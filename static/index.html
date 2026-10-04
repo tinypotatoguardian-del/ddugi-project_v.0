@@ -1997,6 +1997,7 @@ function renderSheet(){
     sheet.innerHTML = renderAccountsSection();
     renderAccounts();
     renderSignupRequests();
+    renderUserList();
   } else if(sec.special==='taxonomy'){
     sheet.innerHTML = renderTaxonomySection();
     renderTaxonomy();
@@ -2213,7 +2214,27 @@ function renderAccountsSection(){
       '<button type="button" class="addbtn" data-action="user-create">계정 만들기</button>'+
     '</div>'+
     '<div id="userCreateMsg" style="font-size:12px;min-height:16px;"></div>'+
+    '<div id="userListBody" style="margin-top:14px">불러오는 중…</div>'+
   '</div>';
+}
+async function renderUserList(){
+  const out = document.getElementById('userListBody');
+  if(!out) return;
+  try{
+    const res = await fetch('/api/admin/users', {headers: authHeaders()});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const list = await res.json();
+    if(!list.length){ out.innerHTML = '<div class="hint">아직 만든 계정이 없어요.</div>'; return; }
+    const rows = list.map(u=>{
+      const when = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ko-KR') : '-';
+      const lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('ko-KR') : '로그인 안 함';
+      const pwBadge = u.mustChangePassword ? '<span style="color:var(--danger);font-size:11px;">⚠ 초기 비번 그대로</span>' : '<span style="color:var(--ok);font-size:11px;">✓ 변경됨</span>';
+      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+pwBadge+'</td><td>'+u.seedCount+'</td><td>'+esc(lastLogin)+'</td><td>'+esc(when)+'</td></tr>';
+    }).join('');
+    out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>닉네임</th><th>비번 상태</th><th>씨앗 수</th><th>마지막 로그인</th><th>만든 날짜</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }catch(e){
+    out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
+  }
 }
 async function renderSignupRequests(){
   const out = document.getElementById('signupReqBody');
@@ -5625,6 +5646,7 @@ document.addEventListener('click', function(e){
         idEl.value=''; nickEl.value='';
         msg.style.color='var(--ok)';
         msg.textContent = '만들었어요 → 아이디: '+d.username+' / 비번: '+d.password+' (이대로 카톡으로 보내주세요. 최초 로그인하면 바꾸라고 떠요)';
+        renderUserList();
       } else {
         msg.style.color='var(--danger)'; msg.textContent = 'HTTP '+res.status+': '+(d.detail||'오류가 발생했어요.');
       }
