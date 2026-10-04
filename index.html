@@ -961,7 +961,10 @@ async function loadRemote(){
     if(res.status===404) return;
     if(!res.ok) return;
     const d = await res.json();
-    if(d.fields && typeof d.fields==='object') state.fields = d.fields;
+    if(d.fields && typeof d.fields==='object'){
+      // 로컬에 있는 값을 서버가 덮어쓰지 않도록 merge (로컬 우선)
+      state.fields = Object.assign({}, d.fields, state.fields);
+    }
     state.locked = !!d.locked;
     state.completed = !!d.completed;
     gateReview = d.gateReview || null;
@@ -4435,7 +4438,7 @@ window.introCopyPrompt = function(){
 };
 
 window.introAutoFill = function(){
-  const raw = (document.getElementById('introAIResult')||{}).value||'';
+  const raw = (document.getElementById('introAIResult')||{}).value || getV('intro_ai_result','');
   const msg = document.getElementById('introFillMsg');
   if(!raw.trim()){
     if(msg){ msg.style.display='block'; msg.style.background='rgba(239,68,68,.1)'; msg.style.color='#ef4444'; msg.textContent='AI 답변을 먼저 붙여넣어줘!'; }
@@ -4570,7 +4573,7 @@ function renderIntroSection(){
       AI가 이런 형식으로 답할 거야 →
       <code style="display:block;margin-top:4px;font-size:11px;line-height:1.8;color:var(--ink);">1. 씨앗 이름: 보고서 취합 자동화&#10;2. 업무 목적: 매주 5개 팀 자료를 합쳐 보고서 작성&#10;3. 현재 프로세스: 파일 수신 → 수동 취합 → 보고서 작성</code>
     </div>
-    <textarea id="introAIResult" placeholder="2번 프롬프트로 받은 AI 답변을 여기에 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
+    <textarea id="introAIResult" data-bind="intro_ai_result" placeholder="2번 프롬프트로 받은 AI 답변을 여기에 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;">${esc(getV('intro_ai_result',''))}</textarea>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
       <button type="button" id="introFillBtn" onclick="introAutoFill()" disabled style="padding:8px 20px;border-radius:8px;border:none;background:var(--line);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;transition:all .2s;">🌱 씨앗 정의서 자동채우기</button>
       <span style="font-size:12px;color:var(--ink-soft);">AI가 채운 거니까 맞는지 꼭 확인해줘</span>
