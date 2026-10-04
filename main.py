@@ -1348,6 +1348,27 @@ def admin_create_user(body: AdminCreateUserIn, x_admin_token: str = Header(defau
     conn.close()
     return {"ok": True, "username": username, "password": username, "userId": uid}
 
+
+class AdminDeleteUserIn(BaseModel):
+    password: str  # 관리자 본인 비밀번호 재확인
+
+
+@app.delete("/api/admin/users/{user_id}")
+def admin_delete_user(user_id: str, body: AdminDeleteUserIn, x_admin_token: str = Header(default="")):
+    """학생/구직자 계정 삭제. 되돌릴 수 없는 작업이라 관리자 본인 비밀번호를 다시 확인한다.
+    (씨앗 데이터는 지우지 않고 남겨둔다 — user_id가 끊어질 뿐)"""
+    sess = require_admin_token(x_admin_token, {"admin", "master"})
+    require_role(sess["emp_id"], body.password, {"admin", "master"})  # 틀리면 여기서 403/429
+    conn = get_db()
+    q = "DELETE FROM users WHERE id=%s" if USE_PG else "DELETE FROM users WHERE id=?"
+    cur = db_execute(conn, q, (user_id,))
+    conn.commit()
+    conn.close()
+    if not cur.rowcount:
+        raise HTTPException(status_code=404, detail="계정을 찾을 수 없습니다.")
+    return {"ok": True}
+
+
 # ── 방명록 (guestbook) ──────────────────────────────────────────────
 class GuestbookIn(BaseModel):
     nickname: str = ""

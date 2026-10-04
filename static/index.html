@@ -2256,9 +2256,10 @@ async function renderUserList(){
       const when = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ko-KR') : '-';
       const lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('ko-KR') : '로그인 안 함';
       const pwBadge = u.mustChangePassword ? '<span style="color:var(--danger);font-size:11px;">⚠ 초기 비번 그대로</span>' : '<span style="color:var(--ok);font-size:11px;">✓ 변경됨</span>';
-      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+pwBadge+'</td><td>'+u.seedCount+'</td><td>'+esc(lastLogin)+'</td><td>'+esc(when)+'</td></tr>';
+      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+pwBadge+'</td><td>'+u.seedCount+'</td><td>'+esc(lastLogin)+'</td><td>'+esc(when)+'</td>'+
+        '<td><button type="button" class="chip-btn" data-action="user-delete" data-target="'+u.id+'|'+esc(u.username||'')+'">삭제</button></td></tr>';
     }).join('');
-    out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>닉네임</th><th>비번 상태</th><th>씨앗 수</th><th>마지막 로그인</th><th>만든 날짜</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>닉네임</th><th>비번 상태</th><th>씨앗 수</th><th>마지막 로그인</th><th>만든 날짜</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
   }
@@ -5653,6 +5654,16 @@ document.addEventListener('click', function(e){
         if(r.ok){ idEl.value=''; nameEl.value=''; codeEl.value=''; msg.textContent=''; renderAccounts(); }
         else{ msg.textContent = await adminErrorText(r); }
       }).catch(()=>{ msg.textContent = '서버에 연결할 수 없어요.'; });
+    return;
+  }
+  if(action==='user-delete'){
+    const [uid, uname] = target.split('|');
+    if(!confirm('아이디 '+uname+' 계정을 지울까요? 되돌릴 수 없어요. (씨앗 데이터는 안 지워지고 남아요)')) return;
+    const pw = prompt('본인 확인을 위해 관리자 비밀번호를 입력해주세요.');
+    if(pw===null || pw===''){ return; }
+    fetch('/api/admin/users/'+encodeURIComponent(uid), {method:'DELETE', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({password:pw})})
+      .then(async r=>{ if(r.ok) renderUserList(); else alert(await adminErrorText(r)); })
+      .catch(()=>alert('서버에 연결할 수 없어요.'));
     return;
   }
   if(action==='signupreq-link'){
