@@ -4578,14 +4578,19 @@ function renderIntroSection(){
     <div id="introFillMsg" style="display:none;margin-top:10px;font-size:12px;padding:10px 14px;border-radius:8px;line-height:1.7;"></div>
   </div>
 
-</div>
-<!-- 자동채우기 완료 토스트 -->
-<div id="introToast" style="display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:14px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);align-items:center;gap:12px;">
-  <span>🌱 씨앗 정의서에 채워뒀어!</span>
-  <button type="button" onclick="introGoToSeed()" style="padding:6px 14px;border-radius:8px;border:none;background:#fff;color:var(--ok);font-size:13px;font-weight:700;cursor:pointer;">01 씨앗 심기 →</button>
-  <button type="button" onclick="introGoToDiscover()" style="padding:6px 14px;border-radius:8px;border:2px solid #fff;background:transparent;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">00 씨앗 찾기 →</button>
-  <button type="button" onclick="document.getElementById('introToast').style.display='none'" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px;">✕</button>
-</div>
+</div>`;
+
+  // 토스트는 body에 직접 주입 (함수 외부 HTML 오염 방지)
+  if(!document.getElementById('introToast')){
+    const t = document.createElement('div');
+    t.id = 'introToast';
+    t.style.cssText = 'display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:14px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);align-items:center;gap:12px;';
+    t.innerHTML = '<span>🌱 씨앗 정의서에 채워뒀어!</span>'+
+      '<button type="button" onclick="introGoToSeed()" style="padding:6px 14px;border-radius:8px;border:none;background:#fff;color:var(--ok);font-size:13px;font-weight:700;cursor:pointer;margin-left:12px;">01 씨앗 심기 →</button>'+
+      '<button type="button" onclick="introGoToDiscover()" style="padding:6px 14px;border-radius:8px;border:2px solid #fff;background:transparent;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-left:8px;">00 씨앗 찾기 →</button>'+
+      '<button type="button" onclick="document.getElementById(\'introToast\').style.display=\'none\'" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px;margin-left:8px;">✕</button>';
+    document.body.appendChild(t);
+  }
 
   return '<div class="frame intro">'+editBtn+autoFillHtml+body+
     (introEditing ? '' : '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>'+
