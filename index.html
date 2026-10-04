@@ -2291,18 +2291,56 @@ async function renderDashboard(){
     const savedN = list.filter(v=>(v.status||'작성중')==='저장됨').length;
     const wipN = list.length - doneN - savedN;
     const bar = (n,cls) => n ? '<span class="dashbar-seg '+cls+'" style="width:'+(100*n/list.length)+'%"></span>' : '';
+
+    // 섹션 진행 단계 레이블 (채워진 비율 기준)
+    const STAGE_LABELS = [
+      {max:0,   label:'미시작',      color:'var(--ink-soft)'},
+      {max:20,  label:'🌱 시작',     color:'#94a3b8'},
+      {max:40,  label:'📝 초반',     color:'var(--blueprint)'},
+      {max:70,  label:'🔥 진행 중',  color:'#f59e0b'},
+      {max:99,  label:'🏁 마무리',   color:'#10b981'},
+      {max:100, label:'✅ 완료',     color:'var(--ok)'},
+    ];
+    function stageLabel(pct){
+      const s = STAGE_LABELS.find(l=>pct<=l.max) || STAGE_LABELS[STAGE_LABELS.length-1];
+      return '<span style="color:'+s.color+';font-weight:600;">'+s.label+'</span>';
+    }
+
+    // 섹션별 진행 현황 막대
+    function miniBar(filled, total){
+      if(!total) return '-';
+      const pct = Math.round(100*filled/total);
+      return '<div style="display:flex;align-items:center;gap:6px;">'+
+        '<div style="width:80px;height:6px;background:var(--line-soft);border-radius:3px;overflow:hidden;">'+
+          '<div style="width:'+pct+'%;height:100%;background:var(--blueprint);border-radius:3px;transition:width .3s;"></div>'+
+        '</div>'+
+        '<span style="font-size:11px;color:var(--ink-soft);">'+filled+'/'+total+'</span>'+
+      '</div>';
+    }
+
     const rows = list.map(v=>{
       const total = v.totalSections || TOTAL_SECTIONS;
       const filled = v.filledCount || 0;
       const pct = total ? Math.round(100*filled/total) : 0;
-      const when = v.updatedAt ? new Date(v.updatedAt).toLocaleString('ko-KR') : '-';
+      const when = v.updatedAt ? new Date(v.updatedAt).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
       const status = v.status || '작성중';
-      const statusHtml = status==='완료' ? '✅ 완료' : (status==='저장됨' ? '🔒 저장됨' : '✏️ 작성중');
-      const learn = lvLabel(aiLevel(v.lpDone||[]));
-      const rec = v.gateReview && v.gateReview.decision==='인정' ? lvLabel(gateLevelNum(v.gateReview.level)) : '없음';
-      const extra = v._extraCount>0 ? '<br><small>(그 외 '+v._extraCount+'건 더 있음)</small>' : '';
-      return '<tr><td>'+esc(v.team||'-')+'</td><td>'+esc(v.name||'-')+extra+'</td><td>'+statusHtml+'</td><td>'+filled+' / '+total+' ('+pct+'%)</td><td>'+esc(learn)+'</td><td>'+esc(rec)+'</td><td>'+esc(when)+'</td></tr>';
+      const statusBadge = status==='완료'
+        ? '<span style="padding:2px 8px;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-size:11px;">✅ 완료</span>'
+        : status==='저장됨'
+        ? '<span style="padding:2px 8px;border-radius:999px;background:var(--panel);color:var(--ink-soft);font-size:11px;">🔒 저장됨</span>'
+        : '<span style="padding:2px 8px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-size:11px;">✏️ 작성중</span>';
+      const seedName = v.task && v.task.seedName ? esc(v.task.seedName) : (v.name ? esc(v.name) : '<span style="color:var(--ink-soft);">미입력</span>');
+      const rec = v.gateReview && v.gateReview.decision==='인정' ? lvLabel(gateLevelNum(v.gateReview.level)) : '-';
+      return '<tr>'+
+        '<td style="font-weight:600;">'+seedName+'</td>'+
+        '<td>'+statusBadge+'</td>'+
+        '<td>'+miniBar(filled, total)+'</td>'+
+        '<td>'+stageLabel(status==='완료'?100:pct)+'</td>'+
+        '<td style="font-size:11px;color:var(--ink-soft);">'+esc(when)+'</td>'+
+        '<td style="font-size:11px;color:var(--ink-soft);">'+esc(rec)+'</td>'+
+      '</tr>';
     }).join('');
+
     const reqs = list.filter(v=>v.gate && v.gate.level && v.gate.aiResult);
     const gateRows = reqs.map(v=>{
       const g = v.gate, r = v.gateReview && v.gateReview.level===g.level ? v.gateReview : null;
@@ -2316,17 +2354,21 @@ async function renderDashboard(){
         '<div class="fhint"><b>AI 1차 판정 (AI 작성)</b></div><pre class="gloss-code">'+esc(g.aiResult)+'</pre></details></td></tr>';
     }).join('');
     const gateWaitN = reqs.filter(v=>!(v.gateReview && v.gateReview.level===v.gate.level)).length;
-    out.innerHTML = '<div class="lvcard">'+
-        '<div class="lvnow">참여 인원 <b>'+list.length+'</b>명'+(gateWaitN ? ' <span>· Gate 확인 대기 '+gateWaitN+'건</span>' : '')+'</div>'+
+    out.innerHTML =
+      '<div class="lvcard">'+
+        '<div class="lvnow">등록된 씨앗 <b>'+list.length+'</b>개'+(gateWaitN ? ' <span>· Gate 확인 대기 '+gateWaitN+'건</span>' : '')+'</div>'+
         '<div class="dashbar">'+bar(doneN,'done')+bar(savedN,'saved')+bar(wipN,'wip')+'</div>'+
-        '<div class="lvnext">✅ 완료 '+doneN+'명 · 🔒 저장됨 '+savedN+'명 · ✏️ 작성중 '+wipN+'명</div>'+
+        '<div class="lvnext">✅ 완료 '+doneN+' · 🔒 저장됨 '+savedN+' · ✏️ 작성중 '+wipN+'</div>'+
       '</div>'+
-      '<h3 style="margin:0 0 8px">Gate 확인 요청</h3>'+
-      (reqs.length ? '<div class="hint">결과물이 Gate 질문을 충족하는지 직접 확인하고 인정하세요. AI 판정은 참고용입니다.</div>'+
+      (reqs.length ?
+        '<h3 style="margin:16px 0 8px">Gate 확인 요청</h3>'+
+        '<div class="hint">결과물이 Gate 질문을 충족하는지 직접 확인하고 인정하세요.</div>'+
         '<table class="dtable"><thead><tr><th>이름</th><th>씨앗</th><th>신청 레벨</th><th>AI 1차</th><th>관리자 확인</th><th></th></tr></thead><tbody>'+gateRows+'</tbody></table>'
-        : '<div class="hint">아직 확인 요청이 없어요.</div>')+
-      '<h3 style="margin:22px 0 8px">작성 현황</h3>'+
-      '<table class="dtable"><thead><tr><th>팀</th><th>이름</th><th>상태</th><th>진척도</th><th>학습 레벨</th><th>인정 레벨</th><th>마지막 저장</th></tr></thead><tbody>'+rows+'</tbody></table>';
+        : '')+
+      '<h3 style="margin:16px 0 8px">씨앗 진행 현황</h3>'+
+      '<table class="dtable"><thead><tr>'+
+        '<th>씨앗 이름</th><th>상태</th><th>입력 현황</th><th>단계</th><th>마지막 저장</th><th>인정 레벨</th>'+
+      '</tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
   }

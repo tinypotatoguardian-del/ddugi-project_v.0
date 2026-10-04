@@ -483,11 +483,17 @@ def list_submissions(x_emp_id: str = Header(default=""), x_emp_code: str = Heade
         "SELECT * FROM submissions ORDER BY updated_at DESC"
     )
     conn.close()
+    # doc_id 기준 중복 제거 (이미 PRIMARY KEY라 없음)
+    # user_id 기준 최신 1개만 — 같은 유저가 여러 기기에서 접근해도 최신 1개만
+    seen_users = set()
     out = []
     for r in rows:
+        uid = r.get("user_id") or r["doc_id"]  # 로그인 전이면 doc_id 사용
+        if uid in seen_users:
+            continue
+        seen_users.add(uid)
         item = row_to_summary(r)
         f = json.loads(r["fields"] or "{}")
-        # 13 효과 확인의 Gate 신청 내용 (관리자 확인용)
         item["gate"] = {
             "level": f.get("g_level", ""),
             "task": f.get("s1_name", ""),
@@ -495,9 +501,8 @@ def list_submissions(x_emp_id: str = Header(default=""), x_emp_code: str = Heade
             "aiResult": f.get("g_ai_result", ""),
         }
         item["lpDone"] = f.get("lp_done", [])
-        # 과제 목록 화면용: 진행 단계는 프런트에서 계산 (실제로 채워졌는지 bool만 넘김)
         item["task"] = {
-            "name": f.get("s1_name", ""),
+            "seedName": f.get("s1_name", ""),
             "cat": f.get("s1_cat", ""),
             "target": f.get("s1_target", []),
             "hasVerify": bool(str(f.get("verify_result", "")).strip()),
