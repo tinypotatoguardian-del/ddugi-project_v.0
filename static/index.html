@@ -1463,7 +1463,8 @@ function getV(id, def){ return (id in state.fields) ? state.fields[id] : def; }
 function setV(id, val){ state.fields[id]=val; persist(); }
 window.getV = getV;
 window.setV = setV;
-window._saveConfirmHtml = function(){ return saveConfirmHtml(); };
+window.showModal = showModal;
+window.hideModal = hideModal;
 window._saveConfirmHtml = saveConfirmHtml;
 // 외부(window) 접근용
 window._setV = function(id, val){ setV(id, val); };
