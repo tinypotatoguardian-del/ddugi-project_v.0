@@ -434,7 +434,9 @@ def revoke_admin_sessions(emp_id: str):
 def require_admin_token(token: str, allowed: set) -> dict:
     sess = ADMIN_SESSIONS.get(token or "")
     if not sess:
-        raise HTTPException(status_code=401, detail="로그인이 필요해요. 다시 로그인해주세요.")
+        # 프론트엔드가 "다시 로그인해주세요" 처리를 403 기준으로 하고 있어서 맞춰준다
+        # (서버 재시작하면 메모리에 있던 세션이 전부 날아가 토큰이 무효해지는 경우도 여기로 옴)
+        raise HTTPException(status_code=403, detail="로그인이 필요해요. 다시 로그인해주세요.")
     if sess["role"] not in allowed:
         raise HTTPException(status_code=403, detail="이 계정은 이 화면을 볼 권한이 없습니다.")
     return sess
