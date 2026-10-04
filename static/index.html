@@ -5606,17 +5606,29 @@ document.addEventListener('click', function(e){
     const msg = document.getElementById('userCreateMsg');
     const username=idEl.value.trim().toLowerCase(), nickname=nickEl.value.trim();
     if(!username){ msg.style.color='var(--danger)'; msg.textContent='아이디를 입력하세요.'; return; }
-    fetch('/api/admin/users/create', {method:'POST', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({username, nickname})})
-      .then(async r=>{
-        const d = await r.json();
-        if(r.ok){
-          idEl.value=''; nickEl.value='';
-          msg.style.color='var(--ok)';
-          msg.textContent = '만들었어요 → 아이디: '+d.username+' / 비번: '+d.password+' (이대로 카톡으로 보내주세요. 최초 로그인하면 바꾸라고 떠요)';
-        } else {
-          msg.style.color='var(--danger)'; msg.textContent = d.detail||'오류가 발생했어요.';
-        }
-      }).catch(()=>{ msg.style.color='var(--danger)'; msg.textContent = '서버에 연결할 수 없어요.'; });
+    msg.style.color='var(--ink-soft)'; msg.textContent='만드는 중…';
+    (async()=>{
+      let res;
+      try{
+        res = await fetch('/api/admin/users/create', {method:'POST', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({username, nickname})});
+      }catch(e){
+        msg.style.color='var(--danger)'; msg.textContent = '네트워크 요청 자체가 실패했어요: '+(e&&e.message||e);
+        return;
+      }
+      let d;
+      try{ d = await res.json(); }
+      catch(e){
+        msg.style.color='var(--danger)'; msg.textContent = '서버 응답을 해석 못했어요 (HTTP '+res.status+'). 서버 로그를 봐야 할 것 같아요.';
+        return;
+      }
+      if(res.ok){
+        idEl.value=''; nickEl.value='';
+        msg.style.color='var(--ok)';
+        msg.textContent = '만들었어요 → 아이디: '+d.username+' / 비번: '+d.password+' (이대로 카톡으로 보내주세요. 최초 로그인하면 바꾸라고 떠요)';
+      } else {
+        msg.style.color='var(--danger)'; msg.textContent = 'HTTP '+res.status+': '+(d.detail||'오류가 발생했어요.');
+      }
+    })();
     return;
   }
   if(action==='acct-del'){
