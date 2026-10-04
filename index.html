@@ -878,9 +878,11 @@ const SECTIONS = [
 const TOTAL_SECTIONS = SECTIONS.filter(s=>!s.special && !s.disabled).length;
 // 사이드바 상위 메뉴: 그룹의 첫 섹션 id → 그룹 이름
 const NAV_GROUPS = {
-  discover:'A. 씨앗 정의서',
-  s16:'B. 가지 그리기 (설계)',
-  s12:'C. 열매와 수확 (결과)'
+  intro:   '🚪 입구',
+  mydash:  '☆ 나의 공간',
+  example: 'A. 씨앗 정의서',
+  s16:     'B. 가지 그리기 (설계)',
+  s12:     'C. 열매와 수확 (결과)'
 };
 // 한 번에 다 보이면 부담스러우니, 이전 단계를 손대기(비어있지 않기) 전까지는 사이드바에서 음영 처리만 함 (클릭은 막지 않음). admin/master는 항상 선명하게.
 const GATE_CHAIN = ['s1','s3','verify','redefine','diag','s7','s9','s10','s11','s12','s13','s14','s15','s17'];
@@ -4350,6 +4352,7 @@ function renderLandingSection(){
 // ── 인트로 자동채우기 기능 ──────────────────────────────
 window.introGenPrompt = function(){
   const text = (document.getElementById('introFreeText')||{}).value||'';
+  if(text) setV('intro_freetext', text);
   if(!text.trim()){ alert('먼저 상황을 적어줘!'); return; }
   const prompt = `아래 상황을 분석해서 항목을 채워줘.
 반드시 아래 형식 그대로만 답해줘. 번호와 레이블은 그대로 두고 콜론 뒤만 채워줘.
@@ -4469,7 +4472,7 @@ function renderIntroSection(){
       <span style="font-size:14px;font-weight:700;color:var(--ink);">뭘 만들고 싶은지 말해봐</span>
       <span style="font-size:12px;color:var(--ink-soft);">막막한 상황, 해결하고 싶은 문제 — 뭐든</span>
     </div>
-    <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:80px;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;"></textarea>
+    <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:80px;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;" oninput="setV('intro_freetext',this.value)">${esc(getV('intro_freetext',''))}</textarea>
     <button type="button" onclick="introGenPrompt()" style="margin-top:10px;padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📋 프롬프트 만들기 →</button>
   </div>
 
