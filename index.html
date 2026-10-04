@@ -2385,6 +2385,9 @@ function updateRulerAndNav(){
   // B·C 그룹은 기본 접힘 (details open 여부)
   const DEFAULT_OPEN = new Set(); // 비어있으면 A그룹(씨앗정의서)만 open
 
+  // 로그인 없이 접근 가능한 special 섹션
+  const LOGIN_FREE_SPECIALS = new Set(['landing','curriculum','aitools','promptkit','intro','discover','mydash','feedback','guestbook','roadmap','export']);
+
   function renderNavItem(s){
     const active = s.id===state.cur;
     const filled = !s.special && sectionFilled(s);
@@ -2396,6 +2399,17 @@ function updateRulerAndNav(){
       }
       return '<li><button type="button" class="navbtn sub" disabled>'+
         '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="ex-note" style="margin-left:auto">'+esc(s.disabledNote||'준비 중')+'</span></button></li>';
+    }
+    // 로그인 필요 섹션 — 보이지만 클릭 불가 + 🔒
+    const needsLogin = !currentUser && !isAdmin && !LOGIN_FREE_SPECIALS.has(s.special);
+    if(needsLogin){
+      const isGrpHead = !!NAV_GROUPS[s.id];
+      const m = isGrpHead ? NAV_GROUPS[s.id].match(/^([A-Z])\.\s*(.+)$/) : null;
+      const num = m ? m[1] : s.num;
+      const label = m ? m[2] : s.title;
+      return '<li><button type="button" class="navbtn'+(isGrpHead?'':' sub')+' dim" disabled style="opacity:0.4;cursor:not-allowed;" title="로그인 후 이용 가능해요">'+
+        '<span class="num">'+esc(num)+'</span>'+esc(label)+'<span style="margin-left:auto;font-size:10px;">🔒</span></button></li>'+
+        (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
     }
     const dim = isSectionLocked(s);
     const st = sectionStatus(s);
@@ -5423,6 +5437,21 @@ document.addEventListener('click', function(e){
     if(target==='accounts' && !isMaster) return;
     if(target==='visits' && !isMaster) return;
     { const tsec = SECTIONS.find(s=>s.id===target); if(tsec && tsec.disabled && !isMaster) return; }
+    // 로그인 필요 섹션 — 비로그인 시 로그인 모달 유도
+    const LOGIN_FREE = new Set(['landing','curriculum','aitools','promptkit','intro','discover','mydash','feedback','guestbook','roadmap','export']);
+    const tsec2 = SECTIONS.find(s=>s.id===target);
+    if(!currentUser && !isAdmin && tsec2 && !LOGIN_FREE.has(tsec2.special)){
+      showModal('<div style="text-align:center;padding:20px 0;">'+
+        '<div style="font-size:32px;margin-bottom:8px;">🔒</div>'+
+        '<h3 style="margin:0 0 8px;">로그인이 필요해요</h3>'+
+        '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">씨앗 정의서는 로그인 후 이용할 수 있어요.<br>초대코드가 있으면 바로 가입할 수 있어요.</p>'+
+        '<div style="display:flex;gap:8px;justify-content:center;">'+
+          '<button type="button" onclick="hideModal();openAuthModal(\'login\')" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;">로그인</button>'+
+          '<button type="button" onclick="hideModal();openAuthModal(\'register\')" style="padding:8px 20px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;cursor:pointer;">회원가입</button>'+
+        '</div>'+
+      '</div>');
+      return;
+    }
     state.cur = target;
     persist();
     renderSheet();
