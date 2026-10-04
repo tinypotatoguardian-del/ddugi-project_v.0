@@ -721,7 +721,7 @@ const SECTIONS = [
 {id:'intro',   num:'',   title:'마음의 방 입구', special:'intro'},
 {id:'mydash',  num:'☆',  title:'나의 마음의 방', special:'mydash'},
 {id:'example', num:'EX', title:'먼저 온 포테이토', special:'example'},
-{id:'discover', num:'00', title:'씨앗 찾기 (선택)', special:'discover'},
+{id:'discover', num:'00', title:'프롬프트 연습장', special:'discover'},
 {id:'s1', num:'01', title:'씨앗 심기 · 지금의 일상', fields:[
   HINT('당신이 바꾸고 싶은 업무는 무엇인가요? 01~02는 AI에게 묻기 전에 직접 생각해서 적는 단계입니다.'),
   SUBHEAD('기본 정보'),
@@ -4673,26 +4673,104 @@ function renderPromptKitSection(){
 }
 
 function renderDiscoverSection(){
-  return '<div class="frame"><h2>00 · AI로 후보 찾기</h2><div class="sub">선택 · 다룰 문제가 아직 명확하지 않을 때</div>'+
-    '<div class="hint">업무가 아직 뭐가 문제인지 잘 모르겠다면 여기서 시작하세요. 자유롭게 업무를 설명하면 AI가 개선 후보 2~3개를 찾아주고, 각 후보가 <b>정말 AI가 필요한지</b>까지 함께 판단합니다. 이미 다룰 문제가 명확하다면 이 단계는 건너뛰고 바로 01로 가도 됩니다.</div>'+
-    '<div class="field"><label>1. 지금 하시는 업무를 자유롭게 설명해주세요</label>'+
-      '<div class="fhint">정답을 쓰는 게 아니라, 있는 그대로 적으면 됩니다. 무슨 업무를 하는지, 뭐가 번거롭거나 아쉬운지.</div>'+
-      '<textarea data-bind="discover_input" style="min-height:140px" placeholder="예: 매주 여러 시스템에서 자료를 찾아 확인하고, 정리해서 관련 부서에 메일로 공유하고 있습니다. 매번 찾는 게 번거롭고 놓칠 때도 있습니다.">'+esc(getV('discover_input',''))+'</textarea>'+
+  const PROBLEMS = {
+    work: {
+      label: '💼 보고서 자동 취합',
+      desc: '매주 5개 팀에서 엑셀 받아서 합치는 데 2시간씩 걸려요.',
+      a: '보고서 자동화 해줘',
+      b: '매주 5개 팀에서 엑셀 파일을 받아서 하나로 합치는 작업을 자동화하는 방법 알려줘. IT팀 없이 혼자 할 수 있는 방법으로.',
+      c: '역할: 업무 자동화 전문가\n상황: 매주 월요일마다 5개 팀(영업/마케팅/운영/CS/재무)에서 각기 다른 형식의 엑셀을 받아 하나의 보고서로 합침. 수작업으로 2시간 소요.\n제약: IT팀 지원 없음, 파이썬 모름, Excel/Google Sheets만 가능\n요청: 지금 당장 적용 가능한 방법 3가지를 난이도 순으로 알려줘. 각각 예상 시간 절감 효과도 포함해줘.',
+      diffA: '너무 모호 → AI가 파이썬, API, 서버까지 제안함. 실제로 못 씀.',
+      diffB: '상황이 생겨서 실용적인 답 나옴. 근데 제약조건이 없어서 못 쓰는 방법도 섞임.',
+      diffC: '역할 + 상황 + 제약 + 요청 형식. 바로 쓸 수 있는 답만 나옴.'
+    },
+    jobhunt: {
+      label: '📝 자소서 피드백',
+      desc: '자소서 쓰고 AI한테 피드백 받고 싶어요.',
+      a: '내 자소서 피드백해줘',
+      b: '아래 자소서 한 문단을 HR 담당자 입장에서 봐줘. 애매하거나 구체적이지 않은 부분 짚어주고, 어떻게 고치면 좋을지도 알려줘.\n\n[자소서 붙여넣기]',
+      c: '역할: 대기업 HR 담당자 (10년 경력)\n직무: 마케팅 기획 신입\n평가 기준: 구체성, 수치, 차별성, 직무 연관성\n\n아래 자소서를 읽고:\n1. 가장 약한 문장 하나 골라서 이유 설명\n2. 강화할 수 있는 구체적 내용 제안\n3. 이 문단에서 빠진 핵심 정보 알려줘\n\n[자소서 붙여넣기]',
+      diffA: '피드백이 너무 일반적. "더 구체적으로 쓰세요" 수준에서 끝남.',
+      diffB: '관점(HR)을 줘서 실용적인 피드백 나옴. 근데 평가 기준이 없어서 두루뭉술함.',
+      diffC: '역할 + 직무 + 평가기준 + 질문 구조화. 바로 고칠 수 있는 피드백 나옴.'
+    },
+    study: {
+      label: '🎓 수행평가 주제 선정',
+      desc: '수행평가 주제를 못 정하겠어요. 뭐부터 해야 할지 모르겠어요.',
+      a: '수행평가 주제 추천해줘',
+      b: '고2 사회문화 수행평가야. 주제를 자유롭게 정할 수 있어. 내가 요즘 관심 있는 건 SNS랑 청소년 정신건강인데, 탐구할 수 있는 주제 3개 추천해줘.',
+      c: '역할: 수행평가 멘토\n과목: 사회문화 (고2)\n조건: 설문조사 가능, 통계 자료 활용 가능, 4주 안에 완성\n관심 주제: SNS 사용과 청소년 정신건강\n\n아래 형식으로 주제 3개 제안해줘:\n- 주제명\n- 탐구 가능한 이유 (자료 수집 가능성)\n- 예상 결론 방향\n- 함정 (이 주제의 어려운 점)',
+      diffA: '너무 광범위. AI가 아무 주제나 나열함. 실제로 쓸 수 없는 것도 많음.',
+      diffB: '관심사를 줘서 관련 주제 나옴. 근데 실현 가능성 확인 안 됨.',
+      diffC: '조건 + 형식 지정으로 바로 쓸 수 있는 주제만 나옴. 함정까지 알 수 있음.'
+    }
+  };
+
+  const sel = window._discoverProblem || 'work';
+  const P = PROBLEMS[sel];
+
+  function tabBtn(id, label){
+    const a = sel===id;
+    return '<button type="button" onclick="window._discoverProblem=\''+id+'\';window._renderSheet();" '+
+      'style="padding:8px 14px;border-radius:8px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';'+
+      'background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';'+
+      'font-size:13px;font-weight:'+(a?700:400)+';cursor:pointer;">'+label+'</button>';
+  }
+
+  const userKey = 'discover_custom_'+sel;
+  const userPrompt = getV(userKey, P.b);
+
+  return '<div class="frame">'+
+    '<h2>00 · 프롬프트 연습장</h2>'+
+    '<div class="sub">같은 문제, 다른 프롬프트 — 어떻게 쓰냐에 따라 AI 답변이 이렇게 달라져요</div>'+
+
+    // 문제 선택
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">'+
+      tabBtn('work','💼 보고서 취합')+
+      tabBtn('jobhunt','📝 자소서 피드백')+
+      tabBtn('study','🎓 수행평가 주제')+
     '</div>'+
-    '<div class="field" style="margin-top:18px"><label>2. 후보 찾기 요청문</label><div class="fhint">복사해서 <b>AI</b>에 붙여넣으세요.</div></div>'+
-    '<textarea id="discoverOut" class="exportbox" readonly></textarea>'+
-    '<div class="exportbar"><button type="button" data-copy="discoverOut">요청문 복사</button><span class="copymsg" data-for="discoverOut"></span></div>'+
-    '<div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">⚠️ AI에 붙여넣으면 해당 AI 회사 서버로 전송됩니다. 민감한 정보는 제거하고 사용하세요.</div>'+
-    '<div class="field" style="margin-top:22px"><label>3. AI가 찾은 후보 붙여넣기 <span class="who ai">AI가 쓴 결과</span></label>'+
-      '<div class="hint">ddugi가 "부적합" 판정을 주거나 세게 말해도, 틀렸다는 게 아니라 원래 그렇게 말하는 캐릭터니 담아두지 마세요.</div>'+
-      '<div class="fhint">전체 답변은 AI 화면에서 직접 읽어보세요. 여기에는 <b>답변 맨 아래 "핵심 요약"만</b> 복사해서 붙여넣으면 충분해요.</div>'+
-      '<textarea data-bind="discover_result" style="min-height:220px" placeholder="AI 답변 맨 아래 핵심 요약을 여기에 붙여넣으세요">'+esc(getV('discover_result',''))+'</textarea>'+
+    '<div style="background:var(--panel);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--ink-soft);margin-bottom:20px;">'+
+      esc(P.desc)+
     '</div>'+
-    '<div class="field" style="margin-top:22px"><label>4. "적합" 후보 중 하나를 골라 옮겨 적으세요 <span class="who me">직접 작성</span></label>'+
-      '<div class="fhint">AI 문장을 그대로 복사하지 말고, 그 후보의 핵심 문제와 해결 방향을 자기 말로 정리하세요. 01의 1-6·1-8에 그대로 들어갑니다.</div>'+
-      '<textarea data-bind="discover_chosen" style="min-height:120px" placeholder="예: 자료 조회~공유까지 여러 시스템을 오가며 수작업으로 하고 있다. 한 화면에서 조회하고 자동으로 공유되면 좋겠다.">'+esc(getV('discover_chosen',''))+'</textarea>'+
+
+    // 3단 비교
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:8px;">'+
+      // A
+      '<div style="border:2px solid #ef4444;border-radius:10px;overflow:hidden;">'+
+        '<div style="background:#ef444415;padding:8px 12px;font-size:12px;font-weight:700;color:#ef4444;">❌ 버전 A — 기본형</div>'+
+        '<div style="padding:12px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;min-height:100px;">'+esc(P.a)+'</div>'+
+      '</div>'+
+      // B
+      '<div style="border:2px solid var(--blueprint);border-radius:10px;overflow:hidden;">'+
+        '<div style="background:var(--blueprint-soft);padding:8px 12px;font-size:12px;font-weight:700;color:var(--blueprint);">🔶 버전 B — 구체형</div>'+
+        '<div style="padding:12px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;min-height:100px;">'+esc(P.b)+'</div>'+
+      '</div>'+
+      // C
+      '<div style="border:2px solid var(--ok);border-radius:10px;overflow:hidden;">'+
+        '<div style="background:var(--ok-soft);padding:8px 12px;font-size:12px;font-weight:700;color:var(--ok);">✅ 버전 C — 전문가형</div>'+
+        '<div style="padding:12px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;min-height:100px;">'+esc(P.c)+'</div>'+
+      '</div>'+
     '</div>'+
-    '<div class="exportbar"><button type="button" data-action="discover-carry">이 후보로 01 이어서 작성하기 →</button></div>'+
+
+    // 차이점
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px;">'+
+      '<div style="background:#ef444410;border-radius:8px;padding:10px 12px;font-size:11px;color:#ef4444;line-height:1.6;">'+esc(P.diffA)+'</div>'+
+      '<div style="background:var(--blueprint-soft);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--blueprint);line-height:1.6;">'+esc(P.diffB)+'</div>'+
+      '<div style="background:var(--ok-soft);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--ok);line-height:1.6;">'+esc(P.diffC)+'</div>'+
+    '</div>'+
+
+    // 내 버전 만들기
+    '<div style="border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px;">'+
+      '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">✏️ 내 버전 만들기</div>'+
+      '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">B를 기반으로 직접 수정해봐. 역할·상황·제약·요청 형식으로 바꿔보면 C에 가까워져.</div>'+
+      '<textarea id="discoverCustom" style="width:100%;min-height:140px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;" '+
+        'oninput="setV(\''+userKey+'\',this.value)">'+esc(userPrompt)+'</textarea>'+
+      '<div class="exportbar">'+
+        '<button type="button" onclick="(()=>{const t=document.getElementById(\'discoverCustom\');if(t)navigator.clipboard.writeText(t.value).then(()=>{const b=event.target;b.textContent=\'✅ 복사됨\';setTimeout(()=>b.textContent=\'📎 복사해서 AI에 붙여넣기\',1500);})})()">📎 복사해서 AI에 붙여넣기</button>'+
+        '<button type="button" class="secondary" onclick="setV(\''+userKey+'\',\''+P.b.replace(/'/g,"\\'").replace(/\n/g,'\\n')+'\');document.getElementById(\'discoverCustom\').value=getV(\''+userKey+'\',\'\');"> B로 초기화</button>'+
+      '</div>'+
+    '</div>'+
   '</div>';
 }
 
