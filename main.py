@@ -383,6 +383,13 @@ def init_db() -> None:
             """
         )
     conn.commit()
+    # signup_requests에 contact_type 컬럼 추가 (마이그레이션) — 카톡/전화 구분용
+    try:
+        db_execute(conn, "ALTER TABLE signup_requests ADD COLUMN contact_type TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
     if MASTER_EMP_ID == "master" and MASTER_CODE == "1234":
         print("[경고] 마스터 계정이 기본값(사번 master / 비밀번호 1234)입니다. 로그인 후 비밀번호를 바꾸세요.")
     conn.close()
@@ -1086,18 +1093,20 @@ def user_change_password(body: UserPasswordIn, authorization: str = Header(defau
 
 class SignupRequestIn(BaseModel):
     contact: str
+    contact_type: str = "kakao"  # "kakao" | "phone"
     note: str = ""
 
 
 @app.post("/api/signup-request")
 def create_signup_request(body: SignupRequestIn):
     contact = body.contact.strip()[:100]
+    contact_type = body.contact_type if body.contact_type in ("kakao", "phone") else "kakao"
     if not contact:
-        raise HTTPException(status_code=400, detail="카톡 아이디(또는 연락 방법)를 입력해주세요.")
+        raise HTTPException(status_code=400, detail="연락처를 입력해주세요.")
     conn = get_db()
     now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
-    db_execute(conn, "INSERT INTO signup_requests (contact, note, created_at) VALUES (?,?,?)",
-               (contact, body.note.strip()[:500], now))
+    db_execute(conn, "INSERT INTO signup_requests (contact, contact_type, note, created_at) VALUES (?,?,?,?)",
+               (contact, contact_type, body.note.strip()[:500], now))
     conn.commit()
     conn.close()
     return {"ok": True}

@@ -1146,8 +1146,16 @@ function openAuthModal(mode){
   if(isWaitlist){
     html =
       '<h2 style="margin:0 0 4px;font-size:17px;">🥔 회원가입</h2>'+
-      '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">지금은 초대로만 받고 있어요. 카톡 아이디(또는 연락 방법)를 남겨주시면 연락드릴게요!</p>'+
-      '<div class="field"><label>카톡 아이디 (또는 연락 방법)</label><input type="text" id="waitlistContact" placeholder="예: kakao_id, 010-0000-0000" maxlength="100"></div>'+
+      '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">지금은 초대로만 받고 있어요. 연락 방법을 남겨주시면 연락드릴게요!</p>'+
+      '<div class="field"><label>연락 방법</label><select id="waitlistType" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);">'+
+        '<option value="kakao">카톡 아이디</option>'+
+        '<option value="phone">전화번호</option>'+
+      '</select></div>'+
+      '<div class="field"><label id="waitlistContactLabel">카톡 아이디</label><input type="text" id="waitlistContact" placeholder="예: kakao_id" maxlength="100"></div>'+
+      '<div id="waitlistPrivacyNotice" style="display:none;font-size:11.5px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;margin-bottom:10px;line-height:1.6;">'+
+        '📞 전화번호는 가입 안내 연락 목적으로만 쓰이고, 연락이 끝나면 바로 삭제돼요. 다른 용도로 쓰거나 제3자에게 제공하지 않아요.'+
+        '<label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;"><input type="checkbox" id="waitlistConsent" style="margin:0;"> 개인정보(전화번호) 수집·이용에 동의합니다</label>'+
+      '</div>'+
       '<div id="authErr" style="font-size:12px;color:var(--danger);margin-bottom:8px;display:none;"></div>'+
       '<button type="button" id="authSubmitBtn" style="width:100%;padding:10px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;">남기기</button>'+
       '<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--ink-soft);">'+
@@ -1159,13 +1167,27 @@ function openAuthModal(mode){
       const btn = document.getElementById('authSubmitBtn');
       const errEl = document.getElementById('authErr');
       const contactEl = document.getElementById('waitlistContact');
+      const typeEl = document.getElementById('waitlistType');
+      const noticeEl = document.getElementById('waitlistPrivacyNotice');
+      const labelEl = document.getElementById('waitlistContactLabel');
       if(contactEl) contactEl.focus();
+      function syncType(){
+        const isPhone = typeEl.value==='phone';
+        labelEl.textContent = isPhone ? '전화번호' : '카톡 아이디';
+        contactEl.placeholder = isPhone ? '예: 010-0000-0000' : '예: kakao_id';
+        noticeEl.style.display = isPhone ? '' : 'none';
+      }
+      if(typeEl) typeEl.addEventListener('change', syncType);
       async function submitWaitlist(){
         const contact = (contactEl?.value||'').trim();
-        if(!contact){ errEl.style.display=''; errEl.textContent='카톡 아이디를 입력해주세요.'; return; }
+        const contactType = typeEl?.value || 'kakao';
+        if(!contact){ errEl.style.display=''; errEl.textContent='연락처를 입력해주세요.'; return; }
+        if(contactType==='phone' && !document.getElementById('waitlistConsent')?.checked){
+          errEl.style.display=''; errEl.textContent='개인정보 수집·이용에 동의해주세요.'; return;
+        }
         if(btn) btn.disabled=true;
         try{
-          const res = await fetch('/api/signup-request', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({contact})});
+          const res = await fetch('/api/signup-request', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({contact, contact_type:contactType})});
           if(!res.ok){ const d = await res.json(); errEl.style.display=''; errEl.textContent=d.detail||'오류가 발생했어요.'; return; }
           document.getElementById('modalBox').innerHTML = '<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">남겼어요!</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">곧 연락드릴게요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">확인</button></div>';
         }catch(e){ errEl.style.display=''; errEl.textContent='네트워크 오류. 다시 시도해주세요.'; }
@@ -2186,9 +2208,10 @@ async function renderSignupRequests(){
     if(!list.length){ out.innerHTML = '<div class="hint">아직 남긴 사람이 없어요.</div>'; return; }
     const rows = list.map(r=>{
       const when = r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '-';
-      return '<tr><td>'+esc(r.contact)+'</td><td>'+esc(when)+'</td></tr>';
+      const typeLabel = r.contact_type==='phone' ? '📞 전화' : '💬 카톡';
+      return '<tr><td>'+typeLabel+'</td><td>'+esc(r.contact)+'</td><td>'+esc(when)+'</td></tr>';
     }).join('');
-    out.innerHTML = '<table class="dtable"><thead><tr><th>연락 방법</th><th>남긴 날짜</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    out.innerHTML = '<table class="dtable"><thead><tr><th>구분</th><th>연락처</th><th>남긴 날짜</th></tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
   }
