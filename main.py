@@ -359,6 +359,29 @@ def init_db() -> None:
             )
             """
         )
+    # 가입 대기 신청 (초대제라 가입 폼 대신 "카톡 아이디 남기기"로 받는 신청)
+    if USE_PG:
+        db_execute(conn,
+            """
+            CREATE TABLE IF NOT EXISTS signup_requests (
+                id SERIAL PRIMARY KEY,
+                contact TEXT NOT NULL,
+                note TEXT,
+                created_at TEXT
+            )
+            """
+        )
+    else:
+        db_execute(conn,
+            """
+            CREATE TABLE IF NOT EXISTS signup_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                contact TEXT NOT NULL,
+                note TEXT,
+                created_at TEXT
+            )
+            """
+        )
     conn.commit()
     if MASTER_EMP_ID == "master" and MASTER_CODE == "1234":
         print("[경고] 마스터 계정이 기본값(사번 master / 비밀번호 1234)입니다. 로그인 후 비밀번호를 바꾸세요.")
@@ -1060,6 +1083,34 @@ def user_change_password(body: UserPasswordIn, authorization: str = Header(defau
     if USE_PG: conn.commit()
     conn.close()
     return {"ok": True, "nickname": new_nick or row["nickname"]}
+
+class SignupRequestIn(BaseModel):
+    contact: str
+    note: str = ""
+
+
+@app.post("/api/signup-request")
+def create_signup_request(body: SignupRequestIn):
+    contact = body.contact.strip()[:100]
+    if not contact:
+        raise HTTPException(status_code=400, detail="카톡 아이디(또는 연락 방법)를 입력해주세요.")
+    conn = get_db()
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    db_execute(conn, "INSERT INTO signup_requests (contact, note, created_at) VALUES (?,?,?)",
+               (contact, body.note.strip()[:500], now))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+@app.get("/api/admin/signup-requests")
+def list_signup_requests(x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"master", "admin"})
+    conn = get_db()
+    rows = db_fetchall(conn, "SELECT * FROM signup_requests ORDER BY created_at DESC")
+    conn.close()
+    return [dict(r) for r in rows]
+
 
 # ── 초대코드 관리 (마스터 전용)
 @app.post("/api/admin/invite")

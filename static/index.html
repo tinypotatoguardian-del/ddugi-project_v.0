@@ -1117,12 +1117,48 @@ function validatePassword(pw){
 }
 
 function openAuthModal(mode){
-  // mode: 'login' | 'register' | 'change_pw'
+  // mode: 'login' | 'register' | 'register_form' | 'change_pw'
+  // 'register'는 기본으로 "초대로만 받습니다" 안내 + 카톡 아이디 남기기를 보여주고,
+  // 실제 초대코드 입력 폼은 'register_form'에서만 보여준다 (안내창의 링크로 들어감)
   const isLogin = mode==='login';
-  const isRegister = mode==='register';
+  const isWaitlist = mode==='register';
+  const isRegister = mode==='register_form';
   const isChangePw = mode==='change_pw';
 
   let html = '';
+  if(isWaitlist){
+    html =
+      '<h2 style="margin:0 0 4px;font-size:17px;">🥔 회원가입</h2>'+
+      '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">지금은 초대로만 받고 있어요. 카톡 아이디(또는 연락 방법)를 남겨주시면 연락드릴게요!</p>'+
+      '<div class="field"><label>카톡 아이디 (또는 연락 방법)</label><input type="text" id="waitlistContact" placeholder="예: kakao_id, 010-0000-0000" maxlength="100"></div>'+
+      '<div id="authErr" style="font-size:12px;color:var(--danger);margin-bottom:8px;display:none;"></div>'+
+      '<button type="button" id="authSubmitBtn" style="width:100%;padding:10px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;">남기기</button>'+
+      '<div style="text-align:center;margin-top:12px;font-size:12px;color:var(--ink-soft);">'+
+        '초대코드를 이미 받았나요? <button type="button" onclick="openAuthModal(\'register_form\')" style="background:none;border:none;color:var(--blueprint);cursor:pointer;font-size:12px;">코드로 가입하기</button><br>'+
+        '계정이 있나요? <button type="button" onclick="openAuthModal(\'login\')" style="background:none;border:none;color:var(--blueprint);cursor:pointer;font-size:12px;">로그인</button>'+
+      '</div>';
+    showModal(html);
+    setTimeout(()=>{
+      const btn = document.getElementById('authSubmitBtn');
+      const errEl = document.getElementById('authErr');
+      const contactEl = document.getElementById('waitlistContact');
+      if(contactEl) contactEl.focus();
+      async function submitWaitlist(){
+        const contact = (contactEl?.value||'').trim();
+        if(!contact){ errEl.style.display=''; errEl.textContent='카톡 아이디를 입력해주세요.'; return; }
+        if(btn) btn.disabled=true;
+        try{
+          const res = await fetch('/api/signup-request', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({contact})});
+          if(!res.ok){ const d = await res.json(); errEl.style.display=''; errEl.textContent=d.detail||'오류가 발생했어요.'; return; }
+          document.getElementById('modalBox').innerHTML = '<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">남겼어요!</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">곧 연락드릴게요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">확인</button></div>';
+        }catch(e){ errEl.style.display=''; errEl.textContent='네트워크 오류. 다시 시도해주세요.'; }
+        finally{ if(btn) btn.disabled=false; }
+      }
+      if(btn) btn.onclick = submitWaitlist;
+      if(contactEl) contactEl.addEventListener('keydown', e=>{ if(e.key==='Enter') submitWaitlist(); });
+    }, 50);
+    return;
+  }
   if(isChangePw){
     html =
       '<h2 style="margin:0 0 4px;font-size:17px;">🔒 비밀번호 변경</h2>'+
@@ -1880,6 +1916,7 @@ function renderSheet(){
   } else if(sec.special==='accounts'){
     sheet.innerHTML = renderAccountsSection();
     renderAccounts();
+    renderSignupRequests();
   } else if(sec.special==='taxonomy'){
     sheet.innerHTML = renderTaxonomySection();
     renderTaxonomy();
@@ -2086,7 +2123,26 @@ function renderAccountsSection(){
     '</div>'+
     '<div id="acctMsg" style="color:var(--danger);font-size:12px;min-height:16px;"></div>'+
     '<div id="acctBody" style="margin-top:14px">불러오는 중…</div>'+
+    '<h3 style="margin-top:28px;">📩 가입 신청 (카톡 남긴 사람)</h3>'+
+    '<div id="signupReqBody" style="margin-top:8px">불러오는 중…</div>'+
   '</div>';
+}
+async function renderSignupRequests(){
+  const out = document.getElementById('signupReqBody');
+  if(!out) return;
+  try{
+    const res = await fetch('/api/admin/signup-requests', {headers: authHeaders()});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const list = await res.json();
+    if(!list.length){ out.innerHTML = '<div class="hint">아직 남긴 사람이 없어요.</div>'; return; }
+    const rows = list.map(r=>{
+      const when = r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '-';
+      return '<tr><td>'+esc(r.contact)+'</td><td>'+esc(when)+'</td></tr>';
+    }).join('');
+    out.innerHTML = '<table class="dtable"><thead><tr><th>연락 방법</th><th>남긴 날짜</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }catch(e){
+    out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
+  }
 }
 async function renderAccounts(){
   const out = document.getElementById('acctBody');
