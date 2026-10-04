@@ -68,8 +68,13 @@
   .apphead-sub{ margin-left:12px; padding-left:12px; border-left:1px solid var(--line); font-size:14px; font-weight:500; color:var(--ink-soft); }
   #appfoot{
     border-top:1px solid var(--line-soft); background:var(--panel); color:var(--ink-soft);
-    padding:16px 24px calc(16px + env(safe-area-inset-bottom,0px)); font-size:13px; text-align:left;
+    padding:8px 24px calc(8px + env(safe-area-inset-bottom,0px)); font-size:13px; text-align:left;
   }
+  #appfoot summary{ cursor:pointer; font-size:12px; color:var(--ink-soft); list-style:none; }
+  #appfoot summary::-webkit-details-marker{ display:none; }
+  #appfoot summary::before{ content:'▸ '; }
+  #appfoot details[open] summary::before{ content:'▾ '; }
+  #appfoot details[open] summary{ margin-bottom:6px; }
 
   #sidebar{
     width:300px; flex:0 0 300px; background:var(--panel); color:var(--ink);
@@ -428,10 +433,11 @@
     .frame{ padding:16px 14px 20px; }
     .navfoot{ padding:0 4px 32px; }
 
-    /* 헤더: 제목+부제+버튼 4개가 한 줄에 다 안 들어가서 줄바꿈 + 부제는 생략 */
+    /* 헤더: 햄버거+제목은 한 줄, 회원가입·로그인은 그 아래 줄에서 오른쪽 정렬 한 줄 */
     #apphead{ flex-wrap:wrap; row-gap:6px; padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px; font-size:15px; }
     .apphead-sub{ display:none; }
-    #apphead .apphead-actions{ margin-left:0; width:100%; flex-wrap:wrap; }
+    #apphead .apphead-actions{ margin-left:0; width:100%; flex-wrap:nowrap; justify-content:flex-end; }
+    #apphead .apphead-actions button{ padding:5px 9px; font-size:11.5px; }
 
     /* 관리자 화면 표: 열이 많아서 그대로 두면 화면 밖으로 잘림 → 가로 스크롤 */
     table.dtable, table.ftable{ display:block; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; }
@@ -444,7 +450,9 @@
 <body>
 
 
-<header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span>
+<header id="apphead">
+<button id="menuToggle" type="button">☰ 목록</button>
+<span data-action="goto" data-target="landing" style="cursor:pointer;">🥔 ddugi Project v.0</span><span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span>
 <div class="apphead-actions" style="margin-left:auto;display:flex;align-items:center;gap:8px;">
   <span id="userBadge" style="font-size:12px;color:var(--ink-soft);display:none;"></span>
   <button type="button" id="registerBtn" onclick="openAuthModal('register')" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;">회원가입</button>
@@ -477,7 +485,6 @@
   <div id="main">
     <div id="topbar">
       <div class="topbar-row">
-        <button id="menuToggle" type="button">☰ 목록</button>
         <div class="breadcrumb" id="breadcrumb"></div>
         <div class="breadcrumb" id="progressText"></div>
         <div class="topactions">
@@ -490,7 +497,7 @@
   </div>
 </div>
 
-<footer id="appfoot">ddugi<br><a href="https://www.threads.com/@tinypotato.guardian" target="_blank" style="color:var(--ink-soft);text-decoration:none;">@tinypotato.guardian</a><br><span style="font-size:10px;color:var(--ink-soft);"><a href="/TERMS.md" target="_blank" style="color:var(--ink-soft);">이용약관</a> · <a href="/PRIVACY.md" target="_blank" style="color:var(--ink-soft);">개인정보처리방침</a> · <a href="/LICENSE.md" target="_blank" style="color:var(--ink-soft);">라이선스</a></span></footer>
+<footer id="appfoot"><details><summary>ddugi</summary><a href="https://www.threads.com/@tinypotato.guardian" target="_blank" style="color:var(--ink-soft);text-decoration:none;">@tinypotato.guardian</a><br><span style="font-size:10px;color:var(--ink-soft);"><a href="/TERMS.md" target="_blank" style="color:var(--ink-soft);">이용약관</a> · <a href="/PRIVACY.md" target="_blank" style="color:var(--ink-soft);">개인정보처리방침</a> · <a href="/LICENSE.md" target="_blank" style="color:var(--ink-soft);">라이선스</a></span></details></footer>
 <button type="button" id="toTop" aria-label="맨 위로">↑ 맨 위로</button>
 
 <div id="modalOverlay" onclick="if(event.target===this) hideModal()" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,.55);z-index:50;align-items:center;justify-content:center;padding:20px;">
