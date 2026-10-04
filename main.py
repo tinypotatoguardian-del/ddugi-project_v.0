@@ -177,7 +177,8 @@ def init_db() -> None:
         db_execute(conn, """
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
-                email TEXT UNIQUE NOT NULL,
+                username TEXT UNIQUE,
+                email TEXT UNIQUE,
                 password_hash TEXT NOT NULL,
                 nickname TEXT,
                 plan TEXT DEFAULT 'free',
@@ -186,17 +187,53 @@ def init_db() -> None:
                 last_login_at TEXT
             )
         """)
+        # 마이그레이션: username 컬럼 없으면 추가
+        try:
+            db_execute(conn, "ALTER TABLE users ADD COLUMN username TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
     else:
         db_execute(conn, """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT UNIQUE NOT NULL,
+                username TEXT UNIQUE,
+                email TEXT,
                 password_hash TEXT NOT NULL,
                 nickname TEXT,
                 plan TEXT DEFAULT 'free',
                 plan_expires_at TEXT,
                 created_at TEXT,
                 last_login_at TEXT
+            )
+        """)
+        # 마이그레이션: username 컬럼 없으면 추가
+        try:
+            db_execute(conn, "ALTER TABLE users ADD COLUMN username TEXT")
+        except Exception:
+            pass
+
+    # ── invite_codes 테이블
+    if USE_PG:
+        db_execute(conn, """
+            CREATE TABLE IF NOT EXISTS invite_codes (
+                code TEXT PRIMARY KEY,
+                created_by TEXT,
+                plan TEXT DEFAULT 'free',
+                expires_at TEXT,
+                used_at TEXT,
+                used_by TEXT
+            )
+        """)
+    else:
+        db_execute(conn, """
+            CREATE TABLE IF NOT EXISTS invite_codes (
+                code TEXT PRIMARY KEY,
+                created_by TEXT,
+                plan TEXT DEFAULT 'free',
+                expires_at TEXT,
+                used_at TEXT,
+                used_by TEXT
             )
         """)
     # submissions에 user_id 컬럼 추가 (마이그레이션)
@@ -826,80 +863,187 @@ def visit_stats(x_emp_id: str = Header(default=""), x_emp_code: str = Header(def
 # ── 일반 유저 (이메일 기반 로그인) ──────────────────────────────────────────────
 
 class UserRegisterIn(BaseModel):
-    email: str
+    username: str
     password: str
     nickname: str = ""
+    invite_code: str = ""
 
 class UserLoginIn(BaseModel):
-    email: str
+    username: str
     password: str
 
-def _user_by_email(conn, email: str):
-    return db_fetchone(conn, "SELECT * FROM users WHERE email=?", (email,)) if not USE_PG else \
-           db_fetchone(conn, "SELECT * FROM users WHERE email=%s", (email,))
+class UserPasswordIn(BaseModel):
+    old_password: str
+    new_password: str
 
-@app.post("/api/user/register")
-def user_register(body: UserRegisterIn):
-    email = body.email.strip().lower()
-    if not email or "@" not in email:
-        raise HTTPException(status_code=400, detail="이메일 형식이 아니에요.")
-    if len(body.password) < 8:
-        raise HTTPException(status_code=400, detail="비밀번호는 8자 이상이어야 해요.")
-    conn = get_db()
-    if _user_by_email(conn, email):
-        raise HTTPException(status_code=409, detail="이미 가입된 이메일이에요.")
-    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
-    ph = hash_code(body.password)
-    nick = body.nickname.strip() or email.split("@")[0]
-    if USE_PG:
-        cur = db_execute(conn, "INSERT INTO users (email,password_hash,nickname,plan,created_at,last_login_at) VALUES (%s,%s,%s,'free',%s,%s) RETURNING id", (email,ph,nick,now,now))
-        uid = str(cur.fetchone()[0])
-        conn.commit()
-    else:
-        cur = db_execute(conn, "INSERT INTO users (email,password_hash,nickname,plan,created_at,last_login_at) VALUES (?,?,?,'free',?,?)", (email,ph,nick,now,now))
-        uid = str(cur.lastrowid)
-    token = make_token(uid, email, "free")
-    return {"token": token, "userId": uid, "email": email, "nickname": nick, "plan": "free"}
+import secrets
+import string
 
-@app.post("/api/user/login")
-def user_login(body: UserLoginIn):
-    email = body.email.strip().lower()
-    conn = get_db()
-    row = _user_by_email(conn, email)
-    if not row:
-        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 틀렸어요.")
-    # 비밀번호 검증
-    ph = row["password_hash"] if isinstance(row, dict) else row[2]
+def _make_invite_code() -> str:
+    chars = string.ascii_uppercase + string.digits
+    return "GAMJA-" + "".join(secrets.choice(chars) for _ in range(4))
+
+def _user_by_username(conn, username: str):
+    q = "SELECT * FROM users WHERE username=%s" if USE_PG else "SELECT * FROM users WHERE username=?"
+    return db_fetchone(conn, q, (username,))
+
+def _user_by_id(conn, uid: str):
+    q = "SELECT * FROM users WHERE id=%s" if USE_PG else "SELECT * FROM users WHERE id=?"
+    return db_fetchone(conn, q, (uid,))
+
+def _check_pw(row, password: str) -> bool:
+    ph = row["password_hash"] if isinstance(row, dict) else row[3]
     try:
         salt_hex, digest_hex = ph.split("$")
         salt = bytes.fromhex(salt_hex)
-        expected = hashlib.pbkdf2_hmac("sha256", body.password.encode(), salt, 200_000)
-        if not hmac.compare_digest(expected, bytes.fromhex(digest_hex)):
-            raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 틀렸어요.")
-    except ValueError:
-        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 틀렸어요.")
-    uid = str(row["id"] if isinstance(row, dict) else row[0])
-    plan = row["plan"] if isinstance(row, dict) else row[4]
-    nick = row["nickname"] if isinstance(row, dict) else row[3]
+        expected = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 200_000)
+        return hmac.compare_digest(expected, bytes.fromhex(digest_hex))
+    except Exception:
+        return False
+
+@app.post("/api/user/register")
+def user_register(body: UserRegisterIn):
+    import re as _re
+    username = body.username.strip().lower()
+    if not username or len(username) < 2:
+        raise HTTPException(status_code=400, detail="아이디는 2자 이상이어야 해요.")
+    if not _re.match(r"^[a-z0-9_]+$", username):
+        raise HTTPException(status_code=400, detail="아이디는 영문 소문자, 숫자, _ 만 사용 가능해요.")
+    if len(body.password) < 8:
+        raise HTTPException(status_code=400, detail="비밀번호는 8자 이상이어야 해요.")
+    if not any(c.isalpha() for c in body.password):
+        raise HTTPException(status_code=400, detail="비밀번호에 영문자를 포함해야 해요.")
+    if not any(c.isdigit() for c in body.password):
+        raise HTTPException(status_code=400, detail="비밀번호에 숫자를 포함해야 해요.")
+    # 초대코드 검증
+    invite_code = body.invite_code.strip().upper()
+    if not invite_code:
+        raise HTTPException(status_code=400, detail="초대코드를 입력해주세요.")
+    conn = get_db()
     now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    q = "SELECT * FROM invite_codes WHERE code=%s" if USE_PG else "SELECT * FROM invite_codes WHERE code=?"
+    inv = db_fetchone(conn, q, (invite_code,))
+    if not inv:
+        conn.close()
+        raise HTTPException(status_code=400, detail="유효하지 않은 초대코드예요.")
+    if inv["used_at"]:
+        conn.close()
+        raise HTTPException(status_code=400, detail="이미 사용된 초대코드예요.")
+    if inv["expires_at"] and inv["expires_at"] < now:
+        conn.close()
+        raise HTTPException(status_code=400, detail="만료된 초대코드예요. 새 코드를 요청해주세요.")
+    # 아이디 중복 확인
+    if _user_by_username(conn, username):
+        conn.close()
+        raise HTTPException(status_code=409, detail="이미 사용 중인 아이디예요.")
+    ph = hash_code(body.password)
+    nick = body.nickname.strip() or username
+    plan = inv["plan"] if isinstance(inv, dict) else "free"
     if USE_PG:
-        db_execute(conn, "UPDATE users SET last_login_at=%s WHERE id=%s", (now, uid))
+        cur = db_execute(conn, "INSERT INTO users (username,password_hash,nickname,plan,created_at,last_login_at) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id", (username,ph,nick,plan,now,now))
+        uid = str(cur.fetchone()[0])
         conn.commit()
     else:
-        db_execute(conn, "UPDATE users SET last_login_at=? WHERE id=?", (now, uid))
-    token = make_token(uid, email, plan or "free")
-    return {"token": token, "userId": uid, "email": email, "nickname": nick or email.split("@")[0], "plan": plan or "free"}
+        cur = db_execute(conn, "INSERT INTO users (username,password_hash,nickname,plan,created_at,last_login_at) VALUES (?,?,?,?,?,?)", (username,ph,nick,plan,now,now))
+        uid = str(cur.lastrowid)
+    # 초대코드 사용 처리
+    q2 = "UPDATE invite_codes SET used_at=%s,used_by=%s WHERE code=%s" if USE_PG else "UPDATE invite_codes SET used_at=?,used_by=? WHERE code=?"
+    db_execute(conn, q2, (now, uid, invite_code))
+    if USE_PG:
+        conn.commit()
+    else:
+        conn.commit()
+    conn.close()
+    token = make_token(uid, username, plan)
+    return {"token": token, "userId": uid, "username": username, "nickname": nick, "plan": plan}
+
+@app.post("/api/user/login")
+def user_login(body: UserLoginIn):
+    username = body.username.strip().lower()
+    conn = get_db()
+    row = _user_by_username(conn, username)
+    if not row or not _check_pw(row, body.password):
+        conn.close()
+        raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 틀렸어요.")
+    uid = str(row["id"] if isinstance(row, dict) else row[0])
+    plan = row["plan"] if isinstance(row, dict) else "free"
+    nick = row["nickname"] if isinstance(row, dict) else username
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    q = "UPDATE users SET last_login_at=%s WHERE id=%s" if USE_PG else "UPDATE users SET last_login_at=? WHERE id=?"
+    db_execute(conn, q, (now, uid))
+    if USE_PG: conn.commit()
+    conn.close()
+    token = make_token(uid, username, plan or "free")
+    return {"token": token, "userId": uid, "username": username, "nickname": nick or username, "plan": plan or "free"}
+
+@app.put("/api/user/password")
+def user_change_password(body: UserPasswordIn, authorization: str = Header(default="")):
+    payload = get_current_user(authorization)
+    uid = payload["sub"]
+    conn = get_db()
+    row = _user_by_id(conn, uid)
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없어요.")
+    if not _check_pw(row, body.old_password):
+        conn.close()
+        raise HTTPException(status_code=401, detail="현재 비밀번호가 틀렸어요.")
+    if len(body.new_password) < 8 or not any(c.isalpha() for c in body.new_password) or not any(c.isdigit() for c in body.new_password):
+        conn.close()
+        raise HTTPException(status_code=400, detail="새 비밀번호: 8자 이상, 영문+숫자 포함해야 해요.")
+    ph = hash_code(body.new_password)
+    q = "UPDATE users SET password_hash=%s WHERE id=%s" if USE_PG else "UPDATE users SET password_hash=? WHERE id=?"
+    db_execute(conn, q, (ph, uid))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"ok": True}
+
+# ── 초대코드 관리 (마스터 전용)
+@app.post("/api/admin/invite")
+def create_invite(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
+    require_role(x_emp_id, x_emp_code, {"master", "admin"})
+    conn = get_db()
+    # 고유 코드 생성
+    for _ in range(10):
+        code = _make_invite_code()
+        q = "SELECT 1 FROM invite_codes WHERE code=%s" if USE_PG else "SELECT 1 FROM invite_codes WHERE code=?"
+        if not db_fetchone(conn, q, (code,)):
+            break
+    expires_at = (datetime.datetime.now(KST) + datetime.timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+    q2 = "INSERT INTO invite_codes (code,created_by,plan,expires_at) VALUES (%s,%s,'free',%s)" if USE_PG else          "INSERT INTO invite_codes (code,created_by,plan,expires_at) VALUES (?,?,'free',?)"
+    db_execute(conn, q2, (code, x_emp_id, expires_at))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"code": code, "expires_at": expires_at}
+
+@app.get("/api/admin/invites")
+def list_invites(x_emp_id: str = Header(default=""), x_emp_code: str = Header(default="")):
+    require_role(x_emp_id, x_emp_code, {"master", "admin"})
+    conn = get_db()
+    rows = db_fetchall(conn, "SELECT * FROM invite_codes ORDER BY expires_at DESC")
+    conn.close()
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    return [{"code": r["code"], "plan": r["plan"], "expires_at": r["expires_at"],
+             "used_at": r["used_at"], "used_by": r["used_by"],
+             "status": "사용됨" if r["used_at"] else ("만료" if r["expires_at"] and r["expires_at"] < now else "유효")}
+            for r in rows]
 
 @app.get("/api/user/me")
 def user_me(authorization: str = Header(default="")):
     payload = get_current_user(authorization)
     conn = get_db()
     uid = payload["sub"]
-    row = db_fetchone(conn, "SELECT id,email,nickname,plan,plan_expires_at,created_at FROM users WHERE id=?", (uid,)) if not USE_PG else \
-          db_fetchone(conn, "SELECT id,email,nickname,plan,plan_expires_at,created_at FROM users WHERE id=%s", (uid,))
+    row = _user_by_id(conn, uid)
+    conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없어요.")
-    return {"userId": str(row["id"]), "email": row["email"], "nickname": row["nickname"], "plan": row["plan"], "planExpiresAt": row["plan_expires_at"]}
+    return {
+        "userId": str(row["id"]),
+        "username": row["username"] or "",
+        "nickname": row["nickname"] or row["username"] or "",
+        "plan": row["plan"] or "free",
+        "planExpiresAt": row["plan_expires_at"] if "plan_expires_at" in row.keys() else None
+    }
 
 # 내 씨앗 목록 (로그인 유저용)
 @app.get("/api/user/submissions")

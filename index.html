@@ -1822,6 +1822,7 @@ function renderSheet(){
   } else if(sec.special==='dashboard'){
     sheet.innerHTML = renderDashboardSection();
     renderDashboard();
+    loadInviteCodes();
   } else if(sec.special==='tasklist'){
     sheet.innerHTML = renderTaskListSection();
     renderTaskList();
@@ -2222,8 +2223,65 @@ function renderDashboardSection(){
     '<div class="exportbar"><button type="button" id="refreshDash" class="secondary">새로고침</button>'+
     '<button type="button" class="secondary" data-admin-pw>비밀번호 변경</button>'+
     '<button type="button" id="adminLogoutBtn2" class="secondary">관리자 모드 끄기</button></div>'+
+    // 초대코드 관리 (마스터/관리자)
+    '<div style="margin-top:20px;border:1px solid var(--line-soft);border-radius:12px;padding:16px 20px;">'+
+      '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;">🎟️ 초대코드 관리</div>'+
+      '<div class="exportbar" style="margin-bottom:12px;">'+
+        '<button type="button" onclick="createInviteCode()" style="padding:8px 16px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;">+ 코드 생성 (24시간)</button>'+
+        '<button type="button" onclick="loadInviteCodes()" class="secondary">새로고침</button>'+
+      '</div>'+
+      '<div id="inviteCodeResult" style="font-size:13px;margin-bottom:10px;"></div>'+
+      '<div id="inviteCodeList" style="font-size:12px;color:var(--ink-soft);">불러오는 중…</div>'+
+    '</div>'+
     '<div id="dashboardBody" style="margin-top:14px">불러오는 중…</div>'+
   '</div>';
+}
+
+async function createInviteCode(){
+  const el = document.getElementById('inviteCodeResult');
+  if(el) el.textContent = '생성 중…';
+  try{
+    const res = await fetch('/api/admin/invite', {method:'POST', headers: authHeaders()});
+    const d = await res.json();
+    if(!res.ok){ if(el) el.textContent = '오류: '+(d.detail||'실패'); return; }
+    if(el){
+      el.innerHTML = '<div style="background:var(--ok-soft);border:1px solid var(--ok);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;">'+
+        '<span style="font-size:16px;font-weight:700;color:var(--ok);letter-spacing:2px;">'+esc(d.code)+'</span>'+
+        '<span style="font-size:11px;color:var(--ink-soft);">만료: '+esc(d.expires_at)+'</span>'+
+        '<button type="button" onclick="navigator.clipboard.writeText(\''+esc(d.code)+'\').then(()=>{this.textContent=\'✅ 복사됨\';setTimeout(()=>this.textContent=\'📎 복사\',1500)})" style="padding:4px 10px;border-radius:6px;border:1px solid var(--ok);background:var(--paper);color:var(--ok);font-size:12px;cursor:pointer;">📎 복사</button>'+
+      '</div>';
+    }
+    loadInviteCodes();
+  }catch(e){ if(el) el.textContent = '네트워크 오류'; }
+}
+
+async function loadInviteCodes(){
+  const el = document.getElementById('inviteCodeList');
+  if(!el) return;
+  try{
+    const res = await fetch('/api/admin/invites', {headers: authHeaders()});
+    if(!res.ok){ el.textContent = '불러오기 실패'; return; }
+    const list = await res.json();
+    if(!list.length){ el.textContent = '아직 생성된 코드가 없어요.'; return; }
+    const statusColor = s => s==='유효'?'var(--ok)':s==='사용됨'?'var(--ink-soft)':'#ef4444';
+    const statusBg = s => s==='유효'?'var(--ok-soft)':s==='사용됨'?'var(--panel)':'rgba(239,68,68,.1)';
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;">'+
+      '<tr style="font-size:11px;color:var(--ink-soft);border-bottom:1px solid var(--line-soft);">'+
+        '<th style="text-align:left;padding:4px 8px;">코드</th>'+
+        '<th style="text-align:left;padding:4px 8px;">상태</th>'+
+        '<th style="text-align:left;padding:4px 8px;">만료</th>'+
+        '<th style="text-align:left;padding:4px 8px;">사용자</th>'+
+      '</tr>'+
+      list.map(c =>
+        '<tr style="border-bottom:1px solid var(--line-soft);">'+
+          '<td style="padding:6px 8px;font-size:12px;font-weight:600;letter-spacing:1px;color:'+statusColor(c.status)+';">'+esc(c.code)+'</td>'+
+          '<td style="padding:6px 8px;"><span style="padding:2px 8px;border-radius:999px;font-size:11px;background:'+statusBg(c.status)+';color:'+statusColor(c.status)+';">'+esc(c.status)+'</span></td>'+
+          '<td style="padding:6px 8px;font-size:12px;color:var(--ink-soft);">'+(c.expires_at?c.expires_at.slice(0,16):'-')+'</td>'+
+          '<td style="padding:6px 8px;font-size:12px;color:var(--ink-soft);">'+(c.used_by||'-')+'</td>'+
+        '</tr>'
+      ).join('')+
+    '</table>';
+  }catch(e){ el.textContent = '오류: '+e.message; }
 }
 
 async function renderDashboard(){
