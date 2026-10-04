@@ -1158,7 +1158,7 @@ function showChangelog(){
     },
     {
       date:'2026-09-28', tag:'기반', title:'학생용 주제 리서치 28개',
-      items:['중고등학생 14개 + 대학생 14개 AI 교육 주제','한국 AI 교육 현황 조사 (95% 사용, 53% 복붙 등)','뚜기 플로우(문제정의→AI진단→해결)에 매핑']
+      items:['학생 14개 + 대학생 14개 AI 교육 주제','한국 AI 교육 현황 조사 (95% 사용, 53% 복붙 등)','뚜기 플로우(문제정의→AI진단→해결)에 매핑']
     },
     {
       date:'2026-09-28', tag:'기반', title:'페르소나 + 사업 전략 수립',
@@ -1194,7 +1194,7 @@ function showChangelog(){
     },
     {
       date:'2026-09-27', tag:'기반', title:'대화형 온보딩 탭 추가',
-      items:['중고등학생 / 대학생 버전 선택','단계별 대화 → 씨앗 정의서 자동 입력 연결']
+      items:['학생 / 대학생 버전 선택','단계별 대화 → 씨앗 정의서 자동 입력 연결']
     },
     {
       date:'이전', tag:'기반', title:'회사 업무 자동화 도구 (원본)',
@@ -3391,7 +3391,7 @@ function renderCurriculumBlock(){
       terms:[['프롬프트 엔지니어링','AI에게 잘 부탁하는 기술'],['컨텍스트','AI에게 알려주는 배경 정보'],['토큰','AI가 읽는 텍스트 단위 (대략 글자 수)']],
       cases:[{who:'고3 · 이과', what:'"수학 문제 풀어줘"라고 했더니 맞는 것처럼 써놓고 중간 과정이 틀렸음. 그냥 복붙했다가 선생님한테 걸림.', result:'AI 답변 검증 습관이 생긴 계기. "풀이 과정도 설명해줘"를 붙이기 시작함'},{who:'대학교 2학년 · 영문과', what:'"전문가처럼 써줘"와 "영문과 교수가 쓰는 것처럼 써줘"의 결과가 완전히 다른 걸 발견.', result:'역할 부여 프롬프트를 자주 쓰게 됨. 과제 피드백 요청에도 동일하게 적용'}],
       next:'프롬프트 조금만 바꿔도 답이 달라진다는 걸 실제로 경험했다' },
-    { lv:'LV.2', icon:'⚙️', title:'내 일에 연결', tag:'중고딩 심화 / 대학생 입문',
+    { lv:'LV.2', icon:'⚙️', title:'내 일에 연결', tag:'학생 심화',
       q:'"공부나 취준에 AI를 제대로 써보고 싶어"',
       learn:['AI로 공부하기 (요약, 퀴즈, 개념 설명 요청)','취준 활용 (자소서, 면접 준비, 직무 분석)','노션 + AI 연결해서 정보 정리하기','AI에게 "문제 정의"를 맡기는 연습'],
       terms:[['RAG','AI에게 내 문서를 먼저 읽히고 질문하는 방식'],['자동화','내가 안 해도 알아서 돌아가게 만들기'],['AX','회사/업무 전체를 AI로 바꾸는 것']],
@@ -3784,7 +3784,7 @@ const AI_TOOLS_DATA = {
       ]
     },
     middle_high: {
-      label: '중고등학생',
+      label: '학생',
       icon: '📚',
       allowed: [
         { cat: '학습·수행평가', icon: '📝', examples: ['수행평가 주제 추천해줘', '논술 개요 잡아줘', '영어 에세이 피드백 해줘'] },
@@ -4012,7 +4012,7 @@ function renderAIQuestions(){
   window._aiQAge = window._aiQAge || 'middle_high';
   const ageGroups = [
     { id:'elementary', label:'🎒 초등학생' },
-    { id:'middle_high', label:'📚 중고등학생' },
+    { id:'middle_high', label:'📚 학생' },
     { id:'university', label:'💼 대학생·취준생' },
     { id:'adult', label:'🏢 직장인' },
   ];
@@ -4069,12 +4069,12 @@ function renderAIQuestions(){
 
 
 function renderCurriculumSection(){
-  // 중고등학생 / 대학생·취준 / 직장인 3탭 버전
+  // 학생 / 대학생·취준 / 직장인 3탭 버전
   window._curriculumTab = window._curriculumTab || 'teen';
   window._curriculumIdx = window._curriculumIdx || 0;
 
   const tabs = [
-    { id:'teen',   label:'📚 중고등학생', desc:'AI 첫 만남부터 진로 탐색까지' },
+    { id:'teen',   label:'📚 학생', desc:'AI 첫 만남부터 진로 탐색까지' },
     { id:'career', label:'💼 대학생·취준', desc:'공부·자소서·직무 연결하기' },
     { id:'work',   label:'🏢 직장인', desc:'업무 보조·자동화·AX 설계' }
   ];
@@ -4095,7 +4095,7 @@ function renderCurriculumSection(){
         cases:[{who:'고3 · 이과', what:'"수학 문제 풀어줘"라고 했더니 중간 과정이 틀렸음.', result:'"풀이 과정도 설명해줘"를 붙이기 시작함. 직접 확인하는 습관 생김'},{who:'중2 · 여학생', what:'독서감상문 쓸 때 "줄거리만 써줘" 했다가 선생님이 알아채심.', result:'"이 책의 주제를 세 가지로 요약하고, 내가 가장 공감한 부분을 묻는 질문 3개 만들어줘"로 바꿈'}],
         mission:{time:'10분', task:'같은 질문 3가지 방식으로 바꿔서 ChatGPT에 넣어보기.\n① "광합성 설명해줘"\n② "초등학생한테 설명하듯이 광합성 설명해줘"\n③ "너는 생물 선생님이야. 광합성을 그림으로 그릴 수 있게 단계별로 설명해줘"', check:'3개 답변이 다르면 성공.'},
         next:'프롬프트 바꾸면 답이 달라진다는 걸 직접 느꼈다', nextLv:'LV.2 →'},
-      {lv:'LV.2', icon:'⚙️', title:'공부에 연결하기', tag:'중고딩 심화',
+      {lv:'LV.2', icon:'⚙️', title:'공부에 연결하기', tag:'학생 심화',
         q:'"AI로 공부를 더 잘할 수 있을까?"',
         learn:['AI로 개념 설명·퀴즈·오답 분석하기', '내 노트를 AI에게 먹여서 개인 과외처럼 활용', 'AI에게 피드백 요청하는 법', '진로 탐색에 AI 활용하기'],
         terms:[['프롬프트 엔지니어링','AI에게 잘 부탁하는 기술'],['요약','긴 내용을 핵심만 뽑아 짧게 만드는 것'],['RAG','AI에게 내 자료를 먼저 읽히고 질문하는 방식']],
@@ -4275,7 +4275,7 @@ function renderCurriculumSection(){
 function renderLandingSection(){
   const _tab = window._landingTab || 'teen';
   const tabs = [
-    {id:'teen',   label:'📚 중고등학생'},
+    {id:'teen',   label:'📚 학생'},
     {id:'career', label:'💼 취준생'},
     {id:'work',   label:'🏢 직장인'},
   ];
