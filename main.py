@@ -399,6 +399,13 @@ def init_db() -> None:
     except Exception:
         if USE_PG:
             conn.rollback()
+    # signup_requests에 created_username 컬럼 추가 (마이그레이션) — 이 사람에게 만들어준 계정 아이디 기록용
+    try:
+        db_execute(conn, "ALTER TABLE signup_requests ADD COLUMN created_username TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
     if MASTER_EMP_ID == "master" and MASTER_CODE == "1234":
         print("[경고] 마스터 계정이 기본값(사번 master / 비밀번호 1234)입니다. 로그인 후 비밀번호를 바꾸세요.")
     conn.close()
@@ -1146,6 +1153,21 @@ def list_signup_requests(x_admin_token: str = Header(default="")):
     rows = db_fetchall(conn, "SELECT * FROM signup_requests ORDER BY created_at DESC")
     conn.close()
     return [dict(r) for r in rows]
+
+
+class SignupRequestLinkIn(BaseModel):
+    username: str = ""  # 빈 문자열이면 연결 해제
+
+
+@app.put("/api/admin/signup-requests/{req_id}")
+def link_signup_request(req_id: int, body: SignupRequestLinkIn, x_admin_token: str = Header(default="")):
+    """이 가입 신청(카톡 남긴 사람)에게 어떤 아이디를 만들어줬는지 기록한다."""
+    require_admin_token(x_admin_token, {"master", "admin"})
+    conn = get_db()
+    db_execute(conn, "UPDATE signup_requests SET created_username=? WHERE id=?", (body.username.strip() or None, req_id))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
 
 
 # ── 초대코드 관리 (마스터 전용)

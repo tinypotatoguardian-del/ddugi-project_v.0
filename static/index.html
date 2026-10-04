@@ -2265,9 +2265,13 @@ async function renderSignupRequests(){
     const rows = list.map(r=>{
       const when = r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '-';
       const typeLabel = r.contact_type==='phone' ? '📞 전화' : '💬 카톡';
-      return '<tr><td>'+typeLabel+'</td><td>'+esc(r.contact)+'</td><td>'+esc(when)+'</td></tr>';
+      const idCell = r.created_username
+        ? '👤 '+esc(r.created_username)+' <button type="button" class="chip-btn" data-action="signupreq-unlink" data-target="'+r.id+'">해제</button>'
+        : '<input type="text" id="signupreqId-'+r.id+'" placeholder="만든 아이디" style="width:110px;display:inline-block;padding:4px 6px;font-size:12px;"> '+
+          '<button type="button" class="chip-btn" data-action="signupreq-link" data-target="'+r.id+'">연결</button>';
+      return '<tr><td>'+typeLabel+'</td><td>'+esc(r.contact)+'</td><td>'+esc(when)+'</td><td>'+idCell+'</td></tr>';
     }).join('');
-    out.innerHTML = '<table class="dtable"><thead><tr><th>구분</th><th>연락처</th><th>남긴 날짜</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    out.innerHTML = '<table class="dtable"><thead><tr><th>구분</th><th>연락처</th><th>남긴 날짜</th><th>만든 아이디</th></tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
   }
@@ -5640,6 +5644,21 @@ document.addEventListener('click', function(e){
         if(r.ok){ idEl.value=''; nameEl.value=''; codeEl.value=''; msg.textContent=''; renderAccounts(); }
         else{ msg.textContent = await adminErrorText(r); }
       }).catch(()=>{ msg.textContent = '서버에 연결할 수 없어요.'; });
+    return;
+  }
+  if(action==='signupreq-link'){
+    const inputEl = document.getElementById('signupreqId-'+target);
+    const username = (inputEl?.value||'').trim().toLowerCase();
+    if(!username) return;
+    fetch('/api/admin/signup-requests/'+target, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({username})})
+      .then(async r=>{ if(r.ok) renderSignupRequests(); else alert(await adminErrorText(r)); })
+      .catch(()=>alert('서버에 연결할 수 없어요.'));
+    return;
+  }
+  if(action==='signupreq-unlink'){
+    fetch('/api/admin/signup-requests/'+target, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({username:''})})
+      .then(async r=>{ if(r.ok) renderSignupRequests(); else alert(await adminErrorText(r)); })
+      .catch(()=>alert('서버에 연결할 수 없어요.'));
     return;
   }
   if(action==='user-create'){
