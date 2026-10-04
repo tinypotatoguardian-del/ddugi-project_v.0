@@ -217,6 +217,15 @@ def init_db() -> None:
         except Exception:
             pass
 
+    # 마이그레이션: 관리자가 직접 만들어준 계정(아이디=초기 비번)이 최초 로그인 시
+    # 비번을 바꾸도록 강제하는 플래그
+    try:
+        db_execute(conn, "ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
     # ── invite_codes 테이블
     if USE_PG:
         db_execute(conn, """
@@ -1064,7 +1073,8 @@ def user_login(body: UserLoginIn):
     if USE_PG: conn.commit()
     conn.close()
     token = make_token(uid, username, plan or "free")
-    return {"token": token, "userId": uid, "username": username, "nickname": nick or username, "plan": plan or "free"}
+    must_change = bool(row["must_change_password"]) if "must_change_password" in row.keys() else False
+    return {"token": token, "userId": uid, "username": username, "nickname": nick or username, "plan": plan or "free", "mustChangePassword": must_change}
 
 @app.put("/api/user/password")
 def user_change_password(body: UserPasswordIn, authorization: str = Header(default="")):
@@ -1084,10 +1094,10 @@ def user_change_password(body: UserPasswordIn, authorization: str = Header(defau
     ph = hash_code(body.new_password)
     new_nick = body.nickname.strip()[:20]
     if new_nick:
-        q = "UPDATE users SET password_hash=%s, nickname=%s WHERE id=%s" if USE_PG else "UPDATE users SET password_hash=?, nickname=? WHERE id=?"
+        q = "UPDATE users SET password_hash=%s, nickname=%s, must_change_password=0 WHERE id=%s" if USE_PG else "UPDATE users SET password_hash=?, nickname=?, must_change_password=0 WHERE id=?"
         db_execute(conn, q, (ph, new_nick, uid))
     else:
-        q = "UPDATE users SET password_hash=%s WHERE id=%s" if USE_PG else "UPDATE users SET password_hash=? WHERE id=?"
+        q = "UPDATE users SET password_hash=%s, must_change_password=0 WHERE id=%s" if USE_PG else "UPDATE users SET password_hash=?, must_change_password=0 WHERE id=?"
         db_execute(conn, q, (ph, uid))
     if USE_PG: conn.commit()
     conn.close()
@@ -1230,7 +1240,7 @@ def put_user_submission(doc_id: str, body: "SubmissionIn", request: Request, aut
 def admin_users(x_admin_token: str = Header(default="")):
     require_admin_token(x_admin_token, {"admin", "master"})
     conn = get_db()
-    users = db_fetchall(conn, "SELECT id,email,nickname,plan,plan_expires_at,created_at,last_login_at FROM users ORDER BY created_at DESC")
+    users = db_fetchall(conn, "SELECT id,username,email,nickname,plan,plan_expires_at,created_at,last_login_at,must_change_password FROM users ORDER BY created_at DESC")
     result = []
     for u in users:
         uid = str(u["id"])
@@ -1239,13 +1249,47 @@ def admin_users(x_admin_token: str = Header(default="")):
         else:
             seeds = db_fetchall(conn, "SELECT doc_id,status,filled_count,completed,updated_at FROM submissions WHERE user_id=?", (uid,))
         result.append({
-            "id": uid, "email": u["email"], "nickname": u["nickname"],
+            "id": uid, "username": u["username"], "email": u["email"], "nickname": u["nickname"],
             "plan": u["plan"], "planExpiresAt": u["plan_expires_at"],
             "createdAt": u["created_at"], "lastLoginAt": u["last_login_at"],
+            "mustChangePassword": bool(u["must_change_password"]),
             "seedCount": len(seeds),
             "seeds": [{"docId": s["doc_id"], "status": s["status"], "filledCount": s["filled_count"], "completed": bool(s["completed"]), "updatedAt": s["updated_at"]} for s in seeds]
         })
     return result
+
+
+class AdminCreateUserIn(BaseModel):
+    username: str
+    nickname: str = ""
+
+
+@app.post("/api/admin/users/create")
+def admin_create_user(body: AdminCreateUserIn, x_admin_token: str = Header(default="")):
+    """관리자가 학생/구직자용 계정을 직접 만든다. 아이디=초기 비밀번호로 만들고,
+    최초 로그인 시 비밀번호를 바꾸도록 강제한다 (카톡 등으로 아이디·비번을 전달하는 용도)."""
+    require_admin_token(x_admin_token, {"admin", "master"})
+    import re as _re
+    username = body.username.strip().lower()
+    if not username or len(username) < 2 or not _re.match(r"^[a-z0-9_]+$", username):
+        raise HTTPException(status_code=400, detail="아이디는 영문 소문자/숫자/_ 2자 이상이어야 해요.")
+    conn = get_db()
+    if _user_by_username(conn, username):
+        conn.close()
+        raise HTTPException(status_code=409, detail="이미 사용 중인 아이디예요.")
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    ph = hash_code(username)  # 초기 비번 = 아이디
+    nick = body.nickname.strip() or username
+    if USE_PG:
+        cur = db_execute(conn, "INSERT INTO users (username,password_hash,nickname,plan,created_at,must_change_password) VALUES (%s,%s,%s,'free',%s,1) RETURNING id", (username, ph, nick, now))
+        uid = str(cur.fetchone()[0])
+        conn.commit()
+    else:
+        cur = db_execute(conn, "INSERT INTO users (username,password_hash,nickname,plan,created_at,must_change_password) VALUES (?,?,?,'free',?,1)", (username, ph, nick, now))
+        uid = str(cur.lastrowid)
+        conn.commit()
+    conn.close()
+    return {"ok": True, "username": username, "password": username, "userId": uid}
 
 # ── 방명록 (guestbook) ──────────────────────────────────────────────
 class GuestbookIn(BaseModel):

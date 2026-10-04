@@ -1065,6 +1065,7 @@ async function flushDbQueue(){
 
 /* ============== 유저 인증 (이메일 로그인) ============== */
 let currentUser = null; // {token, userId, email, nickname, plan}
+let forcedPwChange = false; // 관리자가 만들어준 계정(아이디=초기비번)이라 최초 로그인 직후 비번 변경을 강제할 때 true
 
 function _authHeaders(){
   const t = localStorage.getItem('ddugi_token');
@@ -1201,7 +1202,9 @@ function openAuthModal(mode){
   if(isChangePw){
     html =
       '<h2 style="margin:0 0 4px;font-size:17px;">🔒 비밀번호 변경</h2>'+
-      '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">8자 이상, 영문+숫자 포함</p>'+
+      (forcedPwChange ?
+        '<p style="font-size:12px;color:var(--danger);background:var(--panel);border:1px solid var(--line-soft);border-radius:8px;padding:8px 10px;margin:0 0 14px;">⚠️ 처음 받은 아이디·비번 그대로예요. 현재 비밀번호 칸에 아이디(username)를 넣고, 새 비밀번호로 바꿔주세요.</p>'
+        : '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">8자 이상, 영문+숫자 포함</p>')+
       '<div class="field"><label>닉네임 (바꾸고 싶으면 입력, 비우면 그대로)</label><input type="text" id="authPwNick" placeholder="'+esc((currentUser&&currentUser.nickname)||'')+'" maxlength="20"></div>'+
       '<div class="field"><label>현재 비밀번호</label><input type="password" id="authPwOld" placeholder="현재 비밀번호" autocomplete="current-password"></div>'+
       '<div class="field"><label>새 비밀번호</label><input type="password" id="authPwNew" placeholder="8자 이상, 영문+숫자" autocomplete="new-password">'+
@@ -1281,6 +1284,7 @@ function openAuthModal(mode){
           const d = await res.json();
           if(!res.ok){ showErr(d.detail||'오류가 발생했어요.'); return; }
           if(currentUser) currentUser.nickname = d.nickname;
+          forcedPwChange = false;
           hideModal();
           showModal('<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🔒</div><h3 style="margin:0 0 6px;">비밀번호 변경 완료!</h3><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">확인</button></div>');
         }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
@@ -1325,8 +1329,13 @@ function openAuthModal(mode){
         localStorage.setItem('ddugi_token', d.token);
         currentUser = d;
         updateAuthUI();
-        hideModal();
         await syncSeedToServer();
+        if(d.mustChangePassword){
+          forcedPwChange = true;
+          openAuthModal('change_pw');
+          return;
+        }
+        hideModal();
         const welcomeNick = currentUser.nickname || username;
         showModal('<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">돌아오셨군요!</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+welcomeNick+'님 반가워요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
       }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
@@ -2196,6 +2205,14 @@ function renderAccountsSection(){
     '<div id="acctBody" style="margin-top:14px">불러오는 중…</div>'+
     '<h3 style="margin-top:28px;">📩 가입 신청 (카톡 남긴 사람)</h3>'+
     '<div id="signupReqBody" style="margin-top:8px">불러오는 중…</div>'+
+    '<h3 style="margin-top:28px;">🥔 학생·구직자 계정 만들기</h3>'+
+    '<div class="hint">초기 비밀번호는 아이디와 똑같이 만들어져요. 최초 로그인하면 비번을 바꾸라고 뜨게 돼있어요. 아이디·비번(=아이디)을 그대로 카톡으로 보내주세요.</div>'+
+    '<div class="field" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">'+
+      '<div><label style="font-size:12.5px;color:var(--ink-soft)">아이디</label><input type="text" id="newUserId" placeholder="예: potato1" style="text-transform:lowercase;"></div>'+
+      '<div><label style="font-size:12.5px;color:var(--ink-soft)">닉네임 (선택)</label><input type="text" id="newUserNick" placeholder="비우면 아이디로"></div>'+
+      '<button type="button" class="addbtn" data-action="user-create">계정 만들기</button>'+
+    '</div>'+
+    '<div id="userCreateMsg" style="font-size:12px;min-height:16px;"></div>'+
   '</div>';
 }
 async function renderSignupRequests(){
@@ -5582,6 +5599,24 @@ document.addEventListener('click', function(e){
         if(r.ok){ idEl.value=''; nameEl.value=''; codeEl.value=''; msg.textContent=''; renderAccounts(); }
         else{ msg.textContent = await adminErrorText(r); }
       }).catch(()=>{ msg.textContent = '서버에 연결할 수 없어요.'; });
+    return;
+  }
+  if(action==='user-create'){
+    const idEl=document.getElementById('newUserId'), nickEl=document.getElementById('newUserNick');
+    const msg = document.getElementById('userCreateMsg');
+    const username=idEl.value.trim().toLowerCase(), nickname=nickEl.value.trim();
+    if(!username){ msg.style.color='var(--danger)'; msg.textContent='아이디를 입력하세요.'; return; }
+    fetch('/api/admin/users/create', {method:'POST', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({username, nickname})})
+      .then(async r=>{
+        const d = await r.json();
+        if(r.ok){
+          idEl.value=''; nickEl.value='';
+          msg.style.color='var(--ok)';
+          msg.textContent = '만들었어요 → 아이디: '+d.username+' / 비번: '+d.password+' (이대로 카톡으로 보내주세요. 최초 로그인하면 바꾸라고 떠요)';
+        } else {
+          msg.style.color='var(--danger)'; msg.textContent = d.detail||'오류가 발생했어요.';
+        }
+      }).catch(()=>{ msg.style.color='var(--danger)'; msg.textContent = '서버에 연결할 수 없어요.'; });
     return;
   }
   if(action==='acct-del'){
