@@ -4819,14 +4819,19 @@ function renderDiscoverSection(){
           '<span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>'+
           '<span style="font-size:14px;font-weight:700;color:var(--ink);">AI 답변 보고 결과 선택</span>'+
         '</div>'+
-        '<textarea data-bind="discover_ai_answer" style="min-height:80px;font-size:12px;" placeholder="AI가 뭐라고 했어? (선택사항 — 기록용으로 붙여넣어도 돼)">'+esc(getV('discover_ai_answer',''))+'</textarea>'+
+        '<textarea data-bind="discover_ai_answer" style="min-height:160px;font-size:12px;width:100%;box-sizing:border-box;" placeholder="AI가 뭐라고 했어? (선택사항 — 기록용으로 붙여넣어도 돼)" oninput="window._renderSheet()">'+esc(getV('discover_ai_answer',''))+'</textarea>'+
         '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
-          '<button type="button" onclick="setV(\'discover_result_state\',\'possible\');window._renderSheet();" '+
-            'style="padding:8px 16px;border-radius:8px;border:2px solid '+(resultState==='possible'?'var(--ok)':'var(--line)')+';background:'+(resultState==='possible'?'var(--ok-soft)':'var(--panel)')+';color:'+(resultState==='possible'?'var(--ok)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">✅ AI 써도 됨</button>'+
-          '<button type="button" onclick="setV(\'discover_result_state\',\'redefine\');window._renderSheet();" '+
-            'style="padding:8px 16px;border-radius:8px;border:2px solid '+(resultState==='redefine'?'var(--blueprint)':'var(--line)')+';background:'+(resultState==='redefine'?'var(--blueprint-soft)':'var(--panel)')+';color:'+(resultState==='redefine'?'var(--blueprint)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">🔄 문제 다시 정의</button>'+
-          '<button type="button" onclick="setV(\'discover_result_state\',\'unnecessary\');window._renderSheet();" '+
-            'style="padding:8px 16px;border-radius:8px;border:2px solid '+(resultState==='unnecessary'?'var(--ink)':'var(--line)')+';background:'+(resultState==='unnecessary'?'var(--panel)':'var(--panel)')+';color:'+(resultState==='unnecessary'?'var(--ink)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">🥔 AI 불필요</button>'+
+          (()=>{
+            const hasAnswer = !!getV('discover_ai_answer','').trim();
+            const btnStyle = (active, color) => hasAnswer
+              ? 'padding:8px 16px;border-radius:8px;border:2px solid '+(active?color:'var(--line)')+';background:'+(active?color+'20':'var(--panel)')+';color:'+(active?color:'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;'
+              : 'padding:8px 16px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--line);font-size:13px;font-weight:700;cursor:not-allowed;opacity:0.4;';
+            return (
+              '<button type="button" '+(hasAnswer?'onclick="setV(\'discover_result_state\',\'possible\');window._renderSheet();"':'disabled')+' style="'+btnStyle(resultState==='possible','var(--ok)')+'">✅ AI 써도 됨</button>'+
+              '<button type="button" '+(hasAnswer?'onclick="setV(\'discover_result_state\',\'redefine\');window._renderSheet();"':'disabled')+' style="'+btnStyle(resultState==='redefine','var(--blueprint)')+'">🔄 문제 다시 정의</button>'+
+              '<button type="button" '+(hasAnswer?'onclick="setV(\'discover_result_state\',\'unnecessary\');window._renderSheet();"':'disabled')+' style="'+btnStyle(resultState==='unnecessary','var(--ink)')+'">🥔 AI 불필요</button>'
+            );
+          })()+
         '</div>'+
       '</div>'+
     '</div>'+
