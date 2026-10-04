@@ -566,12 +566,26 @@ def list_submissions(x_admin_token: str = Header(default="")):
     rows = db_fetchall(conn,
         "SELECT * FROM submissions ORDER BY updated_at DESC"
     )
+    # user_id가 있는 것들만 모아서 username을 한 번에 조회 (로그인한 적 있는 제출만 계정이 붙음 —
+    # 지금 익명으로 들어온 것들은 아직 username이 없고, 나중에 그 사람이 계정을 만들어서
+    # 같은 브라우저로 로그인하면 user_id가 자동으로 붙어서 여기도 채워진다)
+    uids = sorted({r["user_id"] for r in rows if r["user_id"]})
+    username_by_uid = {}
+    if uids:
+        if USE_PG:
+            urows = db_fetchall(conn, "SELECT id,username FROM users WHERE id = ANY(%s)", (uids,))
+        else:
+            qmarks = ",".join("?" * len(uids))
+            urows = db_fetchall(conn, f"SELECT id,username FROM users WHERE id IN ({qmarks})", tuple(uids))
+        username_by_uid = {str(u["id"]): u["username"] for u in urows}
     conn.close()
     # 한 사람이 씨앗을 여러 개 만들 수 있어서, 여기선 doc_id 하나당 한 줄 그대로 내려준다.
     # (이름/IP로 같은 사람 것끼리 묶어서 보여주는 건 화면 쪽 dedupeByAuthor()가 한다)
     out = []
     for r in rows:
         item = row_to_summary(r)
+        item["userId"] = r["user_id"]
+        item["username"] = username_by_uid.get(r["user_id"]) if r["user_id"] else None
         f = json.loads(r["fields"] or "{}")
         item["gate"] = {
             "level": f.get("g_level", ""),

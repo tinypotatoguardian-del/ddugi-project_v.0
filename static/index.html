@@ -2551,11 +2551,13 @@ async function renderDashboard(){
         : '<span style="padding:2px 8px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-size:11px;">✏️ 작성중</span>';
       const seedName = v.task && v.task.seedName ? esc(v.task.seedName) : (v.name ? esc(v.name) : '<span style="color:var(--ink-soft);">미입력</span>');
       const rec = v.gateReview && v.gateReview.decision==='인정' ? lvLabel(gateLevelNum(v.gateReview.level)) : '-';
+      const idCell = v.username ? '👤 '+esc(v.username) : '<span style="color:var(--ink-soft);">계정 없음</span>';
       return '<tr>'+
         '<td style="font-weight:600;">'+seedName+'</td>'+
         '<td>'+statusBadge+'</td>'+
         '<td>'+miniBar(filled, total)+'</td>'+
         '<td>'+stageLabel(status==='완료'?100:pct)+'</td>'+
+        '<td style="font-size:11px;">'+idCell+'<br><span style="color:var(--ink-soft);">'+esc(v.ip||'-')+'</span></td>'+
         '<td style="font-size:11px;color:var(--ink-soft);">'+esc(when)+'</td>'+
         '<td style="font-size:11px;color:var(--ink-soft);">'+esc(rec)+'</td>'+
       '</tr>';
@@ -2587,7 +2589,7 @@ async function renderDashboard(){
         : '')+
       '<h3 style="margin:16px 0 8px">씨앗 진행 현황</h3>'+
       '<table class="dtable"><thead><tr>'+
-        '<th>씨앗 이름</th><th>상태</th><th>입력 현황</th><th>단계</th><th>마지막 저장</th><th>인정 레벨</th>'+
+        '<th>씨앗 이름</th><th>상태</th><th>입력 현황</th><th>단계</th><th>아이디/IP</th><th>마지막 저장</th><th>인정 레벨</th>'+
       '</tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
