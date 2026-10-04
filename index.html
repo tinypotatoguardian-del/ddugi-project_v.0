@@ -1463,6 +1463,8 @@ function getV(id, def){ return (id in state.fields) ? state.fields[id] : def; }
 function setV(id, val){ state.fields[id]=val; persist(); }
 window.getV = getV;
 window.setV = setV;
+window._saveConfirmHtml = function(){ return saveConfirmHtml(); };
+window._saveConfirmHtml = saveConfirmHtml;
 // 외부(window) 접근용
 window._setV = function(id, val){ setV(id, val); };
 window._getV = function(id, def){ return getV(id, def); };
@@ -2344,7 +2346,7 @@ function navFootHtml(sec){
       saveHtml =
         '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">'+
           '<button type="button" disabled style="padding:8px 18px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;">💾 저장</button>'+
-          '<button type="button" onclick="state.completed=false;state.locked=false;persist();renderSheet();" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
+          '<button type="button" onclick="window._state.completed=false;window._state.locked=false;window._persist();window._renderSheet();" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
           '<span style="font-size:12px;color:var(--ok);">✅ 완료됨</span>'+
         '</div>';
     } else if(state.locked){
@@ -2352,14 +2354,14 @@ function navFootHtml(sec){
       saveHtml =
         '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">'+
           '<button type="button" disabled style="padding:8px 18px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;">💾 저장</button>'+
-          '<button type="button" onclick="state.locked=false;persist();renderSheet();" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
+          '<button type="button" onclick="window._state.locked=false;window._persist();window._renderSheet();" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
           '<span style="font-size:12px;color:var(--ink-soft);">🔒 저장됨</span>'+
         '</div>';
     } else {
       // 작성 중: 저장(활성)
       saveHtml =
         '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">'+
-          '<button type="button" onclick="showModal(saveConfirmHtml())" style="padding:8px 18px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💾 저장</button>'+
+          '<button type="button" onclick="showModal(window._saveConfirmHtml())" style="padding:8px 18px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💾 저장</button>'+
           '<span style="font-size:12px;color:var(--ink-soft);">저장하면 잠기고, 수정 버튼으로 다시 열 수 있어요</span>'+
         '</div>';
     }
