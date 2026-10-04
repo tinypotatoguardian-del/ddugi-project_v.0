@@ -1350,6 +1350,8 @@ function flashSaved(){
 
 function getV(id, def){ return (id in state.fields) ? state.fields[id] : def; }
 function setV(id, val){ state.fields[id]=val; persist(); }
+window.getV = getV;
+window.setV = setV;
 // 외부(window) 접근용
 window._setV = function(id, val){ setV(id, val); };
 window._getV = function(id, def){ return getV(id, def); };
@@ -4595,10 +4597,20 @@ function renderIntroSection(){
     document.body.appendChild(t);
   }
 
+  const introSaved = getV('intro_saved', false);
+
   return '<div class="frame intro">'+editBtn+autoFillHtml+body+
-    (introEditing ? '' : '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>'+
-      '<button type="button" class="secondary" onclick="goToConv()">🌱 대화로 시작하기</button>'+
-      '<button type="button" class="secondary" data-action="goto" data-target="example">🥔 먼저 온 포테이토 보기</button></div>')+
+    (introEditing ? '' :
+      '<div class="exportbar">'+
+        (!introSaved
+          ? '<button type="button" onclick="setV(\'intro_saved\',true);persist();window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💾 저장 완료</button>'
+          : '<button type="button" onclick="setV(\'intro_saved\',false);window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정하기</button>'+
+            '<span style="font-size:12px;color:var(--ok);margin-left:8px;">✅ 저장됨</span>'
+        )+
+        '<button type="button" class="secondary" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>'+
+        '<button type="button" class="secondary" data-action="goto" data-target="example">🥔 먼저 온 포테이토 보기</button>'+
+      '</div>'
+    )+
   '</div>';
 }
 
