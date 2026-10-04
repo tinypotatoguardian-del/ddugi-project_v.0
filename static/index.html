@@ -4673,106 +4673,172 @@ function renderPromptKitSection(){
 }
 
 function renderDiscoverSection(){
-  const PROBLEMS = {
-    work: {
-      label: '💼 보고서 자동 취합',
-      desc: '매주 5개 팀에서 엑셀 받아서 합치는 데 2시간씩 걸려요.',
-      a: '보고서 자동화 해줘',
-      b: '매주 5개 팀에서 엑셀 파일을 받아서 하나로 합치는 작업을 자동화하는 방법 알려줘. IT팀 없이 혼자 할 수 있는 방법으로.',
-      c: '역할: 업무 자동화 전문가\n상황: 매주 월요일마다 5개 팀(영업/마케팅/운영/CS/재무)에서 각기 다른 형식의 엑셀을 받아 하나의 보고서로 합침. 수작업으로 2시간 소요.\n제약: IT팀 지원 없음, 파이썬 모름, Excel/Google Sheets만 가능\n요청: 지금 당장 적용 가능한 방법 3가지를 난이도 순으로 알려줘. 각각 예상 시간 절감 효과도 포함해줘.',
-      diffA: '너무 모호 → AI가 파이썬, API, 서버까지 제안함. 실제로 못 씀.',
-      diffB: '상황이 생겨서 실용적인 답 나옴. 근데 제약조건이 없어서 못 쓰는 방법도 섞임.',
-      diffC: '역할 + 상황 + 제약 + 요청 형식. 바로 쓸 수 있는 답만 나옴.'
+  // 마음의 방 입구에서 가져온 값
+  const seedName    = getV('s1_name','');
+  const workarea    = getV('s1_workarea','');
+  const cat         = getV('s1_cat','');
+  const freetext    = getV('intro_freetext','');
+  const hasData     = !!(seedName || freetext);
+
+  // 판단 프롬프트 생성
+  const problemDesc = seedName
+    ? ('씨앗: '+seedName+(workarea?'\n영역: '+workarea:'')+(cat?'\n카테고리: '+cat:'')+(freetext?'\n원문 설명: '+freetext:''))
+    : freetext || '';
+
+  const step1Prompt = problemDesc
+    ? ('아래 업무/문제를 보고, AI가 정말 필요한지 먼저 판단해줘.\n\n'+problemDesc+'\n\n'+
+       '아래 형식으로 답해줘:\n\n'+
+       '1. 판단: [AI 활용 가능 / AI 불필요 / 문제 재정의 필요] 중 하나\n'+
+       '2. 이유: (2~3줄)\n'+
+       '3. 제안: AI가 필요 없더라도 더 나은 방향이 있다면 알려줘.\n'+
+       '   (기획 방향, 프로세스 개선, 더 적합한 도구 등)')
+    : '';
+
+  // 카테고리별 프롬프트 구조 추천
+  const STRUCT_MAP = {
+    '① 업무관리형':       '역할·상황·반복 횟수·현재 방법·원하는 결과',
+    '② 정보검색·지식형':  '역할·질문 배경·찾는 정보 범위·출처 조건',
+    '③ 분석·판단지원형':  '역할·데이터 설명·판단 기준·출력 형식',
+    '④ 문서·보고 자동화형':'역할·문서 목적·독자·포함할 내용·형식',
+    '⑤ 업무 프로세스 자동화형':'역할·현재 프로세스·제약(IT/도구)·원하는 결과',
+  };
+  const recStruct = STRUCT_MAP[cat] || '역할 / 상황 / 제약 / 요청';
+
+  // A/B/C 참고 예시 (접어두기)
+  const EXAMPLES = {
+    '보고서': {
+      a:'보고서 자동화 해줘',
+      b:'매주 5개 팀에서 엑셀 파일을 받아서 하나로 합치는 작업을 자동화하는 방법 알려줘. IT팀 없이 혼자 할 수 있는 방법으로.',
+      c:'역할: 업무 자동화 전문가\n상황: 매주 월요일 5개 팀 엑셀 취합. 수작업 2시간.\n제약: IT팀 없음, 파이썬 모름, Excel만 가능\n요청: 지금 당장 적용 가능한 방법 3가지를 난이도 순으로. 시간 절감 효과 포함.'
     },
-    jobhunt: {
-      label: '📝 자소서 피드백',
-      desc: '자소서 쓰고 AI한테 피드백 받고 싶어요.',
-      a: '내 자소서 피드백해줘',
-      b: '아래 자소서 한 문단을 HR 담당자 입장에서 봐줘. 애매하거나 구체적이지 않은 부분 짚어주고, 어떻게 고치면 좋을지도 알려줘.\n\n[자소서 붙여넣기]',
-      c: '역할: 대기업 HR 담당자 (10년 경력)\n직무: 마케팅 기획 신입\n평가 기준: 구체성, 수치, 차별성, 직무 연관성\n\n아래 자소서를 읽고:\n1. 가장 약한 문장 하나 골라서 이유 설명\n2. 강화할 수 있는 구체적 내용 제안\n3. 이 문단에서 빠진 핵심 정보 알려줘\n\n[자소서 붙여넣기]',
-      diffA: '피드백이 너무 일반적. "더 구체적으로 쓰세요" 수준에서 끝남.',
-      diffB: '관점(HR)을 줘서 실용적인 피드백 나옴. 근데 평가 기준이 없어서 두루뭉술함.',
-      diffC: '역할 + 직무 + 평가기준 + 질문 구조화. 바로 고칠 수 있는 피드백 나옴.'
+    '자소서': {
+      a:'내 자소서 피드백해줘',
+      b:'아래 자소서 한 문단을 HR 담당자 입장에서 봐줘. 애매한 부분 짚어주고 어떻게 고치면 좋을지 알려줘.\n\n[자소서 붙여넣기]',
+      c:'역할: 대기업 HR 담당자 10년\n직무: 마케팅 기획 신입\n평가 기준: 구체성, 수치, 차별성\n요청:\n1. 가장 약한 문장 하나 + 이유\n2. 강화 제안\n3. 빠진 핵심 정보\n\n[자소서 붙여넣기]'
     },
-    study: {
-      label: '🎓 수행평가 주제 선정',
-      desc: '수행평가 주제를 못 정하겠어요. 뭐부터 해야 할지 모르겠어요.',
-      a: '수행평가 주제 추천해줘',
-      b: '고2 사회문화 수행평가야. 주제를 자유롭게 정할 수 있어. 내가 요즘 관심 있는 건 SNS랑 청소년 정신건강인데, 탐구할 수 있는 주제 3개 추천해줘.',
-      c: '역할: 수행평가 멘토\n과목: 사회문화 (고2)\n조건: 설문조사 가능, 통계 자료 활용 가능, 4주 안에 완성\n관심 주제: SNS 사용과 청소년 정신건강\n\n아래 형식으로 주제 3개 제안해줘:\n- 주제명\n- 탐구 가능한 이유 (자료 수집 가능성)\n- 예상 결론 방향\n- 함정 (이 주제의 어려운 점)',
-      diffA: '너무 광범위. AI가 아무 주제나 나열함. 실제로 쓸 수 없는 것도 많음.',
-      diffB: '관심사를 줘서 관련 주제 나옴. 근데 실현 가능성 확인 안 됨.',
-      diffC: '조건 + 형식 지정으로 바로 쓸 수 있는 주제만 나옴. 함정까지 알 수 있음.'
+    '수행평가': {
+      a:'수행평가 주제 추천해줘',
+      b:'고2 사회문화 수행평가. 관심: SNS와 청소년 정신건강. 주제 3개 추천해줘.',
+      c:'역할: 수행평가 멘토\n과목: 사회문화 고2\n조건: 설문 가능, 통계 자료 활용, 4주 안에 완성\n형식: 주제명 / 탐구 가능한 이유 / 예상 결론 / 함정\n\n위 형식으로 3개 제안해줘.'
     }
   };
 
-  const sel = window._discoverProblem || 'work';
-  const P = PROBLEMS[sel];
+  // 내 프롬프트 조립
+  const customKey = 'discover_step2_prompt';
+  const defaultStep2 = seedName
+    ? ('역할: [어떤 전문가에게 물어볼지]\n상황: '+seedName+(freetext ? '\n상세: '+freetext : '')+'\n제약: [도구/환경/시간 제약]\n요청: [구체적으로 원하는 것]')
+    : '역할: \n상황: \n제약: \n요청: ';
+  const customPrompt = getV(customKey, defaultStep2);
 
-  function tabBtn(id, label){
-    const a = sel===id;
-    return '<button type="button" onclick="window._discoverProblem=\''+id+'\';window._renderSheet();" '+
-      'style="padding:8px 14px;border-radius:8px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';'+
-      'background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';'+
-      'font-size:13px;font-weight:'+(a?700:400)+';cursor:pointer;">'+label+'</button>';
+  // 결과 선택 상태
+  const resultState = getV('discover_result_state','');
+
+  let step2Html = '';
+  if(resultState === 'possible'){
+    step2Html =
+      '<div style="background:var(--ok-soft);border:1px solid var(--ok);border-radius:10px;padding:16px 20px;margin-bottom:16px;">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--ok);margin-bottom:8px;">✅ AI 써도 됨 — 이제 어떤 프롬프트로?</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">추천 구조: <b>'+esc(recStruct)+'</b></div>'+
+        '<textarea id="discoverCustom" style="width:100%;min-height:120px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;" '+
+          'oninput="setV(\''+customKey+'\',this.value)">'+esc(customPrompt)+'</textarea>'+
+        '<div class="exportbar">'+
+          '<button type="button" onclick="(()=>{const t=document.getElementById(\'discoverCustom\');if(t)navigator.clipboard.writeText(t.value).then(()=>{const b=event.target;b.textContent=\'✅ 복사됨\';setTimeout(()=>b.textContent=\'📎 복사해서 AI에 붙여넣기\',1500);})})()\">📎 복사해서 AI에 붙여넣기</button>'+
+        '</div>'+
+      '</div>';
+  } else if(resultState === 'redefine'){
+    step2Html =
+      '<div style="background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:10px;padding:16px 20px;margin-bottom:16px;">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--blueprint);margin-bottom:6px;">🔄 문제를 좀 더 다듬어봐</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">입구로 돌아가서 고민을 다시 적어줘. AI가 준 힌트를 참고하면 더 명확해질 거야.</div>'+
+        '<div class="exportbar"><button type="button" data-action="goto" data-target="intro">🚪 마음의 방 입구로 →</button></div>'+
+      '</div>';
+  } else if(resultState === 'unnecessary'){
+    step2Html =
+      '<div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:16px 20px;margin-bottom:16px;">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;">🥔 AI가 필요 없다고 나왔어도 괜찮아</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);line-height:1.8;margin-bottom:12px;">'+
+          '문제를 제대로 정의한 거야.<br>'+
+          'AI 대신 더 나은 방향이 나왔다면 그게 더 중요해.<br>'+
+          '<b>AI가 제안한 방향을 여기에 붙여넣어봐.</b>'+
+        '</div>'+
+        '<textarea data-bind="discover_alt" style="min-height:100px;font-size:12px;" placeholder="예: 엑셀 수식으로 30초면 끝. VLOOKUP 써봐.&#10;예: 프로세스 자체를 먼저 단순화해야 함. AI보다 담당자 분리가 먼저.">'+esc(getV('discover_alt',''))+'</textarea>'+
+        '<div style="font-size:11px;color:var(--ink-soft);margin-top:8px;">💡 이 내용도 씨앗 정의서 1-8(해결 방향 가설)에 써볼 수 있어.</div>'+
+      '</div>';
   }
-
-  const userKey = 'discover_custom_'+sel;
-  const userPrompt = getV(userKey, P.b);
 
   return '<div class="frame">'+
     '<h2>00 · 프롬프트 연습장</h2>'+
-    '<div class="sub">같은 문제, 다른 프롬프트 — 어떻게 쓰냐에 따라 AI 답변이 이렇게 달라져요</div>'+
+    '<div class="sub">AI가 필요한지 먼저 확인하고 — 필요하면 어떻게 물어볼지 설계해봐</div>'+
 
-    // 문제 선택
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">'+
-      tabBtn('work','💼 보고서 취합')+
-      tabBtn('jobhunt','📝 자소서 피드백')+
-      tabBtn('study','🎓 수행평가 주제')+
-    '</div>'+
-    '<div style="background:var(--panel);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--ink-soft);margin-bottom:20px;">'+
-      esc(P.desc)+
-    '</div>'+
+    // 감지된 내 문제
+    (hasData
+      ? '<div style="background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:10px;padding:14px 18px;margin-bottom:20px;">'+
+          '<div style="font-size:11px;font-weight:700;color:var(--blueprint);margin-bottom:8px;">📌 마음의 방 입구에서 가져온 내 문제</div>'+
+          (seedName ? '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;">'+esc(seedName)+'</div>' : '')+
+          (workarea||cat ? '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">'+[workarea,cat].filter(Boolean).map(esc).join(' · ')+'</div>' : '')+
+          (freetext ? '<div style="font-size:12px;color:var(--ink-soft);line-height:1.6;margin-top:6px;padding-top:6px;border-top:1px solid var(--line-soft);">'+esc(freetext.slice(0,120))+(freetext.length>120?'…':'')+'</div>' : '')+
+        '</div>'
+      : '<div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--ink-soft);">'+
+          '📌 아직 고민을 안 적었어요. <button type="button" data-action="goto" data-target="intro" style="font-size:13px;color:var(--blueprint);background:none;border:none;cursor:pointer;text-decoration:underline;">마음의 방 입구</button>에서 먼저 적어줘요.'+
+        '</div>'
+    )+
 
-    // 3단 비교
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:8px;">'+
-      // A
-      '<div style="border:2px solid #ef4444;border-radius:10px;overflow:hidden;">'+
-        '<div style="background:#ef444415;padding:8px 12px;font-size:12px;font-weight:700;color:#ef4444;">❌ 버전 A — 기본형</div>'+
-        '<div style="padding:12px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;min-height:100px;">'+esc(P.a)+'</div>'+
+    // STEP 1
+    '<div style="border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;margin-bottom:20px;">'+
+      '<div style="padding:14px 18px;border-bottom:1px solid var(--line-soft);">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
+          '<span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>'+
+          '<span style="font-size:14px;font-weight:700;color:var(--ink);">이 프롬프트로 AI한테 먼저 물어봐</span>'+
+          '<span style="font-size:12px;color:var(--ink-soft);">AI가 필요한지부터 확인</span>'+
+        '</div>'+
+        (step1Prompt
+          ? '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;max-height:160px;overflow-y:auto;" id="discoverStep1Prompt">'+esc(step1Prompt)+'</div>'+
+            '<div class="exportbar"><button type="button" onclick="(()=>{navigator.clipboard.writeText(document.getElementById(\'discoverStep1Prompt\').textContent).then(()=>{const b=event.target;b.textContent=\'✅ 복사됨\';setTimeout(()=>b.textContent=\'📎 복사\',1500);})})()\">📎 복사</button></div>'
+          : '<div style="font-size:12px;color:var(--ink-soft);">마음의 방 입구에서 고민을 먼저 적어줘!</div>'
+        )+
       '</div>'+
-      // B
-      '<div style="border:2px solid var(--blueprint);border-radius:10px;overflow:hidden;">'+
-        '<div style="background:var(--blueprint-soft);padding:8px 12px;font-size:12px;font-weight:700;color:var(--blueprint);">🔶 버전 B — 구체형</div>'+
-        '<div style="padding:12px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;min-height:100px;">'+esc(P.b)+'</div>'+
-      '</div>'+
-      // C
-      '<div style="border:2px solid var(--ok);border-radius:10px;overflow:hidden;">'+
-        '<div style="background:var(--ok-soft);padding:8px 12px;font-size:12px;font-weight:700;color:var(--ok);">✅ 버전 C — 전문가형</div>'+
-        '<div style="padding:12px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;min-height:100px;">'+esc(P.c)+'</div>'+
-      '</div>'+
-    '</div>'+
 
-    // 차이점
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px;">'+
-      '<div style="background:#ef444410;border-radius:8px;padding:10px 12px;font-size:11px;color:#ef4444;line-height:1.6;">'+esc(P.diffA)+'</div>'+
-      '<div style="background:var(--blueprint-soft);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--blueprint);line-height:1.6;">'+esc(P.diffB)+'</div>'+
-      '<div style="background:var(--ok-soft);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--ok);line-height:1.6;">'+esc(P.diffC)+'</div>'+
-    '</div>'+
-
-    // 내 버전 만들기
-    '<div style="border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px;">'+
-      '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">✏️ 내 버전 만들기</div>'+
-      '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">B를 기반으로 직접 수정해봐. 역할·상황·제약·요청 형식으로 바꿔보면 C에 가까워져.</div>'+
-      '<textarea id="discoverCustom" style="width:100%;min-height:140px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;" '+
-        'oninput="setV(\''+userKey+'\',this.value)">'+esc(userPrompt)+'</textarea>'+
-      '<div class="exportbar">'+
-        '<button type="button" onclick="(()=>{const t=document.getElementById(\'discoverCustom\');if(t)navigator.clipboard.writeText(t.value).then(()=>{const b=event.target;b.textContent=\'✅ 복사됨\';setTimeout(()=>b.textContent=\'📎 복사해서 AI에 붙여넣기\',1500);})})()">📎 복사해서 AI에 붙여넣기</button>'+
-        '<button type="button" class="secondary" onclick="setV(\''+userKey+'\',\''+P.b.replace(/'/g,"\\'").replace(/\n/g,'\\n')+'\');document.getElementById(\'discoverCustom\').value=getV(\''+userKey+'\',\'\');"> B로 초기화</button>'+
+      // AI 답변 + 결과 선택
+      '<div style="padding:14px 18px;">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
+          '<span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>'+
+          '<span style="font-size:14px;font-weight:700;color:var(--ink);">AI 답변 보고 결과 선택</span>'+
+        '</div>'+
+        '<textarea data-bind="discover_ai_answer" style="min-height:80px;font-size:12px;" placeholder="AI가 뭐라고 했어? (선택사항 — 기록용으로 붙여넣어도 돼)">'+esc(getV('discover_ai_answer',''))+'</textarea>'+
+        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
+          '<button type="button" onclick="setV(\'discover_result_state\',\'possible\');window._renderSheet();" '+
+            'style="padding:8px 16px;border-radius:8px;border:2px solid '+(resultState==='possible'?'var(--ok)':'var(--line)')+';background:'+(resultState==='possible'?'var(--ok-soft)':'var(--panel)')+';color:'+(resultState==='possible'?'var(--ok)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">✅ AI 써도 됨</button>'+
+          '<button type="button" onclick="setV(\'discover_result_state\',\'redefine\');window._renderSheet();" '+
+            'style="padding:8px 16px;border-radius:8px;border:2px solid '+(resultState==='redefine'?'var(--blueprint)':'var(--line)')+';background:'+(resultState==='redefine'?'var(--blueprint-soft)':'var(--panel)')+';color:'+(resultState==='redefine'?'var(--blueprint)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">🔄 문제 다시 정의</button>'+
+          '<button type="button" onclick="setV(\'discover_result_state\',\'unnecessary\');window._renderSheet();" '+
+            'style="padding:8px 16px;border-radius:8px;border:2px solid '+(resultState==='unnecessary'?'var(--ink)':'var(--line)')+';background:'+(resultState==='unnecessary'?'var(--panel)':'var(--panel)')+';color:'+(resultState==='unnecessary'?'var(--ink)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">🥔 AI 불필요</button>'+
+        '</div>'+
       '</div>'+
     '</div>'+
+
+    // STEP 2 (결과에 따라)
+    step2Html+
+
+    // 참고 예시 (접어두기)
+    '<details style="margin-top:8px;">'+
+      '<summary style="cursor:pointer;font-size:12px;color:var(--ink-soft);padding:4px 0;list-style:none;">▶ 참고 — A/B/C 프롬프트 비교 예시</summary>'+
+      '<div style="margin-top:12px;display:flex;flex-direction:column;gap:16px;">'+
+        Object.entries(EXAMPLES).map(([label, ex]) =>
+          '<div>'+
+            '<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;">📌 '+esc(label)+'</div>'+
+            '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">'+
+              '<div style="border:1px solid #ef4444;border-radius:8px;padding:10px 12px;font-size:11px;white-space:pre-wrap;color:var(--ink);line-height:1.6;"><div style="color:#ef4444;font-weight:700;margin-bottom:4px;">❌ A</div>'+esc(ex.a)+'</div>'+
+              '<div style="border:1px solid var(--blueprint);border-radius:8px;padding:10px 12px;font-size:11px;white-space:pre-wrap;color:var(--ink);line-height:1.6;"><div style="color:var(--blueprint);font-weight:700;margin-bottom:4px;">🔶 B</div>'+esc(ex.b)+'</div>'+
+              '<div style="border:1px solid var(--ok);border-radius:8px;padding:10px 12px;font-size:11px;white-space:pre-wrap;color:var(--ink);line-height:1.6;"><div style="color:var(--ok);font-weight:700;margin-bottom:4px;">✅ C</div>'+esc(ex.c)+'</div>'+
+            '</div>'+
+          '</div>'
+        ).join('')+
+      '</div>'+
+    '</details>'+
   '</div>';
 }
+
+
 
 /* ============== 13 Gate: 결과물 → AI 1차 판정 → 관리자 최종 확인 ============== */
 const gateLevelNum = v => { const m = String(v||'').match(/^L(\d)/); return m ? +m[1] : 0; };
