@@ -436,6 +436,7 @@
 <header id="apphead">🥔 ddugi Project v.0<span class="apphead-sub">🏢🌹 AI 데이터센터 증식으로 인한 지구 종말 방지 프로젝트</span>
 <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
   <span id="userBadge" style="font-size:12px;color:var(--ink-soft);display:none;"></span>
+  <button type="button" id="registerBtn" onclick="openAuthModal('register')" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;">회원가입</button>
   <button type="button" id="loginBtn" onclick="openAuthModal('login')" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;">로그인</button>
   <button type="button" id="logoutBtn" onclick="userLogout()" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;display:none;">로그아웃</button>
   <button type="button" id="changelogBtn" onclick="showChangelog()" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:inherit;display:none;">📋 업데이트 이력</button>
@@ -1059,11 +1060,13 @@ function _authHeaders(){
 
 function updateAuthUI(){
   const loginBtn = document.getElementById('loginBtn');
+  const registerBtn = document.getElementById('registerBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const badge = document.getElementById('userBadge');
   const changelogBtn = document.getElementById('changelogBtn');
   if(currentUser){
     if(loginBtn) loginBtn.style.display='none';
+    if(registerBtn) registerBtn.style.display='none';
     if(logoutBtn) logoutBtn.style.display='';
     if(badge){
       badge.style.display='';
@@ -1078,6 +1081,7 @@ function updateAuthUI(){
     if(changelogBtn) changelogBtn.style.display = isAdmin ? '' : 'none';
   } else {
     if(loginBtn) loginBtn.style.display='';
+    if(registerBtn) registerBtn.style.display='';
     if(logoutBtn) logoutBtn.style.display='none';
     if(badge){ badge.style.display='none'; badge.onclick=null; }
     if(changelogBtn) changelogBtn.style.display='none';
