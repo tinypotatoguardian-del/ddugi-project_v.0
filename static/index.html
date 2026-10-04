@@ -878,8 +878,7 @@ const SECTIONS = [
 const TOTAL_SECTIONS = SECTIONS.filter(s=>!s.special && !s.disabled).length;
 // 사이드바 상위 메뉴: 그룹의 첫 섹션 id → 그룹 이름
 const NAV_GROUPS = {
-  intro:   '🚪 마음의 방 입구',
-  mydash:  '☆ 나의 마음의 방',
+  intro:   '🚪 나의 마음의 방',
   example: 'A. 씨앗 정의서',
   s16:     'B. 가지 그리기 (설계)',
   s12:     'C. 열매와 수확 (결과)'
@@ -3512,9 +3511,11 @@ function DEFAULT_INTRO_HTML(){
       '<span style="color:var(--ink-soft);">AI가 필요한지 판단하기 전에, 먼저 문제를 제대로 들여다보는 곳이야.</span>'+
     '</div>'+
   '</div>'+
-  '<h2 style="margin:0 0 16px;font-size:18px;color:var(--ink);">이런 상황에서 써봤어요</h2>'+
-
-  '<div style="display:flex;flex-direction:column;gap:14px;">'+
+  '<details style="margin-bottom:20px;">'+
+  '<summary style="cursor:pointer;font-size:15px;font-weight:700;color:var(--ink);padding:4px 0;list-style:none;display:flex;align-items:center;gap:6px;">'+
+    '▶ 이런 상황에서 써봤어요'+
+  '</summary>'+
+  '<div style="margin-top:14px;display:flex;flex-direction:column;gap:14px;">'
 
   '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px;">'+
     '<div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;">📚 고2 · 수행평가 준비</div>'+
@@ -3562,6 +3563,7 @@ function DEFAULT_INTRO_HTML(){
   '</div>'+
 
   '</div>'+
+  '</details>'+
   '<blockquote style="margin:20px 0 0;">AI한테 시키기 전에, 나부터 문제를 정리하자.</blockquote>'+
   '<ul class="intro-principles"><li>문제를 먼저 정리한다</li><li>간단한 방법부터 시도한다</li><li>AI가 정말 필요할 때 쓴다</li><li>결과는 내가 직접 확인한다</li></ul>';
 }
@@ -4382,6 +4384,11 @@ window.introGoToSeed = function(){
   if(toast) toast.style.display='none';
   window._state.cur='s1'; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
 };
+window.introGoToDiscover = function(){
+  const toast = document.getElementById('introToast');
+  if(toast) toast.style.display='none';
+  window._state.cur='discover'; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
+};
 window.introGenPrompt = function(){
   const text = (document.getElementById('introFreeText')||{}).value||'';
   if(text) setV('intro_freetext', text);
@@ -4497,7 +4504,7 @@ window.introAutoFill = function(){
   setTimeout(()=>{ window._state.cur='s1'; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
     // 토스트 띄우기
     const toast = document.getElementById('introToast');
-    if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },6000); }
+    if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },8000); }
   }, 2500);
 };
 
@@ -4574,10 +4581,11 @@ function renderIntroSection(){
 </div>
 <!-- 자동채우기 완료 토스트 -->
 <div id="introToast" style="display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:14px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);align-items:center;gap:12px;">
-  <span>🌱 씨앗 정의서에 채워뒀어! 확인하고 수정해줘</span>
-  <button type="button" onclick="introGoToSeed()" style="padding:6px 14px;border-radius:8px;border:none;background:#fff;color:var(--ok);font-size:13px;font-weight:700;cursor:pointer;">씨앗 정의서로 →</button>
+  <span>🌱 씨앗 정의서에 채워뒀어!</span>
+  <button type="button" onclick="introGoToSeed()" style="padding:6px 14px;border-radius:8px;border:none;background:#fff;color:var(--ok);font-size:13px;font-weight:700;cursor:pointer;">01 씨앗 심기 →</button>
+  <button type="button" onclick="introGoToDiscover()" style="padding:6px 14px;border-radius:8px;border:2px solid #fff;background:transparent;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">00 씨앗 찾기 →</button>
   <button type="button" onclick="document.getElementById('introToast').style.display='none'" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px;">✕</button>
-</div>`;
+</div>
 
   return '<div class="frame intro">'+editBtn+autoFillHtml+body+
     (introEditing ? '' : '<div class="exportbar"><button type="button" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>'+
