@@ -470,8 +470,6 @@
         <div class="breadcrumb" id="progressText"></div>
         <div class="topactions">
           <span class="breadcrumb" id="statusBadge"></span>
-          <button type="button" id="saveToggleBtn" class="chip-btn">저장</button>
-          <button type="button" id="completeBtn" class="chip-btn">완료</button>
         </div>
       </div>
       <div class="ruler" id="ruler"></div>
@@ -1874,19 +1872,12 @@ function applyLockState(){
 }
 
 function updateTopActions(){
-  const btn = document.getElementById('saveToggleBtn');
-  const comp = document.getElementById('completeBtn');
   const badge = document.getElementById('statusBadge');
   const topbar = document.getElementById('topbar');
-  if(!btn) return;
-  // 작성 섹션이 아닌 곳은 topbar 숨기기 (단, landing은 모바일 메뉴를 위해 유지)
   const cur = SECTIONS.find(s=>s.id===state.cur)||{};
   const hideTopbar = !!cur.special;
   if(topbar) topbar.style.display = hideTopbar ? 'none' : '';
-  btn.textContent = state.locked ? '수정' : '저장';
-  comp.textContent = state.completed ? '완료 취소' : '완료';
-  comp.classList.toggle('done', !!state.completed);
-  badge.textContent = state.completed ? '✅ 완료' : (state.locked ? '🔒 저장됨' : '');
+  if(badge) badge.textContent = state.completed ? '✅ 완료' : (state.locked ? '🔒 저장됨' : '');
 }
 
 function saveConfirmHtml(){
@@ -1899,25 +1890,12 @@ function saveConfirmHtml(){
 }
 
 document.addEventListener('click', function(e){
-  if(e.target.id==='saveToggleBtn'){
-    if(state.locked){
-      state.locked = false;
-      persist(); renderSheet();
-    } else {
-      showModal(saveConfirmHtml());
-    }
-  }
   if(e.target.id==='saveConfirmYes'){
     hideModal();
     state.locked = true;
     persist(); renderSheet();
   }
   if(e.target.id==='saveConfirmNo'){ hideModal(); }
-  if(e.target.id==='completeBtn'){
-    state.completed = !state.completed;
-    if(state.completed) state.locked = true;
-    persist(); renderSheet();
-  }
 });
 
 // 고민거리가 지금 어느 단계에 있는지: 3-1 검증 결과 → 3-2 재정의 → 3-3 구조화 → 완료 버튼, 실제로 채워진 것만 기준
