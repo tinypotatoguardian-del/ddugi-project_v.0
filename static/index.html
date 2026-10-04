@@ -2353,13 +2353,42 @@ async function renderDashboard(){
 
 function navFootHtml(sec){
   const idx = SECTIONS.findIndex(s=>s.id===sec.id);
-  // 준비 중(비활성) 섹션은 이전/다음 이동에서 건너뜀 (마스터는 모두 볼 수 있음)
   let pi = idx-1; while(pi>=0 && SECTIONS[pi].disabled && !isAdmin) pi--;
   let ni = idx+1; while(ni<SECTIONS.length && SECTIONS[ni].disabled && !isAdmin) ni++;
   const prev = SECTIONS[pi];
   const next = SECTIONS[ni];
-  // 어디로 가는지 목적지 이름을 그대로 보여줌 (다음 예시로 넘어가는 버튼과 헷갈리지 않게)
-  return '<div class="navfoot">'+
+
+  // 저장/수정 버튼 — 작성 섹션(special 없는 것)에만
+  let saveHtml = '';
+  if(!sec.special){
+    if(state.completed){
+      // 완료 상태: 저장(비활성) + 수정
+      saveHtml =
+        '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">'+
+          '<button type="button" disabled style="padding:8px 18px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;">💾 저장</button>'+
+          '<button type="button" onclick="state.completed=false;state.locked=false;persist();renderSheet();" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
+          '<span style="font-size:12px;color:var(--ok);">✅ 완료됨</span>'+
+        '</div>';
+    } else if(state.locked){
+      // 저장됨 상태: 저장(비활성) + 수정
+      saveHtml =
+        '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">'+
+          '<button type="button" disabled style="padding:8px 18px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;">💾 저장</button>'+
+          '<button type="button" onclick="state.locked=false;persist();renderSheet();" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
+          '<span style="font-size:12px;color:var(--ink-soft);">🔒 저장됨</span>'+
+        '</div>';
+    } else {
+      // 작성 중: 저장(활성)
+      saveHtml =
+        '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">'+
+          '<button type="button" onclick="showModal(saveConfirmHtml())" style="padding:8px 18px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💾 저장</button>'+
+          '<span style="font-size:12px;color:var(--ink-soft);">저장하면 잠기고, 수정 버튼으로 다시 열 수 있어요</span>'+
+        '</div>';
+    }
+  }
+
+  return saveHtml+
+    '<div class="navfoot">'+
     '<button type="button" data-action="goto" data-target="'+(prev?prev.id:'')+'" '+(prev?'':'disabled')+'>'+
       (prev ? '← '+esc(prev.num+' · '+prev.title) : '← 이전')+'</button>'+
     '<button type="button" data-action="goto" data-target="'+(next?next.id:'')+'" '+(next?'':'disabled')+'>'+
@@ -5437,10 +5466,11 @@ document.addEventListener('click', function(e){
     if(target==='accounts' && !isMaster) return;
     if(target==='visits' && !isMaster) return;
     { const tsec = SECTIONS.find(s=>s.id===target); if(tsec && tsec.disabled && !isMaster) return; }
-    // 로그인 필요 섹션 — 비로그인 시 로그인 모달 유도
+    // 로그인 필요 섹션 — 비로그인 시 로그인 모달 유도 (admin/master 전용 섹션은 위에서 이미 처리)
     const LOGIN_FREE = new Set(['landing','curriculum','aitools','promptkit','intro','feedback','guestbook','roadmap','export']);
     const tsec2 = SECTIONS.find(s=>s.id===target);
-    if(!currentUser && !isAdmin && tsec2 && !LOGIN_FREE.has(tsec2.special)){
+    const isAdminOnly = ['dashboard','tasklist','accounts','taxonomy','visits'].includes(target);
+    if(!currentUser && !isAdmin && !isAdminOnly && tsec2 && !LOGIN_FREE.has(tsec2.special)){
       showModal('<div style="text-align:center;padding:20px 0;">'+
         '<div style="font-size:32px;margin-bottom:8px;">🔒</div>'+
         '<h3 style="margin:0 0 8px;">로그인이 필요해요</h3>'+
