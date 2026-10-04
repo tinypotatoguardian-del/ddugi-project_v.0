@@ -1038,12 +1038,13 @@ def user_register(body: UserRegisterIn):
     ph = hash_code(body.password)
     nick = body.nickname.strip() or username
     plan = inv["plan"] if isinstance(inv, dict) else "free"
+    placeholder_email = username + "@noemail.local"  # email이 NOT NULL/UNIQUE인 옛 스키마 대비 — 실제 이메일 안 씀
     if USE_PG:
-        cur = db_execute(conn, "INSERT INTO users (username,password_hash,nickname,plan,created_at,last_login_at) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id", (username,ph,nick,plan,now,now))
+        cur = db_execute(conn, "INSERT INTO users (username,email,password_hash,nickname,plan,created_at,last_login_at) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id", (username,placeholder_email,ph,nick,plan,now,now))
         uid = str(cur.fetchone()[0])
         conn.commit()
     else:
-        cur = db_execute(conn, "INSERT INTO users (username,password_hash,nickname,plan,created_at,last_login_at) VALUES (?,?,?,?,?,?)", (username,ph,nick,plan,now,now))
+        cur = db_execute(conn, "INSERT INTO users (username,email,password_hash,nickname,plan,created_at,last_login_at) VALUES (?,?,?,?,?,?,?)", (username,placeholder_email,ph,nick,plan,now,now))
         uid = str(cur.lastrowid)
     # 초대코드 사용 처리
     q2 = "UPDATE invite_codes SET used_at=%s,used_by=%s WHERE code=%s" if USE_PG else "UPDATE invite_codes SET used_at=?,used_by=? WHERE code=?"
@@ -1280,12 +1281,13 @@ def admin_create_user(body: AdminCreateUserIn, x_admin_token: str = Header(defau
     now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
     ph = hash_code(username)  # 초기 비번 = 아이디
     nick = body.nickname.strip() or username
+    placeholder_email = username + "@noemail.local"  # email이 NOT NULL/UNIQUE인 옛 스키마 대비 — 실제 이메일 안 씀
     if USE_PG:
-        cur = db_execute(conn, "INSERT INTO users (username,password_hash,nickname,plan,created_at,must_change_password) VALUES (%s,%s,%s,'free',%s,1) RETURNING id", (username, ph, nick, now))
+        cur = db_execute(conn, "INSERT INTO users (username,email,password_hash,nickname,plan,created_at,must_change_password) VALUES (%s,%s,%s,%s,'free',%s,1) RETURNING id", (username, placeholder_email, ph, nick, now))
         uid = str(cur.fetchone()[0])
         conn.commit()
     else:
-        cur = db_execute(conn, "INSERT INTO users (username,password_hash,nickname,plan,created_at,must_change_password) VALUES (?,?,?,'free',?,1)", (username, ph, nick, now))
+        cur = db_execute(conn, "INSERT INTO users (username,email,password_hash,nickname,plan,created_at,must_change_password) VALUES (?,?,?,?,'free',?,1)", (username, placeholder_email, ph, nick, now))
         uid = str(cur.lastrowid)
         conn.commit()
     conn.close()
