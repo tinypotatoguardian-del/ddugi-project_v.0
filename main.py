@@ -626,6 +626,30 @@ def list_submissions(x_admin_token: str = Header(default="")):
     return out
 
 
+@app.delete("/api/admin/submissions/empty")
+def delete_empty_submissions(x_admin_token: str = Header(default="")):
+    """아무 항목도 안 채운(filled_count=0) 씨앗을 한 번에 지운다. (빈 테스트/이탈 기록 정리용)"""
+    require_admin_token(x_admin_token, {"admin", "master"})
+    conn = get_db()
+    cur = db_execute(conn, "DELETE FROM submissions WHERE filled_count=0 OR filled_count IS NULL")
+    conn.commit()
+    conn.close()
+    return {"ok": True, "deleted": cur.rowcount}
+
+
+@app.delete("/api/submissions/{doc_id}")
+def delete_submission(doc_id: str, x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"admin", "master"})
+    conn = get_db()
+    q = "DELETE FROM submissions WHERE doc_id=%s" if USE_PG else "DELETE FROM submissions WHERE doc_id=?"
+    cur = db_execute(conn, q, (doc_id,))
+    conn.commit()
+    conn.close()
+    if not cur.rowcount:
+        raise HTTPException(status_code=404, detail="not found")
+    return {"ok": True}
+
+
 @app.get("/api/submissions/{doc_id}")
 def get_submission(doc_id: str):
     conn = get_db()

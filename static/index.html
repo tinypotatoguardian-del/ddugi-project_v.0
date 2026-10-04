@@ -2111,7 +2111,8 @@ let taskListData = [];
 function renderTaskListSection(){
   return '<div class="frame"><h2>☷ 씨앗 목록</h2><div class="sub">ADMIN VIEW</div>'+
     '<div class="hint">전체 씨앗을 한 화면에 모아봐요 (작성자 이름 기준으로 한 명당 최신 것 하나만). "진행 단계"는 임의로 매긴 점수가 아니라 3-1 검증 결과·3-2 재정의·3-3 구조화 결과·완료 버튼이 실제로 채워졌는지로 판단해요.</div>'+
-    '<div class="exportbar"><button type="button" id="refreshTaskList" class="secondary">새로고침</button></div>'+
+    '<div class="exportbar"><button type="button" id="refreshTaskList" class="secondary">새로고침</button>'+
+      '<button type="button" class="secondary" data-action="submission-delete-empty">🗑️ 빈 기록 전체 삭제</button></div>'+
     '<div id="taskListSummary" style="margin:14px 0"></div>'+
     '<div class="field" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px">'+
       '<div style="flex:1;min-width:180px"><label style="font-size:12.5px;color:var(--ink-soft)">검색 (씨앗 이름·담당자·부서)</label><input type="text" id="taskListSearch" placeholder="검색"></div>'+
@@ -2185,9 +2186,10 @@ function renderTaskListBody(){
     return '<tr><td>'+esc(t.name||'(제목 없음)')+'</td><td>'+esc(v.team||'-')+' · '+esc(v.name||'-')+extra+'</td>'+
       '<td>'+esc(v.ip||'-')+'</td>'+
       '<td>'+esc(t.cat||'-')+(t.target&&t.target.length ? '<br><small>'+esc(t.target.join(', '))+'</small>' : '')+'</td>'+
-      '<td>'+esc(TASK_STAGE_LABELS[v.stageIdx])+'</td><td>'+esc(learn)+'</td><td>'+esc(rec)+'</td><td>'+esc(when)+'</td></tr>';
+      '<td>'+esc(TASK_STAGE_LABELS[v.stageIdx])+'</td><td>'+esc(learn)+'</td><td>'+esc(rec)+'</td><td>'+esc(when)+'</td>'+
+      '<td><button type="button" class="chip-btn" data-action="submission-delete" data-target="'+esc(v.docId)+'">삭제</button></td></tr>';
   }).join('');
-  body.innerHTML = '<table class="dtable"><thead><tr><th>씨앗 이름</th><th>부서·담당자</th><th>IP</th><th>카테고리·대상</th><th>진행 단계</th><th>학습 레벨</th><th>인정 레벨</th><th>마지막 저장</th></tr></thead><tbody>'+trs+'</tbody></table>';
+  body.innerHTML = '<table class="dtable"><thead><tr><th>씨앗 이름</th><th>부서·담당자</th><th>IP</th><th>카테고리·대상</th><th>진행 단계</th><th>학습 레벨</th><th>인정 레벨</th><th>마지막 저장</th><th></th></tr></thead><tbody>'+trs+'</tbody></table>';
 }
 
 /* ============== 나의 대시보드 (일반, 로그인 없음 — 이 브라우저의 지금 고민거리 기준) ============== */
@@ -5654,6 +5656,23 @@ document.addEventListener('click', function(e){
         if(r.ok){ idEl.value=''; nameEl.value=''; codeEl.value=''; msg.textContent=''; renderAccounts(); }
         else{ msg.textContent = await adminErrorText(r); }
       }).catch(()=>{ msg.textContent = '서버에 연결할 수 없어요.'; });
+    return;
+  }
+  if(action==='submission-delete'){
+    if(!confirm('이 씨앗 기록을 지울까요? 되돌릴 수 없어요.')) return;
+    fetch('/api/submissions/'+encodeURIComponent(target), {method:'DELETE', headers: authHeaders()})
+      .then(async r=>{ if(r.ok) renderTaskList(); else alert(await adminErrorText(r)); })
+      .catch(()=>alert('서버에 연결할 수 없어요.'));
+    return;
+  }
+  if(action==='submission-delete-empty'){
+    if(!confirm('아무 항목도 안 채운 빈 기록을 전부 지울까요? 되돌릴 수 없어요.')) return;
+    fetch('/api/admin/submissions/empty', {method:'DELETE', headers: authHeaders()})
+      .then(async r=>{
+        if(r.ok){ const d = await r.json(); alert(d.deleted+'건 지웠어요.'); renderTaskList(); }
+        else alert(await adminErrorText(r));
+      })
+      .catch(()=>alert('서버에 연결할 수 없어요.'));
     return;
   }
   if(action==='user-delete'){
