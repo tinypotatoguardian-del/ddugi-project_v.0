@@ -2089,11 +2089,46 @@ function saveConfirmHtml(){
     '</div>';
 }
 
+function showCtaPopup(){
+  showModal(`
+    <div style="text-align:center;padding:8px 0 4px;">
+      <div style="font-size:36px;margin-bottom:8px;">🥔</div>
+      <h2 style="margin:0 0 6px;font-size:18px;">씨앗 정의서 완성!</h2>
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:20px;">
+        이 씨앗을 제대로 키우려면 커뮤니티가 필요해요.<br>
+        두 가지 방법으로 합류할 수 있어요.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+        <a href="https://open.kakao.com/o/gJShrZPi" target="_blank" rel="noopener"
+          style="display:block;padding:12px 20px;border-radius:10px;background:var(--blueprint);color:#fff;font-size:14px;font-weight:700;text-decoration:none;">
+          💬 오픈카톡방 참여하기
+          <div style="font-size:11px;font-weight:400;margin-top:2px;opacity:0.85;">참여 후 가입 안내 받기</div>
+        </a>
+        <button type="button" onclick="hideModal();showAuthModal('register');"
+          style="padding:12px 20px;border-radius:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:14px;font-weight:700;cursor:pointer;">
+          📝 가입 신청하기
+          <div style="font-size:11px;font-weight:400;margin-top:2px;color:var(--ink-soft);">바로 신청서 작성 → 승인 후 로그인</div>
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--ink-soft);margin-bottom:12px;">신청 후 관리자 확인 → 계정 발급</div>
+      <button type="button" onclick="hideModal();"
+        style="font-size:12px;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;">
+        나중에 할게요
+      </button>
+    </div>
+  `);
+}
+
 document.addEventListener('click', function(e){
   if(e.target.id==='saveConfirmYes'){
     hideModal();
     state.locked = true;
     persist(); renderSheet();
+    // 마지막 섹션(s3-3) 저장 시 → 비로그인이면 CTA 팝업
+    const lastSeedSection = 's3-3';
+    if(state.cur === lastSeedSection && !currentUser){
+      setTimeout(()=> showCtaPopup(), 400);
+    }
   }
   if(e.target.id==='saveConfirmNo'){ hideModal(); }
 });
@@ -2223,7 +2258,7 @@ function renderMyDashSection(){
         '<div style="font-size:14px;font-weight:700;color:var(--blueprint);margin-bottom:4px;">🥔 같이 더 공부해보고 싶어요?</div>'+
         '<div style="font-size:12px;color:var(--ink-soft);">씨앗 정의서 피드백 · 감자밭 커뮤니티 · 레벨 판정</div>'+
       '</div>'+
-      '<a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener" style="padding:10px 20px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
+      '<a href="https://open.kakao.com/o/gJShrZPi" target="_blank" rel="noopener" style="padding:10px 20px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
     '</div>'+
     (currentUser ? '<h3 style="margin-top:24px;">내 씨앗 목록</h3><div id="mySeedsList" class="hint">불러오는 중…</div>' : '')
   '</div>';
@@ -5295,7 +5330,7 @@ function renderIntroSection(){
               '<div style="font-size:13px;font-weight:700;color:var(--blueprint);margin-bottom:3px;">🥔 같이 더 공부해보고 싶어요?</div>'+
               '<div style="font-size:12px;color:var(--ink-soft);">초대코드 받고 씨앗 정의서 이어서 써봐요</div>'+
             '</div>'+
-            '<a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener" style="padding:9px 18px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
+            '<a href="https://open.kakao.com/o/gJShrZPi" target="_blank" rel="noopener" style="padding:9px 18px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
           '</div>'
         : ''
       )
