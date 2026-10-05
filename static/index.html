@@ -5707,12 +5707,11 @@ document.addEventListener('change', function(e){
   }
 });
 
-document.addEventListener('click', function(e){
+document.addEventListener('click', async function(e){
   const btn = e.target.closest('[data-action]');
   if(!btn) return;
   const action = btn.getAttribute('data-action');
   const target = btn.getAttribute('data-target');
-
   if(action==='lp-refresh'){ renderSheet(); return; }
   // 역량 체크 전체 선택/해제 (계획 표에서는 이미 경험한 항목 제외)
   if(action==='lp-all' || action==='lp-none' || action==='lp-level'){
