@@ -2885,7 +2885,7 @@ function updateRulerAndNav(){
     const dim = isSectionLocked(s);
     const st = sectionStatus(s);
     const stMark = st==='done' ? '<span class="sec-status st-done">완료</span>' : st==='partial' ? '<span class="sec-status st-partial">작성중</span>' : '<span class="dot"></span>';
-    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook'||s.special==='landing';
+    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook'||s.special==='landing'||s.special==='discover';
     return '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(isTop?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
       '<span class="num">'+s.num+'</span>'+esc(s.title)+stMark+'</button></li>'+
       (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
