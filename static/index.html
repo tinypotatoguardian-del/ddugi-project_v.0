@@ -6214,10 +6214,10 @@ document.addEventListener('click', async function(e){
         sheet.style.position = 'relative';
         const overlay = document.createElement('div');
         overlay.id = 'loginBlurOverlay';
-        overlay.style.cssText = 'position:absolute;inset:0;z-index:10;padding:16px;';
+        overlay.style.cssText = 'position:absolute;inset:0;z-index:10;';
         overlay.innerHTML =
           '<div style="backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);position:absolute;inset:0;background:rgba(0,0,0,0.12);border-radius:12px;"></div>'+
-          '<div style="position:relative;z-index:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;max-width:300px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.18);">'+
+          '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:11;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px 22px;width:min(300px,90vw);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.22);">'+
             '<div style="font-size:28px;margin-bottom:8px;">🔒</div>'+
             '<div style="font-size:15px;font-weight:700;margin-bottom:4px;">로그인이 필요해요</div>'+
             '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:16px;line-height:1.6;">씨앗 정의서는 가입 후 이용할 수 있어요.</div>'+
