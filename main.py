@@ -266,6 +266,27 @@ def init_db() -> None:
             )
         """)
     conn.commit()  # 아래 submissions 마이그레이션 ALTER가 실패해서 rollback해도 이 CREATE TABLE은 지워지지 않도록
+
+    # ── admin_sessions 테이블 (서버 재시작해도 세션 유지)
+    if USE_PG:
+        db_execute(conn, """
+            CREATE TABLE IF NOT EXISTS admin_sessions (
+                token TEXT PRIMARY KEY,
+                emp_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                created_at TEXT
+            )
+        """)
+    else:
+        db_execute(conn, """
+            CREATE TABLE IF NOT EXISTS admin_sessions (
+                token TEXT PRIMARY KEY,
+                emp_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                created_at TEXT
+            )
+        """)
+    conn.commit()
     # submissions에 user_id 컬럼 추가 (마이그레이션)
     try:
         if USE_PG:
@@ -458,30 +479,52 @@ def get_role(conn, emp_id: str) -> Optional[str]:
 # ponytail: 메모리 보관이라 서버를 다시 켜면 초기화됨. 사내 SSO 연동 시 이 방식은 대체
 FAILS: Dict[str, list] = {}
 
-# 관리자 로그인 세션 (토큰 -> {emp_id, role}). 비밀번호를 매 요청마다
-# 보내지 않고, 로그인 1회로 만든 토큰만 보내게 하기 위한 저장소.
-# 시간 만료는 없음 — 로그아웃, 비밀번호 변경, 계정 삭제로만 무효화된다.
-# ponytail: 메모리 보관이라 서버를 다시 켜면 전부 로그아웃됨. 여러 서버로 늘리면 DB/Redis로 교체
-ADMIN_SESSIONS: Dict[str, dict] = {}
+# 관리자 로그인 세션 — DB에 저장해서 서버 재시작해도 유지
+ADMIN_SESSIONS: Dict[str, dict] = {}  # 캐시용 (DB 조회 최소화)
 
 
 def make_admin_session(emp_id: str, role: str) -> str:
     token = secrets.token_hex(32)
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
+    if USE_PG:
+        db_execute(conn, "INSERT INTO admin_sessions (token,emp_id,role,created_at) VALUES (%s,%s,%s,%s)", (token, emp_id, role, now))
+        conn.commit()
+    else:
+        db_execute(conn, "INSERT INTO admin_sessions (token,emp_id,role,created_at) VALUES (?,?,?,?)", (token, emp_id, role, now))
+    conn.close()
     ADMIN_SESSIONS[token] = {"emp_id": emp_id, "role": role}
     return token
 
 
 def revoke_admin_sessions(emp_id: str):
+    conn = get_db()
+    if USE_PG:
+        db_execute(conn, "DELETE FROM admin_sessions WHERE emp_id=%s", (emp_id,))
+        conn.commit()
+    else:
+        db_execute(conn, "DELETE FROM admin_sessions WHERE emp_id=?", (emp_id,))
+    conn.close()
     for t in [t for t, s in ADMIN_SESSIONS.items() if s["emp_id"] == emp_id]:
         ADMIN_SESSIONS.pop(t, None)
 
 
 def require_admin_token(token: str, allowed: set) -> dict:
+    # 캐시 먼저
     sess = ADMIN_SESSIONS.get(token or "")
     if not sess:
-        # 프론트엔드가 "다시 로그인해주세요" 처리를 403 기준으로 하고 있어서 맞춰준다
-        # (서버 재시작하면 메모리에 있던 세션이 전부 날아가 토큰이 무효해지는 경우도 여기로 옴)
-        raise HTTPException(status_code=403, detail="로그인이 필요해요. 다시 로그인해주세요.")
+        # DB에서 조회 (서버 재시작 후 캐시 없을 때)
+        conn = get_db()
+        if USE_PG:
+            row = db_fetchone(conn, "SELECT emp_id,role FROM admin_sessions WHERE token=%s", (token or "",))
+        else:
+            row = db_fetchone(conn, "SELECT emp_id,role FROM admin_sessions WHERE token=?", (token or "",))
+        conn.close()
+        if row:
+            sess = {"emp_id": row["emp_id"], "role": row["role"]}
+            ADMIN_SESSIONS[token] = sess  # 캐시에 올려두기
+        else:
+            raise HTTPException(status_code=403, detail="로그인이 필요해요. 다시 로그인해주세요.")
     if sess["role"] not in allowed:
         raise HTTPException(status_code=403, detail="이 계정은 이 화면을 볼 권한이 없습니다.")
     return sess
