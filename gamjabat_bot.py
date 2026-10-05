@@ -61,33 +61,73 @@ bot = discord.Client(intents=intents)
 async def on_ready():
     print(f"[감자밭봇] 연결됨: {bot.user}")
 
-# ① 자기소개 새 스레드 → 자동 댓글 + 새싹감자 역할 부여
+# ① 자기소개 새 스레드 → 품질 체크 후 역할 부여 or 재작성 안내
 SEEDLING_ROLE_ID = int(os.environ.get("DISCORD_SEEDLING_ROLE_ID", "1555811319477964871"))
+
+MIN_LENGTH = 80  # 최소 글자 수
+NUMBER_PATTERNS = ["1.", "2.", "3.", "4.", "5.", "①", "②", "③"]
+
+def check_quality(text: str) -> tuple[bool, str]:
+    """자기소개 품질 체크. (통과 여부, 이유) 반환"""
+    text = text.strip()
+    length = len(text)
+
+    # 글자 수 체크
+    if length < MIN_LENGTH:
+        return False, f"글자 수가 너무 짧아요 ({length}자). 조금 더 작성해줘요!"
+
+    # 번호 패턴 체크 (최소 2개 이상)
+    pattern_count = sum(1 for p in NUMBER_PATTERNS if p in text)
+    if pattern_count < 2:
+        return False, "질문 항목을 번호에 맞게 답해줘요. (1. 2. 이런 식으로)"
+
+    return True, "통과"
 
 @bot.event
 async def on_thread_create(thread: discord.Thread):
     if thread.parent_id != FORUM_CHANNEL_ID:
         return
-    await asyncio.sleep(3)
+    await asyncio.sleep(4)  # 글 작성 완료 대기
 
-    # 새싹감자 역할 부여
+    # 첫 메시지 가져오기
     try:
-        guild = bot.get_guild(GUILD_ID)
-        author = thread.owner
-        if guild and author:
-            role = guild.get_role(SEEDLING_ROLE_ID)
-            if role and role not in author.roles:
-                await author.add_roles(role, reason="gate1-자기소개 작성")
-                print(f"[감자밭봇] 새싹감자 역할 부여: {author.display_name}")
-    except Exception as e:
-        print(f"[감자밭봇] 역할 부여 오류: {e}")
+        messages = [m async for m in thread.history(limit=1, oldest_first=True)]
+        content = messages[0].content if messages else ""
+    except Exception:
+        content = thread.name  # 첫 메시지 못 가져오면 제목으로 대체
 
-    # 환영 댓글
-    try:
-        await thread.send(MSG_THREAD_COMMENT)
-        print(f"[감자밭봇] 자기소개 댓글: {thread.name}")
-    except Exception as e:
-        print(f"[감자밭봇] 자기소개 댓글 오류: {e}")
+    passed, reason = check_quality(content)
+    guild = bot.get_guild(GUILD_ID)
+    author = thread.owner
+
+    if passed:
+        # 새싹감자 역할 부여
+        try:
+            if guild and author:
+                role = guild.get_role(SEEDLING_ROLE_ID)
+                if role and role not in author.roles:
+                    await author.add_roles(role, reason="gate1-자기소개 품질 통과")
+                    print(f"[감자밭봇] 새싹감자 부여: {author.display_name}")
+        except Exception as e:
+            print(f"[감자밭봇] 역할 부여 오류: {e}")
+
+        # 환영 댓글
+        try:
+            await thread.send(MSG_THREAD_COMMENT)
+        except Exception as e:
+            print(f"[감자밭봇] 환영 댓글 오류: {e}")
+
+    else:
+        # 재작성 안내
+        try:
+            await thread.send(
+                f"🥔 자기소개 잘 봤어! 근데 조금 더 채워줘야 역할을 드릴 수 있어요.\n\n"
+                f"**이유:** {reason}\n\n"
+                f"5개 질문에 맞게 답변을 더 작성해주면 바로 확인할게요!"
+            )
+            print(f"[감자밭봇] 재작성 안내: {author.display_name if author else '?'} — {reason}")
+        except Exception as e:
+            print(f"[감자밭봇] 재작성 안내 오류: {e}")
 
 # ② 새 멤버 입장 → 자동 DM
 @bot.event
