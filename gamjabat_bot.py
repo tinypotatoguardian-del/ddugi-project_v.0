@@ -64,22 +64,22 @@ async def on_ready():
 # ① 자기소개 새 스레드 → 품질 체크 후 역할 부여 or 재작성 안내
 SEEDLING_ROLE_ID = int(os.environ.get("DISCORD_SEEDLING_ROLE_ID", "1555811319477964871"))
 
-MIN_LENGTH = 80  # 최소 글자 수
-NUMBER_PATTERNS = ["1.", "2.", "3.", "4.", "5.", "①", "②", "③"]
+MIN_LENGTH = 50  # 최소 글자 수 (느슨하게)
+QUESTIONS = ["1.", "2.", "3.", "4.", "5."]
+MIN_QUESTIONS = 4  # 5개 중 4개 이상 답해야 통과
 
 def check_quality(text: str) -> tuple[bool, str]:
     """자기소개 품질 체크. (통과 여부, 이유) 반환"""
     text = text.strip()
-    length = len(text)
 
     # 글자 수 체크
-    if length < MIN_LENGTH:
-        return False, f"글자 수가 너무 짧아요 ({length}자). 조금 더 작성해줘요!"
+    if len(text) < MIN_LENGTH:
+        return False, f"내용이 너무 짧아요 ({len(text)}자). 질문에 맞게 답해줘요!"
 
-    # 번호 패턴 체크 (최소 2개 이상)
-    pattern_count = sum(1 for p in NUMBER_PATTERNS if p in text)
-    if pattern_count < 2:
-        return False, "질문 항목을 번호에 맞게 답해줘요. (1. 2. 이런 식으로)"
+    # 질문 항목 몇 개 답했는지
+    answered = sum(1 for q in QUESTIONS if q in text)
+    if answered < MIN_QUESTIONS:
+        return False, f"질문 {MIN_QUESTIONS}개 이상 답해줘야 해요. (지금 {answered}개)"
 
     return True, "통과"
 
