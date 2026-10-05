@@ -1343,8 +1343,7 @@ function openAuthModal(mode){
             '<p style="font-size:14px;color:var(--ink-soft);margin:0 0 16px;">배정된 감자명: <b style="color:var(--blueprint);">'+esc(d.nickname)+'</b><br><span style="font-size:12px;">마이페이지에서 바꿀 수 있어요</span></p>'+
             '<button type="button" onclick="hideModal()" style="padding:8px 24px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;cursor:pointer;font-size:14px;">시작하기 🌱</button>'+
           '</div>');
-          showModal('<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">감자밭에 오신 걸 환영해요!</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+(d.nickname||username)+'님의 씨앗이 기기 어디서나 유지돼요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
-        }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
+         }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
         finally{ if(btn) btn.disabled=false; }
         return;
       }
@@ -6215,17 +6214,17 @@ document.addEventListener('click', async function(e){
         sheet.style.position = 'relative';
         const overlay = document.createElement('div');
         overlay.id = 'loginBlurOverlay';
-        overlay.style.cssText = 'position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.style.cssText = 'position:absolute;inset:0;z-index:10;padding:16px;';
         overlay.innerHTML =
-          '<div style="backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);position:absolute;inset:0;background:rgba(0,0,0,0.25);border-radius:12px;"></div>'+
-          '<div style="position:relative;z-index:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 24px;max-width:320px;width:100%;text-align:center;">'+
-            '<div style="font-size:32px;margin-bottom:10px;">🔒</div>'+
-            '<div style="font-size:16px;font-weight:700;margin-bottom:6px;">로그인이 필요해요</div>'+
-            '<div style="font-size:13px;color:var(--ink-soft);margin-bottom:18px;line-height:1.6;">씨앗 정의서는 가입 후 이용할 수 있어요.</div>'+
+          '<div style="backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);position:absolute;inset:0;background:rgba(0,0,0,0.12);border-radius:12px;"></div>'+
+          '<div style="position:relative;z-index:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;max-width:300px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.18);">'+
+            '<div style="font-size:28px;margin-bottom:8px;">🔒</div>'+
+            '<div style="font-size:15px;font-weight:700;margin-bottom:4px;">로그인이 필요해요</div>'+
+            '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:16px;line-height:1.6;">씨앗 정의서는 가입 후 이용할 수 있어요.</div>'+
             '<div style="display:flex;flex-direction:column;gap:8px;">'+
-              '<button type="button" onclick="document.getElementById(\'loginBlurOverlay\').remove();openAuthModal(\'login\')" style="padding:10px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;">로그인</button>'+
-              '<button type="button" onclick="document.getElementById(\'loginBlurOverlay\').remove();openAuthModal(\'register\')" style="padding:10px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;cursor:pointer;">가입 신청</button>'+
-              '<a href="https://open.kakao.com/o/gJShrZPi" target="_blank" style="display:block;padding:10px;border-radius:8px;background:var(--panel);color:var(--ink-soft);border:1px solid var(--line);font-size:12px;text-decoration:none;">💬 오픈카톡방으로 안내받기</a>'+
+              '<button type="button" onclick="document.getElementById(\'loginBlurOverlay\').remove();openAuthModal(\'login\')" style="padding:9px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;">로그인</button>'+
+              '<button type="button" onclick="document.getElementById(\'loginBlurOverlay\').remove();openAuthModal(\'register\')" style="padding:9px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;cursor:pointer;">가입 신청</button>'+
+              '<a href="https://open.kakao.com/o/gJShrZPi" target="_blank" style="display:block;padding:9px;border-radius:8px;background:var(--panel);color:var(--ink-soft);border:1px solid var(--line);font-size:12px;text-decoration:none;">💬 오픈카톡방으로 안내받기</a>'+
             '</div>'+
           '</div>';
         sheet.appendChild(overlay);
