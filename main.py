@@ -1177,31 +1177,16 @@ def user_register(body: UserRegisterIn):
         raise HTTPException(status_code=400, detail="비밀번호에 영문자를 포함해야 해요.")
     if not any(c.isdigit() for c in body.password):
         raise HTTPException(status_code=400, detail="비밀번호에 숫자를 포함해야 해요.")
-    # 초대코드 검증
-    invite_code = body.invite_code.strip().upper()
-    if not invite_code:
-        raise HTTPException(status_code=400, detail="초대코드를 입력해주세요.")
     conn = get_db()
     now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
-    q = "SELECT * FROM invite_codes WHERE code=%s" if USE_PG else "SELECT * FROM invite_codes WHERE code=?"
-    inv = db_fetchone(conn, q, (invite_code,))
-    if not inv:
-        conn.close()
-        raise HTTPException(status_code=400, detail="유효하지 않은 초대코드예요.")
-    if inv["used_at"]:
-        conn.close()
-        raise HTTPException(status_code=400, detail="이미 사용된 초대코드예요.")
-    if inv["expires_at"] and inv["expires_at"] < now:
-        conn.close()
-        raise HTTPException(status_code=400, detail="만료된 초대코드예요. 새 코드를 요청해주세요.")
     # 아이디 중복 확인
     if _user_by_username(conn, username):
         conn.close()
         raise HTTPException(status_code=409, detail="이미 사용 중인 아이디예요.")
     ph = hash_code(body.password)
     nick = body.nickname.strip() or username
-    plan = inv["plan"] if isinstance(inv, dict) else "free"
-    placeholder_email = username + "@noemail.local"  # email이 NOT NULL/UNIQUE인 옛 스키마 대비 — 실제 이메일 안 씀
+    plan = "free"
+    placeholder_email = username + "@noemail.local"
     if USE_PG:
         cur = db_execute(conn, "INSERT INTO users (username,email,password_hash,nickname,plan,created_at,last_login_at) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id", (username,placeholder_email,ph,nick,plan,now,now))
         uid = str(cur.fetchone()[0])
@@ -1209,12 +1194,6 @@ def user_register(body: UserRegisterIn):
     else:
         cur = db_execute(conn, "INSERT INTO users (username,email,password_hash,nickname,plan,created_at,last_login_at) VALUES (?,?,?,?,?,?,?)", (username,placeholder_email,ph,nick,plan,now,now))
         uid = str(cur.lastrowid)
-    # 초대코드 사용 처리
-    q2 = "UPDATE invite_codes SET used_at=%s,used_by=%s WHERE code=%s" if USE_PG else "UPDATE invite_codes SET used_at=?,used_by=? WHERE code=?"
-    db_execute(conn, q2, (now, uid, invite_code))
-    if USE_PG:
-        conn.commit()
-    else:
         conn.commit()
     conn.close()
     token = make_token(uid, username, plan)
@@ -1222,7 +1201,6 @@ def user_register(body: UserRegisterIn):
     _notify_discord(
         f"🥔 새 감자 가입!\n"
         f"**닉네임:** {nick}  |  **아이디:** `{username}`\n"
-        f"**플랜:** {plan}  |  **초대코드:** `{invite_code}`\n"
         f"*{now}*"
     )
     return {"token": token, "userId": uid, "username": username, "nickname": nick, "plan": plan}
