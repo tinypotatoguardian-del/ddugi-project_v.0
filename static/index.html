@@ -1688,10 +1688,10 @@ window.runDiscoverJudge = async function(){
     '</div>'+
     '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
 
-  const seedName  = (window._state?.fields?.s1_name || '').trim();
-  const workarea  = (window._state?.fields?.s1_workarea || '').trim();
-  const cat       = (window._state?.fields?.s1_cat || '').trim();
-  const freetext  = (window._state?.fields?.intro_freetext || '').trim();
+  const seedName  = String(window._state?.fields?.s1_name || '').trim();
+  const workarea  = String(window._state?.fields?.s1_workarea || '').trim();
+  const cat       = String(window._state?.fields?.s1_cat || '').trim();
+  const freetext  = String(window._state?.fields?.intro_freetext || '').trim();
   const text = [seedName, workarea, cat, freetext].filter(Boolean).join(' / ');
   const apiKey = sessionStorage.getItem('_ddugi_tmp_key') || '';
 
