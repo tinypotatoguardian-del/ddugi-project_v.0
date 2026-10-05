@@ -1669,8 +1669,9 @@ window._saveConfirmHtml = saveConfirmHtml;
 
 // ── 심기 전 준비: 자동 판정 함수 ──────────────────────────────
 window.applyJudgeResult = function(judgment, reason){
-  setV('discover_result_state', judgment);
-  setV('discover_judge_reason', reason || '');
+  window._setV('discover_result_state', judgment);
+  window._setV('discover_judge_reason', reason || '');
+  window._persist();
   window._renderSheet();
 };
 
@@ -1693,9 +1694,9 @@ window.runDiscoverJudge = async function(){
     const d = await res.json();
     if(!res.ok) throw new Error(d.detail||'오류');
     // 결과를 state에 저장 → renderSheet가 읽어서 표시
-    setV('discover_result_state', d.judgment);
-    setV('discover_judge_reason', d.reason || '');
-    setV('discover_judge_method', d.method || 'keyword');
+    window._setV('discover_result_state', d.judgment);
+    window._setV('discover_judge_reason', d.reason || '');
+    window._setV('discover_judge_method', d.method || 'keyword');
     window._persist();
     window._renderSheet();  // 재렌더 — 결과 자동 표시됨
   }catch(e){
@@ -5646,10 +5647,19 @@ function renderDiscoverSection(){
             : ''
           )+
           '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
-            '<button type="button" onclick="applyJudgeResult(\'possible\',\'직접 선택\')" style="padding:8px 14px;border-radius:8px;border:2px solid '+(resultState==='possible'?'var(--ok)':'var(--line)')+';background:'+(resultState==='possible'?'rgba(46,204,113,.1)':'var(--panel)')+';color:'+(resultState==='possible'?'var(--ok)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">✅ AI 써도 됨</button>'+
-            '<button type="button" onclick="applyJudgeResult(\'redefine\',\'직접 선택\')" style="padding:8px 14px;border-radius:8px;border:2px solid '+(resultState==='redefine'?'var(--blueprint)':'var(--line)')+';background:'+(resultState==='redefine'?'var(--blueprint-soft)':'var(--panel)')+';color:'+(resultState==='redefine'?'var(--blueprint)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">🔄 문제 다시 정의</button>'+
-            '<button type="button" onclick="applyJudgeResult(\'unnecessary\',\'직접 선택\')" style="padding:8px 14px;border-radius:8px;border:2px solid '+(resultState==='unnecessary'?'var(--ink)':'var(--line)')+';background:'+(resultState==='unnecessary'?'var(--panel)':'var(--panel)')+';color:'+(resultState==='unnecessary'?'var(--ink)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">🥔 AI 불필요</button>'+
-          '</div>'+
+            ((['possible','redefine','unnecessary']).map(v => {
+              const labels = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의', unnecessary:'🥔 AI 불필요'};
+              const colors = {possible:'var(--ok)', redefine:'var(--blueprint)', unnecessary:'var(--ink)'};
+              const isSelected = resultState === v;
+              const isOther = resultState && !isSelected;
+              return '<button type="button" '+(isOther?'disabled':('onclick="applyJudgeResult(\''+v+'\',\'직접 선택\')"'))+
+                ' style="padding:8px 14px;border-radius:8px;border:2px solid '+(isSelected?colors[v]:'var(--line)')+
+                ';background:'+(isSelected?colors[v]+'20':'var(--panel)')+
+                ';color:'+(isSelected?colors[v]:(isOther?'var(--line)':'var(--ink-soft)'))+
+                ';font-size:13px;font-weight:700;cursor:'+(isOther?'not-allowed':'pointer')+
+                ';opacity:'+(isOther?'0.35':'1')+';">'+labels[v]+'</button>';
+            }).join(''))+
+          '</div>'
         '</div>'+
       '</details>'+
     '</div>'+
