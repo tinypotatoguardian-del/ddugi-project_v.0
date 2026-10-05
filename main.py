@@ -217,6 +217,22 @@ def init_db() -> None:
         except Exception:
             pass
 
+    # 마이그레이션: role 컬럼 (새싹감자/l1/l2/l3/l4/l5/mentor)
+    try:
+        db_execute(conn, "ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'seedling'")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
+    # 마이그레이션: is_active 컬럼 (0=비활성, 1=활성)
+    try:
+        db_execute(conn, "ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
     # 마이그레이션: 관리자가 직접 만들어준 계정(아이디=초기 비번)이 최초 로그인 시
     # 비번을 바꾸도록 강제하는 플래그
     try:
@@ -1123,6 +1139,11 @@ def user_login(body: UserLoginIn):
     if not row or not _check_pw(row, body.password):
         conn.close()
         raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 틀렸어요.")
+    # 비활성 계정 차단
+    is_active = row["is_active"] if isinstance(row, dict) and "is_active" in row.keys() else 1
+    if is_active == 0:
+        conn.close()
+        raise HTTPException(status_code=403, detail="접근이 제한된 계정이에요. 관리자에게 문의하세요.")
     uid = str(row["id"] if isinstance(row, dict) else row[0])
     plan = row["plan"] if isinstance(row, dict) else "free"
     nick = row["nickname"] if isinstance(row, dict) else username
@@ -1202,15 +1223,111 @@ class SignupRequestLinkIn(BaseModel):
     username: str = ""  # 빈 문자열이면 연결 해제
 
 
+import random, string as _string
+
+def _make_temp_password(length=10):
+    chars = _string.ascii_letters + _string.digits
+    return ''.join(random.choices(chars, k=length))
+
+
 @app.put("/api/admin/signup-requests/{req_id}")
 def link_signup_request(req_id: int, body: SignupRequestLinkIn, x_admin_token: str = Header(default="")):
-    """이 가입 신청(카톡 남긴 사람)에게 어떤 아이디를 만들어줬는지 기록한다."""
+    """연결: 가입신청자에게 실제 계정 생성. 해제(username 빈칸): 계정 비활성화."""
     require_admin_token(x_admin_token, {"master", "admin"})
     conn = get_db()
-    db_execute(conn, "UPDATE signup_requests SET created_username=? WHERE id=?", (body.username.strip() or None, req_id))
+
+    # 신청 정보 가져오기
+    req = db_fetchone(conn, "SELECT * FROM signup_requests WHERE id=?" if not USE_PG else "SELECT * FROM signup_requests WHERE id=%s", (req_id,))
+    if not req:
+        conn.close()
+        raise HTTPException(status_code=404, detail="가입 신청을 찾을 수 없어요.")
+
+    # 해제: 계정 비활성화
+    if not body.username.strip():
+        old_username = req["created_username"] if isinstance(req, dict) else req[req.keys().index("created_username") if hasattr(req, "keys") else 6]
+        if old_username:
+            q_deact = "UPDATE users SET is_active=0 WHERE username=%s" if USE_PG else "UPDATE users SET is_active=0 WHERE username=?"
+            db_execute(conn, q_deact, (old_username,))
+        q_unlink = "UPDATE signup_requests SET created_username=NULL WHERE id=%s" if USE_PG else "UPDATE signup_requests SET created_username=NULL WHERE id=?"
+        db_execute(conn, q_unlink, (req_id,))
+        conn.commit()
+        conn.close()
+        return {"ok": True, "action": "unlinked"}
+
+    # 연결: 계정 생성
+    import re as _re
+    username = body.username.strip().lower()[:20]
+    if not username or len(username) < 2 or not _re.match(r"^[a-z0-9_]+$", username):
+        conn.close()
+        raise HTTPException(status_code=400, detail="아이디는 영문 소문자/숫자/_ 2자 이상이어야 해요.")
+
+    # 아이디 중복 확인
+    q_dup = "SELECT 1 FROM users WHERE username=%s" if USE_PG else "SELECT 1 FROM users WHERE username=?"
+    if db_fetchone(conn, q_dup, (username,)):
+        conn.close()
+        raise HTTPException(status_code=409, detail="이미 사용 중인 아이디예요.")
+
+    req_dict = dict(req)
+    nickname = req_dict.get("nickname") or username
+    temp_pw = _make_temp_password(10)
+    ph = hash_code(temp_pw)
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    placeholder_email = username + "@noemail.local"
+
+    if USE_PG:
+        cur = db_execute(conn, "INSERT INTO users (username,email,password_hash,nickname,plan,role,is_active,must_change_password,created_at,last_login_at) VALUES (%s,%s,%s,%s,'free','seedling',1,1,%s,%s) RETURNING id",
+                         (username, placeholder_email, ph, nickname, now, now))
+        conn.commit()
+    else:
+        db_execute(conn, "INSERT INTO users (username,email,password_hash,nickname,plan,role,is_active,must_change_password,created_at,last_login_at) VALUES (?,?,?,?,'free','seedling',1,1,?,?)",
+                   (username, placeholder_email, ph, nickname, now, now))
+
+    # signup_requests에 기록
+    q_link = "UPDATE signup_requests SET created_username=%s WHERE id=%s" if USE_PG else "UPDATE signup_requests SET created_username=? WHERE id=?"
+    db_execute(conn, q_link, (username, req_id))
     conn.commit()
     conn.close()
-    return {"ok": True}
+    return {"ok": True, "action": "created", "username": username, "temp_password": temp_pw}
+
+
+# ── 사용자 권한(role) 설정 API
+VALID_ROLES = {"seedling", "l1", "l2", "l3", "l4", "l5", "mentor"}
+ROLE_LABELS = {
+    "seedling": "🌱 새싹감자",
+    "l1": "🍊 L1 AI User",
+    "l2": "🌿 L2 AI Operator",
+    "l3": "🔧 L3 AI Builder",
+    "l4": "⚙️ L4 AI System Builder",
+    "l5": "🏗️ L5 AX Architect",
+    "mentor": "⭐ 멘토",
+}
+
+class UserRoleIn(BaseModel):
+    role: str
+
+@app.put("/api/master/users/{username}/role")
+def set_user_role(username: str, body: UserRoleIn, x_admin_token: str = Header(default="")):
+    """사용자 권한(레벨) 설정"""
+    require_admin_token(x_admin_token, {"master", "admin"})
+    if body.role not in VALID_ROLES:
+        raise HTTPException(status_code=400, detail=f"유효한 역할: {', '.join(VALID_ROLES)}")
+    conn = get_db()
+    q = "UPDATE users SET role=%s WHERE username=%s" if USE_PG else "UPDATE users SET role=? WHERE username=?"
+    cur = db_execute(conn, q, (body.role, username))
+    if USE_PG:
+        conn.commit()
+    conn.close()
+    return {"ok": True, "username": username, "role": body.role, "label": ROLE_LABELS[body.role]}
+
+
+@app.get("/api/master/users")
+def list_users(x_admin_token: str = Header(default="")):
+    """전체 일반 유저 목록 (마스터/어드민 전용)"""
+    require_admin_token(x_admin_token, {"master", "admin"})
+    conn = get_db()
+    rows = db_fetchall(conn, "SELECT id,username,nickname,plan,role,is_active,created_at,last_login_at FROM users ORDER BY created_at DESC")
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 # ── 초대코드 관리 (마스터 전용)

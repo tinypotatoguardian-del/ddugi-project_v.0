@@ -2249,19 +2249,37 @@ function renderAccountsSection(){
 async function renderUserList(){
   const out = document.getElementById('userListBody');
   if(!out) return;
+  const ROLE_LABELS = {
+    seedling:'🌱 새싹감자', l1:'🍊 L1 User', l2:'🌿 L2 Operator',
+    l3:'🔧 L3 Builder', l4:'⚙️ L4 System Builder', l5:'🏗️ L5 Architect', mentor:'⭐ 멘토'
+  };
   try{
-    const res = await fetch('/api/admin/users', {headers: authHeaders()});
+    const res = await fetch('/api/master/users', {headers: authHeaders()});
     if(!res.ok) throw new Error('HTTP '+res.status);
     const list = await res.json();
     if(!list.length){ out.innerHTML = '<div class="hint">아직 만든 계정이 없어요.</div>'; return; }
     const rows = list.map(u=>{
-      const when = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ko-KR') : '-';
-      const lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('ko-KR') : '로그인 안 함';
-      const pwBadge = u.mustChangePassword ? '<span style="color:var(--danger);font-size:11px;">⚠ 초기 비번 그대로</span>' : '<span style="color:var(--ok);font-size:11px;">✓ 변경됨</span>';
-      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+pwBadge+'</td><td>'+u.seedCount+'</td><td>'+esc(lastLogin)+'</td><td>'+esc(when)+'</td>'+
-        '<td><button type="button" class="chip-btn" data-action="user-delete" data-target="'+u.id+'|'+esc(u.username||'')+'">삭제</button></td></tr>';
+      const when = u.created_at ? new Date(u.created_at).toLocaleDateString('ko-KR') : '-';
+      const lastLogin = u.last_login_at ? new Date(u.last_login_at).toLocaleDateString('ko-KR') : '로그인 안 함';
+      const activeLabel = u.is_active===0 ? '<span style="color:var(--danger,#e74c3c);font-size:11px;">🔒 비활성</span>' : '<span style="color:var(--ok,#2ecc71);font-size:11px;">✅ 활성</span>';
+      const roleOpts = Object.entries(ROLE_LABELS).map(([v,l])=>`<option value="${v}"${u.role===v?' selected':''}>${l}</option>`).join('');
+      const roleSelect = `<select data-action="user-role" data-target="${esc(u.username||'')}" style="font-size:12px;padding:3px 6px;border-radius:4px;background:var(--card);color:var(--foreground);border:1px solid var(--border);">${roleOpts}</select>`;
+      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+activeLabel+'</td><td>'+roleSelect+'</td><td>'+esc(lastLogin)+'</td><td>'+esc(when)+'</td></tr>';
     }).join('');
-    out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>닉네임</th><th>비번 상태</th><th>씨앗 수</th><th>마지막 로그인</th><th>만든 날짜</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+    out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>닉네임</th><th>상태</th><th>역할/레벨</th><th>마지막 로그인</th><th>만든 날짜</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    // role 드롭다운 이벤트
+    out.querySelectorAll('select[data-action="user-role"]').forEach(sel=>{
+      sel.addEventListener('change', async function(){
+        const username = this.dataset.target;
+        const role = this.value;
+        const r = await fetch('/api/master/users/'+encodeURIComponent(username)+'/role', {
+          method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()),
+          body: JSON.stringify({role})
+        });
+        if(r.ok){ this.style.borderColor='var(--ok,#2ecc71)'; setTimeout(()=>this.style.borderColor='',1500); }
+        else{ this.style.borderColor='var(--danger,#e74c3c)'; alert('권한 변경 실패'); }
+      });
+    });
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
   }
@@ -2278,12 +2296,12 @@ async function renderSignupRequests(){
       const when = r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '-';
       const typeLabel = r.contact_type==='phone' ? '📞 전화' : '💬 카톡';
       const idCell = r.created_username
-        ? '👤 '+esc(r.created_username)+' <button type="button" class="chip-btn" data-action="signupreq-unlink" data-target="'+r.id+'">해제</button>'
+        ? '👤 '+esc(r.created_username)+' <button type="button" class="chip-btn" style="background:var(--danger,#c0392b);color:#fff;" data-action="signupreq-unlink" data-target="'+r.id+'">해제</button>'
         : '<input type="text" id="signupreqId-'+r.id+'" value="'+esc(r.desired_username||'')+'" placeholder="만든 아이디" style="width:110px;display:inline-block;padding:4px 6px;font-size:12px;"> '+
-          '<button type="button" class="chip-btn" data-action="signupreq-link" data-target="'+r.id+'">연결</button>';
+          '<button type="button" class="chip-btn" style="background:var(--accent,#2ecc71);color:#fff;" data-action="signupreq-link" data-target="'+r.id+'">✅ 연결</button>';
       return '<tr><td>'+typeLabel+'</td><td>'+esc(r.contact)+'</td><td>'+esc(r.desired_username||'-')+'</td><td>'+esc(r.nickname||'-')+'</td><td>'+esc(when)+'</td><td>'+idCell+'</td></tr>';
     }).join('');
-    out.innerHTML = '<table class="dtable"><thead><tr><th>구분</th><th>연락처</th><th>희망 아이디</th><th>감자명</th><th>남긴 날짜</th><th>만든 아이디</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    out.innerHTML = '<table class="dtable"><thead><tr><th>구분</th><th>연락처</th><th>희망 아이디</th><th>감자명</th><th>남긴 날짜</th><th>계정</th></tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
   }
@@ -5688,10 +5706,22 @@ document.addEventListener('click', function(e){
   if(action==='signupreq-link'){
     const inputEl = document.getElementById('signupreqId-'+target);
     const username = (inputEl?.value||'').trim().toLowerCase();
-    if(!username) return;
-    fetch('/api/admin/signup-requests/'+target, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({username})})
-      .then(async r=>{ if(r.ok) renderSignupRequests(); else alert(await adminErrorText(r)); })
-      .catch(()=>alert('서버에 연결할 수 없어요.'));
+    if(!username){ alert('아이디를 입력해주세요.'); return; }
+    if(!/^[a-z0-9_]{2,20}$/.test(username)){ alert('아이디는 영문 소문자/숫자/_ 2~20자여야 해요.'); return; }
+    const r = await fetch('/api/admin/signup-requests/'+target, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({username})});
+    const data = await r.json();
+    if(!r.ok){ alert(data.detail||'오류가 발생했어요.'); return; }
+    renderSignupRequests();
+    showModal(`
+      <h2 style="margin-top:0;font-size:16px;">✅ 계정 생성 완료!</h2>
+      <div style="margin-bottom:12px;">
+        <b>아이디:</b> ${esc(data.username)}<br>
+        <b>임시 비밀번호:</b> <code style="background:var(--card,#222);padding:4px 8px;border-radius:4px;font-size:15px;letter-spacing:1px;">${esc(data.temp_password)}</code>
+      </div>
+      <div class="fhint" style="margin-bottom:14px;">이 비밀번호를 신청자에게 전달해주세요. 첫 로그인 후 비밀번호를 변경하게 됩니다.</div>
+      <button type="button" id="adminCancel" class="addbtn" onclick="navigator.clipboard.writeText('아이디: ${esc(data.username)}\\n임시 비밀번호: ${esc(data.temp_password)}').then(()=>this.textContent='✅ 복사됨!')" style="width:100%;text-align:center;margin-bottom:8px;">📋 클립보드에 복사</button>
+      <button type="button" id="adminCancel" class="addbtn" style="width:100%;text-align:center;">닫기</button>
+    `);
     return;
   }
   if(action==='signupreq-unlink'){
