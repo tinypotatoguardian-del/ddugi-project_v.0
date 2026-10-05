@@ -1682,7 +1682,8 @@ window.runDiscoverJudge = async function(){
   const cat       = (window._state?.fields?.s1_cat || '').trim();
   const freetext  = (window._state?.fields?.intro_freetext || '').trim();
   const text = [seedName, workarea, cat, freetext].filter(Boolean).join(' / ');
-  const apiKey = (window._state?.fields?.user_claude_key || '').trim();
+  // API 키는 sessionStorage에서만 읽음 (localStorage 아님 — 탭 닫으면 삭제)
+  const apiKey = sessionStorage.getItem('_ddugi_tmp_key') || '';
   try{
     const res = await fetch('/api/discover/judge', {
       method:'POST',
@@ -1691,23 +1692,16 @@ window.runDiscoverJudge = async function(){
     });
     const d = await res.json();
     if(!res.ok) throw new Error(d.detail||'오류');
-    window.applyJudgeResult(d.judgment, d.reason);
-    // 결과 표시
-    const resultEl = document.getElementById('judgeResult');
-    if(resultEl){
-      const labelMap = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의', unnecessary:'🥔 AI 불필요'};
-      const colorMap = {possible:'var(--ok)', redefine:'var(--blueprint)', unnecessary:'var(--ink)'};
-      const methodLabel = d.method==='ai' ? '🤖 Claude AI 판정' : '🔍 키워드 판정 (기본)';
-      resultEl.innerHTML = '<div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:12px;">'+
-        '<div style="font-weight:700;color:'+colorMap[d.judgment]+';margin-bottom:4px;">'+labelMap[d.judgment]+'</div>'+
-        '<div style="color:var(--ink-soft);line-height:1.6;margin-bottom:6px;">'+esc(d.reason)+'</div>'+
-        '<div style="font-size:11px;color:var(--ink-soft);">'+methodLabel+(d.method==='keyword'?' · <button type="button" onclick="document.getElementById(\'apiKeySetup\').style.display=\'block\'" style="font-size:11px;color:var(--blueprint);background:none;border:none;cursor:pointer;text-decoration:underline;">더 정확하게 하려면 →</button>':'')+'</div>'+
-      '</div>';
-    }
+    // 결과를 state에 저장 → renderSheet가 읽어서 표시
+    setV('discover_result_state', d.judgment);
+    setV('discover_judge_reason', d.reason || '');
+    setV('discover_judge_method', d.method || 'keyword');
+    window._persist();
+    window._renderSheet();  // 재렌더 — 결과 자동 표시됨
   }catch(e){
-    const resultEl = document.getElementById('judgeResult');
-    if(resultEl) resultEl.innerHTML = '<div style="font-size:12px;color:var(--danger,#e74c3c);">판정 실패: '+esc(e.message)+'</div>';
     if(btn){ btn.textContent='🤖 자동 판정받기'; btn.disabled=false; }
+    const resultEl = document.getElementById('judgeResult');
+    if(resultEl) resultEl.innerHTML = '<div style="font-size:12px;color:var(--danger,#e74c3c);padding:8px;">판정 실패: '+esc(e.message)+'</div>';
   }
 };
 // 외부(window) 접근용
@@ -5611,20 +5605,33 @@ function renderDiscoverSection(){
             '</div>'+
             // API 키 설정 안내 (접혀있음)
             '<div id="apiKeySetup" style="display:none;margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;">'+
-              '<div style="font-size:13px;font-weight:700;margin-bottom:6px;">🔑 Claude API 키 연동</div>'+
+              '<div style="font-size:13px;font-weight:700;margin-bottom:4px;">🔑 Claude API 키 연동</div>'+
+              '<div style="font-size:11px;color:var(--ok);margin-bottom:8px;">🔒 탭 닫으면 자동 삭제 · 서버에 저장 안 됨</div>'+
               '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;line-height:1.6;">'+
                 '1. <a href="https://console.anthropic.com" target="_blank" style="color:var(--blueprint);">console.anthropic.com</a> 접속<br>'+
                 '2. API Keys → Create Key<br>'+
-                '3. 아래에 붙여넣기 (브라우저에만 저장, 서버로 전송 안 됨)'+
+                '3. 아래에 붙여넣기 (이 탭에서만 유효)'+
               '</div>'+
               '<div style="display:flex;gap:8px;">'+
                 '<input type="password" id="claudeKeyInput" placeholder="sk-ant-..." style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:12px;">'+
-                '<button type="button" onclick="const k=document.getElementById(\'claudeKeyInput\').value.trim();if(k){setV(\'user_claude_key\',k);window._renderSheet();}" style="padding:8px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">저장</button>'+
-                (getV('user_claude_key','') ? '<button type="button" onclick="setV(\'user_claude_key\',\'\');window._renderSheet();" style="padding:8px 14px;border-radius:8px;background:var(--panel);color:var(--danger,#e74c3c);border:1px solid var(--danger,#e74c3c);font-size:12px;cursor:pointer;">삭제</button>' : '')+
+                '<button type="button" onclick="const k=document.getElementById(\'claudeKeyInput\').value.trim();if(k){sessionStorage.setItem(\'_ddugi_tmp_key\',k);document.getElementById(\'apiKeySetup\').style.display=\'none\';const sp=document.getElementById(\'apiKeyStatus\');if(sp)sp.textContent=\'✅ Claude API 연동됨 (이 탭)\';}" style="padding:8px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">연동</button>'+
+                '<button type="button" onclick="sessionStorage.removeItem(\'_ddugi_tmp_key\');const sp=document.getElementById(\'apiKeyStatus\');if(sp)sp.textContent=\'키워드 판정 (기본)\';" style="padding:8px 14px;border-radius:8px;background:var(--panel);color:var(--ink-soft);border:1px solid var(--line);font-size:12px;cursor:pointer;">초기화</button>'+
               '</div>'+
             '</div>'+
-            // 판정 결과 표시 영역
-            '<div id="judgeResult" style="margin-top:12px;"></div>'
+            // 판정 결과 — state에 있으면 여기서 표시
+            (resultState ? (()=>{
+              const labelMap = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의', unnecessary:'🥔 AI 불필요'};
+              const colorMap = {possible:'var(--ok)', redefine:'var(--blueprint)', unnecessary:'var(--ink)'};
+              const reason = getV('discover_judge_reason','');
+              const method = getV('discover_judge_method','keyword');
+              return '<div style="margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:12px;">'+
+                '<div style="font-weight:700;color:'+colorMap[resultState]+';margin-bottom:4px;">'+labelMap[resultState]+'</div>'+
+                (reason ? '<div style="color:var(--ink-soft);line-height:1.6;margin-bottom:6px;">'+esc(reason)+'</div>' : '')+
+                '<div style="font-size:11px;color:var(--ink-soft);">'+(method==='ai'?'🤖 Claude AI 판정':'🔍 키워드 판정')+
+                  ' · <button type="button" onclick="setV(\'discover_result_state\',\'\');window._renderSheet();" style="font-size:11px;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;">다시 판정</button>'+
+                '</div>'+
+              '</div>';
+            })() : '<div id="judgeResult" style="margin-top:12px;"></div>')
           : '<div style="font-size:12px;color:var(--ink-soft);">마음의 방 입구에서 고민을 먼저 적어줘!</div>'
         )+
       '</div>'+
