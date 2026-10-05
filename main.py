@@ -605,7 +605,17 @@ def require_role(emp_id: str, code: str, allowed: set) -> str:
 
 init_db()
 
-app = FastAPI(title="ddugi Project")
+# ── 감자밭 봇 시작 ──────────────────────────────────────────────
+from contextlib import asynccontextmanager
+from gamjabat_bot import launch_bot_thread, stop_bot
+
+@asynccontextmanager
+async def lifespan(app):
+    launch_bot_thread()   # 봇 백그라운드 시작
+    yield
+    await stop_bot()      # 서버 종료 시 봇도 종료
+
+app = FastAPI(title="ddugi Project", lifespan=lifespan)
 
 
 def get_client_ip(request: Request) -> str:

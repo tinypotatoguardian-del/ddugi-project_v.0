@@ -2281,7 +2281,7 @@ document.addEventListener('click', function(e){
     // 마지막 섹션(diag=3-3) 저장 시 → 비로그인이면 CTA 팝업
     const lastSeedSection = 'diag';
     if(state.cur === lastSeedSection && !currentUser){
-      setTimeout(()=> showCtaPopup(), 400);
+      // CTA 팝업 제거됨
     }
   }
   if(e.target.id==='saveConfirmNo'){ hideModal(); }
@@ -5378,8 +5378,7 @@ window.introAutoFill = function(){
   // 토스트 띄우기
   const toast = document.getElementById('introToast');
   if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },8000); }
-  // 비로그인자 CTA 팝업
-  if(!currentUser){ setTimeout(()=> showCtaPopup(), 1000); }
+  // 비로그인자 CTA 팝업 제거됨
 };
 
 function renderIntroSection(){
@@ -5489,7 +5488,7 @@ function renderIntroSection(){
           : '<button type="button" onclick="setV(\'intro_saved\',false);window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정하기</button>'+
             '<span style="font-size:12px;color:var(--ok);margin-left:8px;">✅ 저장됨</span>'
         )+
-        '<button type="button" class="secondary" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>'+
+        (currentUser ? '<button type="button" class="secondary" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>' : '')+
         '<button type="button" class="secondary" data-action="goto" data-target="example">🥔 먼저 온 포테이토 보기</button>'+
       '</div>'+
       // 비로그인 카톡 CTA — 저장 완료 후 노출
