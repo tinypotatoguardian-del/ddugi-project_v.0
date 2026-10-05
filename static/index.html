@@ -4287,6 +4287,16 @@ const AI_TOOLS_DATA = {
           weak: 'ChatGPT Plus 필요',
           models: [{ name: 'DALL-E 3', desc: '텍스트 → 고품질 이미지', tag: '이미지' }]
         },
+        {
+          name: 'Leonardo AI', url: 'https://leonardo.ai', type: '이미지 생성 AI',
+          free: true, paid: 'Pro $12/월',
+          best: '캐릭터 일관성 유지·포토스타일 고정',
+          weak: '무료 크레딧 제한',
+          models: [
+            { name: 'Leonardo Phoenix', desc: '텍스트 렌더링+고품질 이미지', tag: '추천' },
+            { name: 'Flux Dev', desc: '사실적 이미지', tag: '무료포함' },
+          ]
+        },
       ]
     },
     {
@@ -4647,6 +4657,7 @@ function renderAICompare(){
   const imageRows = [
     { situation:'캐리커처·얼굴 합성', tools:['Nano Banana'], reason:'얼굴 보존+캐리커처 특화, 4K, 14장 합성 가능' },
     { situation:'예쁜 이미지·아트워크', tools:['Midjourney'], reason:'미학·조명·구도 최고. 월 $10부터' },
+    { situation:'캐릭터·일관성 유지', tools:['Leonardo AI'], reason:'캐릭터 레퍼런스 고정 기능(포토스타일) 강점. 무료 플랜 있음' },
     { situation:'이미지 안에 글자 넣기', tools:['GPT Image 2','Ideogram'], reason:'텍스트 렌더링 정확도 최강' },
     { situation:'사실적인 사진 느낌', tools:['Flux 2','Imagen 4'], reason:'포토리얼리즘 최강, API 종량제' },
     { situation:'무료로 이미지 생성', tools:['Gemini','DALL-E (ChatGPT)'], reason:'Gemini 무료, ChatGPT Plus 번들' },
