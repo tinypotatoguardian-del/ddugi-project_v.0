@@ -500,7 +500,7 @@
 <footer id="appfoot"><details><summary>ddugi</summary><a href="https://www.threads.com/@tinypotato.guardian" target="_blank" style="color:var(--ink-soft);text-decoration:none;">@tinypotato.guardian</a><br><span style="font-size:10px;color:var(--ink-soft);"><a href="/TERMS.md" target="_blank" style="color:var(--ink-soft);">이용약관</a> · <a href="/PRIVACY.md" target="_blank" style="color:var(--ink-soft);">개인정보처리방침</a> · <a href="/LICENSE.md" target="_blank" style="color:var(--ink-soft);">라이선스</a></span></details></footer>
 <button type="button" id="toTop" aria-label="맨 위로">↑ 맨 위로</button>
 
-<div id="modalOverlay" onclick="if(event.target===this) hideModal()" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,.55);z-index:50;align-items:center;justify-content:center;padding:20px;">
+<div id="modalOverlay" onclick="if(event.target===this && !this.dataset.noBackdropClose) hideModal()" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,.55);z-index:50;align-items:center;justify-content:center;padding:20px;">
   <div style="position:relative;max-width:360px;width:100%;">
     <button type="button" onclick="hideModal()" aria-label="닫기" style="position:absolute;top:-14px;right:-14px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:14px;cursor:pointer;z-index:1;">✕</button>
     <div id="modalBox" style="background:var(--panel);width:100%;padding:22px;border:1px solid var(--line);"></div>
@@ -1528,7 +1528,15 @@ function showChangelog(){
 
 function showModal(html){
   document.getElementById('modalBox').innerHTML = html;
-  document.getElementById('modalOverlay').style.display = 'flex';
+  const overlay = document.getElementById('modalOverlay');
+  overlay.style.display = 'flex';
+  overlay.dataset.noBackdropClose = '';  // 기본: 배경 클릭 시 닫힘
+}
+function showModalLocked(html){
+  document.getElementById('modalBox').innerHTML = html;
+  const overlay = document.getElementById('modalOverlay');
+  overlay.style.display = 'flex';
+  overlay.dataset.noBackdropClose = '1';  // 배경 클릭해도 안 닫힘
 }
 function hideModal(){
   document.getElementById('modalOverlay').style.display = 'none';
@@ -2090,7 +2098,7 @@ function saveConfirmHtml(){
 }
 
 function showCtaPopup(){
-  showModal(`
+  showModalLocked(`
     <div style="text-align:center;padding:8px 0 4px;">
       <div style="font-size:36px;margin-bottom:8px;">🥔</div>
       <h2 style="margin:0 0 6px;font-size:18px;">씨앗 정의서 완성!</h2>
@@ -5209,7 +5217,11 @@ window.introAutoFill = function(){
   if(hypothesis) summary += '💡 <b>해결 방향 가설:</b> '+esc(hypothesis)+'<br>';
   summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>맞는지 꼭 확인하고 수정해줘!</b>';
 
-  if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
+  if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary+
+    '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">'+
+      '<button type="button" onclick="window._state.cur=\'s1\';window._renderSheet();document.getElementById(\'main\').scrollTo(0,0);" style="padding:7px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">✏️ 씨앗 정의서 확인하기</button>'+
+      '<button type="button" onclick="window._state.cur=\'intro\';window._renderSheet();" style="padding:7px 14px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:12px;cursor:pointer;">← 마음의 방으로</button>'+
+    '</div>'; }
 
   // 토스트 띄우기
   const toast = document.getElementById('introToast');
