@@ -5554,12 +5554,14 @@ function renderDiscoverSection(){
       '<div style="padding:14px 18px;border-bottom:1px solid var(--line-soft);">'+
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
           '<span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>'+
-          '<span style="font-size:14px;font-weight:700;color:var(--ink);">이 프롬프트로 AI한테 먼저 물어봐</span>'+
-          '<span style="font-size:12px;color:var(--ink-soft);">AI가 필요한지부터 확인</span>'+
+          '<span style="font-size:14px;font-weight:700;color:var(--ink);">아래 프롬프트 복사 → AI에 붙여넣기</span>'+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;padding:8px 12px;background:var(--panel);border-radius:8px;line-height:1.7;">'+
+          '① 아래 복사 버튼 클릭 → ② ChatGPT / Claude 열기 → ③ 붙여넣고 답변 받기 → ④ 답변을 아래 STEP 2에 붙여넣기'+
         '</div>'+
         (step1Prompt
           ? '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;max-height:160px;overflow-y:auto;" id="discoverStep1Prompt">'+esc(step1Prompt)+'</div>'+
-            '<div class="exportbar"><button type="button" onclick="(()=>{navigator.clipboard.writeText(document.getElementById(\'discoverStep1Prompt\').textContent).then(()=>{const b=event.target;b.textContent=\'✅ 복사됨\';setTimeout(()=>b.textContent=\'📎 복사\',1500);})})()\">📎 복사</button></div>'
+            '<div class="exportbar"><button type="button" id="discoverCopyBtn" onclick="(()=>{navigator.clipboard.writeText(document.getElementById(\'discoverStep1Prompt\').textContent).then(()=>{const b=document.getElementById(\'discoverCopyBtn\');b.textContent=\'✅ 복사됨! 이제 AI에 붙여넣어봐\';b.style.background=\'var(--ok)\';b.style.color=\'#fff\';setTimeout(()=>{b.textContent=\'📎 복사\';b.style.background=\'\';b.style.color=\'\';},4000);})})()" style="transition:all .2s;">📎 복사</button></div>'
           : '<div style="font-size:12px;color:var(--ink-soft);">마음의 방 입구에서 고민을 먼저 적어줘!</div>'
         )+
       '</div>'+
@@ -5568,22 +5570,24 @@ function renderDiscoverSection(){
       '<div style="padding:14px 18px;">'+
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
           '<span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>'+
-          '<span style="font-size:14px;font-weight:700;color:var(--ink);">AI 답변 보고 결과 선택</span>'+
+          '<span style="font-size:14px;font-weight:700;color:var(--ink);">AI 답변 붙여넣기 → 결과 선택</span>'+
         '</div>'+
-        '<textarea data-bind="discover_ai_answer" style="min-height:160px;font-size:12px;width:100%;box-sizing:border-box;" placeholder="AI가 뭐라고 했어? (선택사항 — 기록용으로 붙여넣어도 돼)" oninput="window._renderSheet()">'+esc(getV('discover_ai_answer',''))+'</textarea>'+
-        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
-          (()=>{
-            const hasAnswer = !!getV('discover_ai_answer','').trim();
-            const btnStyle = (active, color) => hasAnswer
-              ? 'padding:8px 16px;border-radius:8px;border:2px solid '+(active?color:'var(--line)')+';background:'+(active?color+'20':'var(--panel)')+';color:'+(active?color:'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;'
-              : 'padding:8px 16px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--line);font-size:13px;font-weight:700;cursor:not-allowed;opacity:0.4;';
-            return (
-              '<button type="button" '+(hasAnswer?'onclick="setV(\'discover_result_state\',\'possible\');window._renderSheet();"':'disabled')+' style="'+btnStyle(resultState==='possible','var(--ok)')+'">✅ AI 써도 됨</button>'+
-              '<button type="button" '+(hasAnswer?'onclick="setV(\'discover_result_state\',\'redefine\');window._renderSheet();"':'disabled')+' style="'+btnStyle(resultState==='redefine','var(--blueprint)')+'">🔄 문제 다시 정의</button>'+
-              '<button type="button" '+(hasAnswer?'onclick="setV(\'discover_result_state\',\'unnecessary\');window._renderSheet();"':'disabled')+' style="'+btnStyle(resultState==='unnecessary','var(--ink)')+'">🥔 AI 불필요</button>'
-            );
-          })()+
-        '</div>'+
+        '<textarea data-bind="discover_ai_answer" style="min-height:160px;font-size:12px;width:100%;box-sizing:border-box;" placeholder="AI 답변을 여기에 붙여넣어줘.&#10;(판단: / 이유: / 제안: 형식으로 왔을 거야)" oninput="window._renderSheet()">'+esc(getV('discover_ai_answer',''))+'</textarea>'+
+        (getV('discover_ai_answer','').trim()
+          ? '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
+              (()=>{
+                const btnStyle = (active, color) => 'padding:8px 16px;border-radius:8px;border:2px solid '+(active?color:'var(--line)')+';background:'+(active?color+'20':'var(--panel)')+';color:'+(active?color:'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;';
+                return (
+                  '<button type="button" onclick="setV(\'discover_result_state\',\'possible\');window._renderSheet();" style="'+btnStyle(resultState==='possible','var(--ok)')+'">✅ AI 써도 됨</button>'+
+                  '<button type="button" onclick="setV(\'discover_result_state\',\'redefine\');window._renderSheet();" style="'+btnStyle(resultState==='redefine','var(--blueprint)')+'">🔄 문제 다시 정의</button>'+
+                  '<button type="button" onclick="setV(\'discover_result_state\',\'unnecessary\');window._renderSheet();" style="'+btnStyle(resultState==='unnecessary','var(--ink)')+'">🥔 AI 불필요</button>'
+                );
+              })()+
+            '</div>'
+          : '<div style="margin-top:10px;font-size:12px;color:var(--ink-soft);padding:8px 12px;background:var(--panel);border-radius:8px;">'+
+              '👆 AI 답변을 붙여넣으면 아래 버튼이 활성화돼요'+
+            '</div>'
+        )+
       '</div>'+
     '</div>'+
 
