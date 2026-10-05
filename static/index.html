@@ -2124,8 +2124,8 @@ document.addEventListener('click', function(e){
     hideModal();
     state.locked = true;
     persist(); renderSheet();
-    // 마지막 섹션(s3-3) 저장 시 → 비로그인이면 CTA 팝업
-    const lastSeedSection = 's3-3';
+    // 마지막 섹션(diag=3-3) 저장 시 → 비로그인이면 CTA 팝업
+    const lastSeedSection = 'diag';
     if(state.cur === lastSeedSection && !currentUser){
       setTimeout(()=> showCtaPopup(), 400);
     }
@@ -5210,6 +5210,8 @@ window.introAutoFill = function(){
     // 토스트 띄우기
     const toast = document.getElementById('introToast');
     if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },8000); }
+    // 비로그인자 CTA 팝업
+    if(!currentUser){ setTimeout(()=> showCtaPopup(), 600); }
   }, 2500);
 };
 
