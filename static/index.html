@@ -4210,30 +4210,35 @@ function renderCurriculumBlock(){
       learn:['AI가 내 삶에 이미 들어와 있다는 것','ChatGPT / Claude가 뭔지, 어떻게 다른지','AI가 잘하는 것 / 못하는 것 (환각 포함)','AI를 쓸 때의 기본 윤리 감각'],
       terms:[['LLM','엄청 많은 글을 읽고 학습한 AI'],['프롬프트','AI에게 하는 말/질문'],['환각(Hallucination)','AI가 없는 걸 있다고 꾸며내는 것']],
       cases:[{who:'고2 · 문과', what:'유튜브 알고리즘이 AI인지 몰랐다가 수업에서 처음 들음. ChatGPT에 "수행평가 주제 추천해줘" 한 마디 넣었다가 답변이 너무 길어서 당황.', result:'AI가 틀릴 수 있다는 걸 직접 확인하고 나서야 믿고 쓰기 시작함'},{who:'대학교 1학년 · 경영학과', what:'"AI에 대해 알려줘" 했다가 위키피디아 같은 답변만 받음.', result:'질문을 어떻게 하느냐가 결과를 바꾼다는 걸 처음 느낀 계기'}],
+      mission:{time:'5분', task:'ChatGPT(chat.openai.com) 또는 Claude(claude.ai) 열고\n오늘 제일 귀찮은 업무 하나 적어서 보내봐.\n예: "매주 회의록을 이메일로 정리하는데 어떻게 도와줄 수 있어?"', check:'AI가 뭔가 답했으면 성공. 맞든 틀리든 OK.'},
       next:'ChatGPT에 질문을 3번 이상 해봤고, AI가 틀릴 수 있다는 걸 안다' },
     { lv:'LV.1', icon:'🔍', title:'도구로 쓰기', tag:'ChatGPT 써본 적 있음',
       q:'"그냥 쓰긴 하는데, 내가 제대로 쓰는 건지 모르겠어"',
       learn:['프롬프트 잘 쓰는 법 (역할 / 맥락 / 형식 주기)','원하는 답을 뽑는 질문 구조 만들기','AI 답변을 그대로 믿지 않는 법','ChatGPT / Claude / Gemini 차이와 선택 기준'],
       terms:[['프롬프트 엔지니어링','AI에게 잘 부탁하는 기술'],['컨텍스트','AI에게 알려주는 배경 정보'],['토큰','AI가 읽는 텍스트 단위 (대략 글자 수)']],
       cases:[{who:'고3 · 이과', what:'"수학 문제 풀어줘"라고 했더니 맞는 것처럼 써놓고 중간 과정이 틀렸음. 그냥 복붙했다가 선생님한테 걸림.', result:'AI 답변 검증 습관이 생긴 계기. "풀이 과정도 설명해줘"를 붙이기 시작함'},{who:'대학교 2학년 · 영문과', what:'"전문가처럼 써줘"와 "영문과 교수가 쓰는 것처럼 써줘"의 결과가 완전히 다른 걸 발견.', result:'역할 부여 프롬프트를 자주 쓰게 됨. 과제 피드백 요청에도 동일하게 적용'}],
+      mission:{time:'10분', task:'같은 요청을 3가지 방식으로 물어봐.\n① "회의록 요약해줘"\n② "너는 기획팀장이야. 임원 보고용으로 이 회의록을 3줄로 요약해줘"\n③ "이 회의록에서 액션 아이템과 담당자만 표로 뽑아줘"', check:'3개 답변이 다르게 나왔으면 성공.'},
       next:'프롬프트 조금만 바꿔도 답이 달라진다는 걸 실제로 경험했다' },
     { lv:'LV.2', icon:'⚙️', title:'내 일에 연결', tag:'학생 심화',
       q:'"공부나 취준에 AI를 제대로 써보고 싶어"',
       learn:['AI로 공부하기 (요약, 퀴즈, 개념 설명 요청)','취준 활용 (자소서, 면접 준비, 직무 분석)','노션 + AI 연결해서 정보 정리하기','AI에게 "문제 정의"를 맡기는 연습'],
       terms:[['RAG','AI에게 내 문서를 먼저 읽히고 질문하는 방식'],['자동화','내가 안 해도 알아서 돌아가게 만들기'],['AX','회사/업무 전체를 AI로 바꾸는 것']],
       cases:[{who:'대학교 3학년 · 경영학과 · AX 직무 취준', what:'채용공고를 AI에게 붙여넣고 "핵심 역량 뽑아줘, 내 자소서에서 부족한 부분 알려줘"로 시작. 공고 10개를 분석하니 공통 키워드가 보이기 시작.', result:'직무 분석 프레임워크 생김. AI 피드백 → 자소서 수정 사이클 5회 반복 후 서류 합격률 올라감'},{who:'대학교 2학년 · 사회학과', what:'노션에 스터디 기록 쌓다가 "이 내용 기반으로 나한테 퀴즈 내줘"를 시도.', result:'AI 기반 복습 루틴 완성. "내가 만든 노트"를 AI에게 먹여서 개인 과외처럼 활용'}],
+      mission:{time:'15분', task:'지금 매주 반복하는 업무 하나를 골라서 Claude나 ChatGPT한테 이렇게 물어봐.\n"나는 [업무]을 매주 하는데, AI를 써서 줄일 수 있는 부분이 있을까? 구체적으로 알려줘."', check:'AI가 제안한 방법 중 하나가 실제로 해볼 만하다는 느낌이 들면 성공.', link:true},
       next:'AI 없이 했을 때와 있을 때 결과물 차이를 직접 느꼈다' },
     { lv:'LV.3', icon:'🛠️', title:'구조 설계', tag:'대학생 / 주니어 지망생',
       q:'"그냥 쓰는 게 아니라, 직접 만들어보고 싶어"',
       learn:['자동화 흐름 설계 (문제 → 입력 → 처리 → 출력)','노코드 자동화 도구 (Make, Zapier, n8n)','AI 기획서 작성 방법 (AX 기획 프로세스)','프로토타입 만들기'],
       terms:[['API','서비스끼리 말 걸 수 있는 창구'],['노코드(No-Code)','코딩 없이 도구 연결해서 만드는 것'],['파이프라인','데이터나 작업이 흐르는 전체 경로']],
       cases:[{who:'대학교 4학년 · 산업공학과 · 기획 직무 지망', what:'Make로 구글 폼 → 노션 DB → 슬랙 알림 흐름을 만들었는데, 처음엔 트리거 개념을 몰라서 삽질 3일.', result:'자동화 설계 감각 생김. "업무 효율화 경험"으로 포트폴리오에 녹임'},{who:'취업준비생 · 비전공자 · AX기획 지원', what:'코딩 하나도 모르는데 ddugi 도구로 업무 문제를 정의하는 연습을 했음.', result:'문제 정의 → 구조화 → 설계 단계가 실제로 돌아간다는 걸 체험. 중급과 초급의 차이가 구조를 먼저 아는 것임을 이해'}],
+      mission:{time:'20분', task:'Make(make.com) 또는 Zapier 무료 계정 만들고\n아무 자동화 템플릿 하나 실행해봐.\n작동하든 안 하든 시도해보는 게 목표.', check:'뭔가 연결해봤으면 성공. 실패해도 OK.', link:true},
       next:'내가 설계한 자동화가 실제로 한 번 이상 작동했다' },
     { lv:'LV.4', icon:'🧭', title:'진로 방향 잡기', tag:'대학생 / 진로 고민 중',
       q:'"AI 시대에 나는 어디로 가야 하지?"',
       learn:['AI 관련 직무 지형도 (기획 / 개발 / 데이터 / 운영)','AI가 대체 못하는 능력 (문제 정의, 판단, 관계)','포트폴리오에 AI 활용 경험 녹이는 방법','지금 당장 할 수 있는 실전 준비 루틴'],
       terms:[['AX기획자','회사 업무를 AI로 어떻게 바꿀지 설계하는 사람'],['데이터 리터러시','데이터를 읽고 해석하는 기초 능력'],['MLOps','AI 모델을 실제 서비스로 유지·관리하는 것']],
       cases:[{who:'졸업예정자 · 경영정보학과 · PM 지망', what:'"이걸로 뭘 할 수 있는 사람이에요?"라는 질문에 막혔음. LV.2~3 결과물을 정리하면서 한 문장을 완성함.', result:'포트폴리오 스토리라인 완성. "도구를 쓸 줄 아는 것"이 아니라 "문제를 보는 눈"을 어필하는 방향으로 전환'},{who:'대학교 3학년 · 컴퓨터공학과', what:'AI 관련 채용공고 20개를 분석했더니 "AI를 만드는 사람"보다 "AI를 업무에 연결하는 사람"을 더 많이 뽑고 있다는 걸 발견.', result:'AI 엔지니어 → AX기획+개발 방향으로 전환. 기술 스택보다 문제 해결 경험 중심으로 이력서 재구성'}],
+      mission:{time:'자유', task:'내 업무에서 AI로 바꿀 수 있는 프로세스 하나를 골라서\n마음의 방에서 씨앗 정의서를 시작해봐.\n씨앗 이름 + 현재 프로세스 + 핵심 문제까지만 적어도 충분해.', check:'씨앗 이름이 생겼으면 성공.', link:true},
       next:'특화 직무 심화 과정으로 → AX기획 / 개발 / 데이터 분석 중 선택' }
   ];
 
@@ -4290,6 +4295,34 @@ function renderCurriculumBlock(){
           '<div style="margin-top:4px;font-size:11px;color:var(--ink-soft);">→ <b style="color:var(--blueprint);">'+c.result+'</b></div>'+
         '</div>').join('')+
       '</div>'+
+      // 🎯 미션 섹션
+      (l.mission ?
+      (()=>{
+        const mkey = 'gamja_mission_'+l.lv.replace('.','_');
+        const done = localStorage.getItem(mkey)==='1';
+        return '<div style="padding:16px 20px;border-bottom:1px solid var(--line);background:var(--blueprint-soft);">'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
+            '<span style="font-size:13px;">🎯</span>'+
+            '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--blueprint);">이번 미션</span>'+
+            '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--blueprint);color:#fff;font-weight:600;">⏱ '+l.mission.time+'</span>'+
+          '</div>'+
+          '<div style="font-size:13px;color:var(--ink);line-height:1.8;white-space:pre-line;margin-bottom:10px;">'+l.mission.task+'</div>'+
+          '<div style="font-size:12px;color:var(--blueprint);font-weight:600;margin-bottom:12px;">✅ 완료 기준: '+l.mission.check+'</div>'+
+          '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);">'+
+            '<input type="checkbox" '+(done?'checked':'')+' onchange="(function(el){'+
+              'var k=\'gamja_mission_'+l.lv.replace('.','_')+'\';'+
+              'localStorage.setItem(k,el.checked?\'1\':\'0\');'+
+              'window._curriculumIdx='+curIdx+';'+
+              'window._renderSheet&&window._renderSheet();'+
+            '})(this)" style="width:16px;height:16px;accent-color:var(--blueprint);">'+
+            (done?'<span style="color:var(--ok);">완료했어! 🎉</span>':'<span>해봤어!</span>')+
+          '</label>'+
+          (done && l.mission.link ?
+            '<div style="margin-top:12px;">'+
+              '<button type="button" onclick="window._gotoSection(\'discover\')" style="font-size:13px;padding:8px 18px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;cursor:pointer;font-weight:600;">🌱 씨앗 찾기 시작하기 →</button>'+
+            '</div>' : '')+
+        '</div>';
+      })() : '')+
       // 다음 레벨 조건
       '<div style="padding:12px 20px;background:var(--panel);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
         '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);">'+(curIdx<4?'다음 레벨 조건':'이 레벨 이후')+'</span>'+
