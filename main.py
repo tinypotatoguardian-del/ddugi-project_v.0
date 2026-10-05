@@ -1432,6 +1432,19 @@ def set_user_role(username: str, body: UserRoleIn, x_admin_token: str = Header(d
     return {"ok": True, "username": username, "role": body.role, "label": ROLE_LABELS[body.role]}
 
 
+@app.put("/api/master/users/{username}/reset-password")
+def reset_user_password(username: str, x_admin_token: str = Header(default="")):
+    """사용자 비밀번호를 아이디와 동일하게 초기화"""
+    require_admin_token(x_admin_token, {"master", "admin"})
+    conn = get_db()
+    ph = hash_code(username)
+    q = "UPDATE users SET password_hash=%s, must_change_password=1 WHERE username=%s" if USE_PG else "UPDATE users SET password_hash=?, must_change_password=1 WHERE username=?"
+    db_execute(conn, q, (ph, username))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"ok": True, "username": username, "message": "비밀번호가 아이디와 동일하게 초기화됐어요."}
+
+
 @app.get("/api/master/users")
 def list_users(x_admin_token: str = Header(default="")):
     """전체 일반 유저 목록 (마스터/어드민 전용)"""
