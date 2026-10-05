@@ -1585,7 +1585,7 @@ function showChangelog(){
     '<h2 style="margin:0 0 16px;font-size:17px;">📋 업데이트 이력</h2>'+
     log.map(l=>'<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line-soft);">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'+
-        '<span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;'+( tagColor[l.tag]||'')+'">'+l.tag+'</span>'+
+        '<span style="font-size:11px;padding:3px 10px;border-radius:999px;font-weight:700;'+( tagColor[l.tag]||'')+'">'+l.tag+'</span>'+
         '<span style="font-size:14px;font-weight:700;color:var(--ink);">'+l.title+'</span>'+
         '<span style="font-size:11px;color:var(--ink-soft);margin-left:auto;">'+l.date+'</span>'+
       '</div>'+
@@ -2827,7 +2827,7 @@ async function loadInviteCodes(){
       list.map(c =>
         '<tr style="border-bottom:1px solid var(--line-soft);">'+
           '<td style="padding:6px 8px;font-size:12px;font-weight:600;letter-spacing:1px;color:'+statusColor(c.status)+';">'+esc(c.code)+'</td>'+
-          '<td style="padding:6px 8px;"><span style="padding:2px 8px;border-radius:999px;font-size:11px;background:'+statusBg(c.status)+';color:'+statusColor(c.status)+';">'+esc(c.status)+'</span></td>'+
+          '<td style="padding:6px 8px;"><span style="padding:3px 10px;border-radius:999px;font-size:11px;background:'+statusBg(c.status)+';color:'+statusColor(c.status)+';">'+esc(c.status)+'</span></td>'+
           '<td style="padding:6px 8px;font-size:12px;color:var(--ink-soft);">'+(c.expires_at?c.expires_at.slice(0,16):'-')+'</td>'+
           '<td style="padding:6px 8px;font-size:12px;color:var(--ink-soft);">'+esc(c.used_by||'-')+'</td>'+
         '</tr>'
@@ -2896,10 +2896,10 @@ async function renderDashboard(){
       const when = v.updatedAt ? new Date(v.updatedAt).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
       const status = v.status || '작성중';
       const statusBadge = status==='완료'
-        ? '<span style="padding:2px 8px;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-size:11px;">✅ 완료</span>'
+        ? '<span style="padding:3px 10px;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-size:11px;">✅ 완료</span>'
         : status==='저장됨'
-        ? '<span style="padding:2px 8px;border-radius:999px;background:var(--panel);color:var(--ink-soft);font-size:11px;">🔒 저장됨</span>'
-        : '<span style="padding:2px 8px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-size:11px;">✏️ 작성중</span>';
+        ? '<span style="padding:3px 10px;border-radius:999px;background:var(--panel);color:var(--ink-soft);font-size:11px;">🔒 저장됨</span>'
+        : '<span style="padding:3px 10px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-size:11px;">✏️ 작성중</span>';
       const seedName = v.task && v.task.seedName ? esc(v.task.seedName) : (v.name ? esc(v.name) : '<span style="color:var(--ink-soft);">미입력</span>');
       const rec = v.gateReview && v.gateReview.decision==='인정' ? lvLabel(gateLevelNum(v.gateReview.level)) : '-';
       const idCell = v.username ? '👤 '+esc(v.username) : '<span style="color:var(--ink-soft);">계정 없음</span>';
@@ -4271,7 +4271,7 @@ function renderCurriculumBlock(){
           '<div style="font-size:16px;font-weight:700;color:var(--ink);">'+l.title+'</div>'+
           '<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:2px;">'+l.q+'</div>'+
         '</div>'+
-        '<span style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
+        '<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--line-soft);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
       '</div>'+
       // 2열 그리드
       '<div style="display:grid;grid-template-columns:1fr 1fr;">'+
@@ -5098,7 +5098,7 @@ function renderCurriculumSection(){
           '<span style="font-size:9px;color:var(--blueprint);font-weight:700;">'+l.lv.replace('LV.','Step ')+'</span><span style="font-size:18px;">'+l.icon+'</span></div>'+
         '<div style="flex:1;"><div style="font-size:16px;font-weight:700;color:var(--ink);">'+l.title+'</div>'+
           '<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:2px;">'+l.q+'</div></div>'+
-        '<span style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
+        '<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--line-soft);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
       '</div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;">'+
         '<div style="padding:16px 20px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);">'+
@@ -5599,7 +5599,7 @@ function renderPromptKitSection(){
       list.map((p,i) =>
         '<div style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">'+
           '<div style="padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">'+
-            '<span style="font-size:10px;padding:3px 8px;border-radius:6px;background:var(--blueprint-soft);color:var(--blueprint);font-weight:700;white-space:nowrap;margin-top:2px;">'+p.tag+'</span>'+
+            '<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-weight:700;white-space:nowrap;margin-top:2px;">'+p.tag+'</span>'+
             '<div style="flex:1;">'+
               '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;">'+p.title+'</div>'+
               '<div style="font-size:12px;color:var(--ink-soft);">'+p.desc+'</div>'+
