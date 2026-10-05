@@ -2461,7 +2461,8 @@ async function renderUserList(){
       const activeLabel = u.is_active===0 ? '<span style="color:var(--danger,#e74c3c);font-size:11px;">🔒 비활성</span>' : '<span style="color:var(--ok,#2ecc71);font-size:11px;">✅ 활성</span>';
       const roleOpts = Object.entries(ROLE_LABELS).map(([v,l])=>`<option value="${v}"${u.role===v?' selected':''}>${l}</option>`).join('');
       const roleSelect = `<select data-action="user-role" data-target="${esc(u.username||'')}" style="font-size:12px;padding:3px 6px;border-radius:4px;background:var(--card);color:var(--foreground);border:1px solid var(--border);">${roleOpts}</select>`;
-      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+activeLabel+'</td><td>'+roleSelect+'</td><td>'+esc(lastLogin)+'</td><td>'+esc(when)+'</td></tr>';
+      const resetBtn = `<button type="button" data-action="user-reset-pw" data-target="${esc(u.username||'')}" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:none;color:var(--ink-soft);cursor:pointer;">비번초기화</button>`;
+      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+activeLabel+'</td><td>'+roleSelect+'</td><td>'+esc(lastLogin)+'</td><td>'+esc(when)+'</td><td>'+resetBtn+'</td></tr>';
     }).join('');
     out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>닉네임</th><th>상태</th><th>역할/레벨</th><th>마지막 로그인</th><th>만든 날짜</th></tr></thead><tbody>'+rows+'</tbody></table>';
     // role 드롭다운 이벤트
@@ -2475,6 +2476,18 @@ async function renderUserList(){
         });
         if(r.ok){ this.style.borderColor='var(--ok,#2ecc71)'; setTimeout(()=>this.style.borderColor='',1500); }
         else{ this.style.borderColor='var(--danger,#e74c3c)'; alert('권한 변경 실패'); }
+      });
+    });
+    // 비번 초기화 버튼 이벤트
+    out.querySelectorAll('button[data-action="user-reset-pw"]').forEach(btn=>{
+      btn.addEventListener('click', async function(){
+        const username = this.dataset.target;
+        if(!confirm(username+'의 비밀번호를 아이디와 동일하게 초기화할까요?')) return;
+        const r = await fetch('/api/master/users/'+encodeURIComponent(username)+'/reset-password', {
+          method:'PUT', headers: authHeaders()
+        });
+        if(r.ok){ this.textContent='✅ 완료'; setTimeout(()=>this.textContent='비번초기화',2000); }
+        else{ alert('초기화 실패'); }
       });
     });
   }catch(e){
@@ -6130,14 +6143,15 @@ document.addEventListener('click', async function(e){
     const data = await r.json();
     if(!r.ok){ alert(data.detail||'오류가 발생했어요.'); return; }
     renderSignupRequests();
+    renderUserList();
     showModal(`
       <h2 style="margin-top:0;font-size:16px;">✅ 계정 생성 완료!</h2>
       <div style="margin-bottom:12px;">
         <b>아이디:</b> ${esc(data.username)}<br>
-        <b>임시 비밀번호:</b> <code style="background:var(--card,#222);padding:4px 8px;border-radius:4px;font-size:15px;letter-spacing:1px;">${esc(data.temp_password)}</code>
+        <b>초기 비밀번호:</b> <code style="background:var(--card,#222);padding:4px 8px;border-radius:4px;font-size:15px;letter-spacing:1px;">${esc(data.username)}</code>
       </div>
-      <div class="fhint" style="margin-bottom:14px;">이 비밀번호를 신청자에게 전달해주세요. 첫 로그인 후 비밀번호를 변경하게 됩니다.</div>
-      <button type="button" id="adminCancel" class="addbtn" onclick="navigator.clipboard.writeText('아이디: ${esc(data.username)}\\n임시 비밀번호: ${esc(data.temp_password)}').then(()=>this.textContent='✅ 복사됨!')" style="width:100%;text-align:center;margin-bottom:8px;">📋 클립보드에 복사</button>
+      <div class="fhint" style="margin-bottom:14px;">초기 비밀번호는 아이디와 동일해요. 첫 로그인 후 변경하게 됩니다.</div>
+      <button type="button" id="adminCancel" class="addbtn" onclick="navigator.clipboard.writeText('아이디: ${esc(data.username)}\n비밀번호: ${esc(data.username)}').then(()=>this.textContent='✅ 복사됨!')" style="width:100%;text-align:center;margin-bottom:8px;">📋 클립보드에 복사</button>
       <button type="button" id="adminCancel" class="addbtn" style="width:100%;text-align:center;">닫기</button>
     `);
     return;

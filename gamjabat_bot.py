@@ -164,3 +164,32 @@ def launch_bot_thread():
 async def stop_bot():
     if not bot.is_closed():
         await bot.close()
+
+# ⑤ 사이트 URL 변경 시 → 공지 채널에 메시지
+async def _announce_url_change(new_url: str):
+    guild = bot.get_guild(GUILD_ID)
+    if not guild:
+        return
+    # 공지(announcement) 또는 general 채널 찾기
+    ch = discord.utils.find(
+        lambda c: c.name in ("공지", "announcement", "general", "일반"),
+        guild.text_channels
+    )
+    if not ch:
+        # 없으면 notify 채널 ID 사용
+        notify_ch_id = os.environ.get("DISCORD_NOTIFY_CHANNEL", "")
+        if notify_ch_id:
+            ch = bot.get_channel(int(notify_ch_id))
+    if not ch:
+        print(f"[감자밭봇] URL 공지 채널 못 찾음")
+        return
+    try:
+        await ch.send(f"📢 **사이트 주소가 변경됐어!**\n새 주소: {new_url}")
+        print(f"[감자밭봇] URL 변경 공지 완료: {new_url}")
+    except Exception as e:
+        print(f"[감자밭봇] URL 공지 오류: {e}")
+
+def notify_url_change(new_url: str):
+    """main.py 동기 컨텍스트에서 호출"""
+    if _bot_loop and not bot.is_closed():
+        asyncio.run_coroutine_threadsafe(_announce_url_change(new_url), _bot_loop)

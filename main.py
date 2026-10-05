@@ -607,7 +607,7 @@ init_db()
 
 # ── 감자밭 봇 시작 ──────────────────────────────────────────────
 from contextlib import asynccontextmanager
-from gamjabat_bot import launch_bot_thread, stop_bot, notify_registered
+from gamjabat_bot import launch_bot_thread, stop_bot, notify_registered, notify_url_change
 
 @asynccontextmanager
 async def lifespan(app):
@@ -1512,6 +1512,11 @@ def update_settings(body: SettingsUpdate, x_admin_token: str = Header(default=""
     if USE_PG:
         conn.commit()
     conn.close()
+    # 사이트 URL 바뀌면 Discord 공지
+    if "gamja99_url" in updates:
+        new_url = updates["gamja99_url"]
+        _notify_discord(f"📢 **사이트 주소가 변경됐어!**\n새 주소: {new_url}")
+        notify_url_change(new_url)
     return {"ok": True, "updated": list(updates.keys())}
 
 # ── 초대 패키지 생성 (초대코드 + 설정값 한 번에)
