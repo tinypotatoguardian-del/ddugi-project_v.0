@@ -607,7 +607,7 @@ init_db()
 
 # ── 감자밭 봇 시작 ──────────────────────────────────────────────
 from contextlib import asynccontextmanager
-from gamjabat_bot import launch_bot_thread, stop_bot
+from gamjabat_bot import launch_bot_thread, stop_bot, notify_registered
 
 @asynccontextmanager
 async def lifespan(app):
@@ -1234,12 +1234,13 @@ def user_register(body: UserRegisterIn):
         conn.commit()
     conn.close()
     token = make_token(uid, username, plan)
-    # Discord 가입 알람
+    # Discord 가입 알람 (방장 채널) + 당사자 DM
     _notify_discord(
         f"🥔 새 감자 가입!\n"
         f"**닉네임:** {nick}  |  **아이디:** `{username}`\n"
         f"*{now}*"
     )
+    notify_registered(nick)
     return {"token": token, "userId": uid, "username": username, "nickname": nick, "plan": plan}
 
 @app.post("/api/user/login")
@@ -1380,7 +1381,7 @@ def link_signup_request(req_id: int, body: SignupRequestLinkIn, x_admin_token: s
 
     req_dict = dict(req)
     nickname = req_dict.get("nickname") or username
-    temp_pw = _make_temp_password(10)
+    temp_pw = username  # 초기 비밀번호 = 아이디와 동일
     ph = hash_code(temp_pw)
     now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
     placeholder_email = username + "@noemail.local"
