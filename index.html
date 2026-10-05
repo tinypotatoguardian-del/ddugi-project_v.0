@@ -2017,6 +2017,7 @@ function renderSheet(){
     sheet.innerHTML = renderDashboardSection();
     renderDashboard();
     loadInviteCodes();
+    loadSettings();
   } else if(sec.special==='tasklist'){
     sheet.innerHTML = renderTaskListSection();
     renderTaskList();
@@ -2493,6 +2494,31 @@ function renderDashboardSection(){
       '<div id="inviteCodeResult" style="font-size:13px;margin-bottom:10px;"></div>'+
       '<div id="inviteCodeList" style="font-size:12px;color:var(--ink-soft);">불러오는 중…</div>'+
     '</div>'+
+    // ── 초대 패키지 섹션
+    '<div style="background:var(--panel);border-radius:10px;padding:16px 18px;margin-bottom:12px;">'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:12px;">🥔 초대 패키지</div>'+
+      '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">초대코드 + 링크 + 카톡 메시지를 한 번에 생성해요.</div>'+
+      '<button type="button" onclick="createInvitePackage()" style="padding:8px 18px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;">🎁 초대 패키지 생성</button>'+
+      '<div id="invitePkgResult" style="margin-top:12px;"></div>'+
+    '</div>'+
+    // ── URL 설정 섹션
+    '<div style="background:var(--panel);border-radius:10px;padding:16px 18px;margin-bottom:12px;">'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:12px;">⚙️ 링크 설정</div>'+
+      '<div style="display:flex;flex-direction:column;gap:10px;">'+
+        '<div>'+
+          '<label style="font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;">gamja99 URL (홈페이지 주소)</label>'+
+          '<div style="display:flex;gap:8px;">'+
+            '<input id="settingGameja99Url" type="text" placeholder="https://gamja99.up.railway.app" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:13px;">'+
+            '<button type="button" onclick="saveSettings()" style="padding:8px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">저장</button>'+
+          '</div>'+
+        '</div>'+
+        '<div>'+
+          '<label style="font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;">Discord 초대링크 (영구 링크)</label>'+
+          '<input id="settingDiscordInvite" type="text" placeholder="https://discord.gg/xxxxxxx" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:13px;box-sizing:border-box;">'+
+        '</div>'+
+      '</div>'+
+      '<div id="settingsSaveMsg" style="font-size:12px;margin-top:8px;color:var(--ok);display:none;"></div>'+
+    '</div>'+
     '<div id="dashboardBody" style="margin-top:14px">불러오는 중…</div>'+
   '</div>';
 }
@@ -2513,6 +2539,70 @@ async function createInviteCode(){
     }
     loadInviteCodes();
   }catch(e){ if(el) el.textContent = '네트워크 오류'; }
+}
+
+async function createInvitePackage(){
+  const el = document.getElementById('invitePkgResult');
+  if(el) el.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);">생성 중…</div>';
+  try{
+    const res = await fetch('/api/admin/invite-package', {method:'POST', headers: authHeaders()});
+    const d = await res.json();
+    if(!res.ok){ if(el) el.textContent = '오류: '+(d.detail||'실패'); return; }
+    const msg = `안녕하세요! 감자밭 초대드려요 🥔
+
+🌱 씨앗 정의서 (회원가입 필요)
+${d.gamja99_url}
+초대코드: ${d.code}
+(24시간 내 사용, 1회용)
+
+${d.discord_invite ? '💬 감자밭 Discord\n'+d.discord_invite : '💬 Discord 초대링크는 별도 안내드릴게요!'}`;
+    if(el) el.innerHTML =
+      '<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;">'+
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;">'+
+          '<div style="flex:1;min-width:160px;">'+
+            '<div style="font-size:11px;color:var(--ink-soft);margin-bottom:3px;">gamja99 초대코드</div>'+
+            '<div style="font-size:16px;font-weight:700;letter-spacing:2px;color:var(--ok);">'+esc(d.code)+'</div>'+
+            '<div style="font-size:11px;color:var(--ink-soft);">만료: '+esc(d.expires_at.slice(0,16))+'</div>'+
+          '</div>'+
+          (d.discord_invite ? '<div style="flex:1;min-width:160px;"><div style="font-size:11px;color:var(--ink-soft);margin-bottom:3px;">Discord 초대링크</div><div style="font-size:12px;color:var(--blueprint);word-break:break-all;">'+esc(d.discord_invite)+'</div></div>' : '')+
+        '</div>'+
+        '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:12px;font-size:12px;white-space:pre-wrap;line-height:1.7;color:var(--ink);">'+esc(msg)+'</div>'+
+        '<div style="margin-top:10px;display:flex;gap:8px;">'+
+          '<button type="button" onclick="navigator.clipboard.writeText('+JSON.stringify(msg)+').then(()=>{this.textContent=\'✅ 복사됨\';setTimeout(()=>this.textContent=\'📋 카톡 메시지 복사\',2000)})" style="padding:7px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">📋 카톡 메시지 복사</button>'+
+          '<button type="button" onclick="navigator.clipboard.writeText(\''+esc(d.code)+'\').then(()=>{this.textContent=\'✅\';setTimeout(()=>this.textContent=\'코드만 복사\',1500)})" style="padding:7px 12px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:12px;cursor:pointer;">코드만 복사</button>'+
+        '</div>'+
+      '</div>';
+    loadInviteCodes();
+  }catch(e){ if(el) el.textContent = '네트워크 오류'; }
+}
+
+async function loadSettings(){
+  try{
+    const res = await fetch('/api/admin/settings', {headers: authHeaders()});
+    if(!res.ok) return;
+    const d = await res.json();
+    const u = document.getElementById('settingGameja99Url');
+    const di = document.getElementById('settingDiscordInvite');
+    if(u) u.value = d.gamja99_url || '';
+    if(di) di.value = d.discord_invite || '';
+  }catch(e){}
+}
+
+async function saveSettings(){
+  const u = document.getElementById('settingGameja99Url');
+  const di = document.getElementById('settingDiscordInvite');
+  const msg = document.getElementById('settingsSaveMsg');
+  const body = {};
+  if(u && u.value.trim()) body.gamja99_url = u.value.trim();
+  if(di) body.discord_invite = di.value.trim();
+  try{
+    const res = await fetch('/api/admin/settings', {method:'PUT', headers:{...authHeaders(),'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    if(res.ok){
+      if(msg){ msg.style.display=''; msg.textContent='✅ 저장됐어요!'; setTimeout(()=>msg.style.display='none',2000); }
+    } else {
+      if(msg){ msg.style.display=''; msg.style.color='#ef4444'; msg.textContent='저장 실패'; }
+    }
+  }catch(e){ if(msg){ msg.style.display=''; msg.textContent='오류'; } }
 }
 
 async function loadInviteCodes(){

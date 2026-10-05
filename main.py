@@ -267,6 +267,27 @@ def init_db() -> None:
         """)
     conn.commit()  # 아래 submissions 마이그레이션 ALTER가 실패해서 rollback해도 이 CREATE TABLE은 지워지지 않도록
 
+    # ── settings 테이블 (관리자 설정값 — URL, Discord 초대링크 등)
+    db_execute(conn, """
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            updated_at TEXT
+        )
+    """)
+    # 기본값 세팅
+    now_str = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    for k, v in [
+        ("gamja99_url", "https://gamja99.up.railway.app"),
+        ("discord_invite", ""),
+    ]:
+        q_exist = "SELECT 1 FROM settings WHERE key=?" if not USE_PG else "SELECT 1 FROM settings WHERE key=%s"
+        if not db_fetchone(conn, q_exist, (k,)):
+            q_ins = "INSERT INTO settings (key,value,updated_at) VALUES (?,?,?)" if not USE_PG else \
+                    "INSERT INTO settings (key,value,updated_at) VALUES (%s,%s,%s)"
+            db_execute(conn, q_ins, (k, v, now_str))
+    conn.commit()
+
     # ── admin_sessions 테이블 (서버 재시작해도 세션 유지)
     if USE_PG:
         db_execute(conn, """
@@ -1402,6 +1423,65 @@ def list_invites(x_admin_token: str = Header(default="")):
              "used_at": r["used_at"], "used_by": r["used_by"],
              "status": "사용됨" if r["used_at"] else ("만료" if r["expires_at"] and r["expires_at"] < now else "유효")}
             for r in rows]
+
+
+# ── 설정값 (URL, Discord 초대링크)
+@app.get("/api/admin/settings")
+def get_settings(x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"master", "admin"})
+    conn = get_db()
+    rows = db_fetchall(conn, "SELECT key, value FROM settings")
+    conn.close()
+    return {r["key"]: r["value"] for r in rows}
+
+class SettingsUpdate(BaseModel):
+    gamja99_url: Optional[str] = None
+    discord_invite: Optional[str] = None
+
+@app.put("/api/admin/settings")
+def update_settings(body: SettingsUpdate, x_admin_token: str = Header(default="")):
+    require_admin_token(x_admin_token, {"master", "admin"})
+    conn = get_db()
+    now_str = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    updates = {k: v for k, v in body.dict().items() if v is not None}
+    for k, v in updates.items():
+        q = "INSERT OR REPLACE INTO settings (key,value,updated_at) VALUES (?,?,?)" if not USE_PG else \
+            "INSERT INTO settings (key,value,updated_at) VALUES (%s,%s,%s) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at"
+        db_execute(conn, q, (k, v, now_str))
+    if USE_PG:
+        conn.commit()
+    conn.close()
+    return {"ok": True, "updated": list(updates.keys())}
+
+# ── 초대 패키지 생성 (초대코드 + 설정값 한 번에)
+@app.post("/api/admin/invite-package")
+def create_invite_package(x_admin_token: str = Header(default="")):
+    sess = require_admin_token(x_admin_token, {"master", "admin"})
+    conn = get_db()
+    # 초대코드 생성
+    for _ in range(10):
+        code = _make_invite_code()
+        q = "SELECT 1 FROM invite_codes WHERE code=?" if not USE_PG else "SELECT 1 FROM invite_codes WHERE code=%s"
+        if not db_fetchone(conn, q, (code,)):
+            break
+    expires_at = (datetime.datetime.now(KST) + datetime.timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+    q2 = "INSERT INTO invite_codes (code,created_by,plan,expires_at) VALUES (?,?,'free',?)" if not USE_PG else \
+         "INSERT INTO invite_codes (code,created_by,plan,expires_at) VALUES (%s,%s,'free',%s)"
+    db_execute(conn, q2, (code, sess["emp_id"], expires_at))
+    if USE_PG:
+        conn.commit()
+    # 설정값 조회
+    rows = db_fetchall(conn, "SELECT key, value FROM settings")
+    conn.close()
+    cfg = {r["key"]: r["value"] for r in rows}
+    gamja99_url = cfg.get("gamja99_url", "https://gamja99.up.railway.app")
+    discord_invite = cfg.get("discord_invite", "")
+    return {
+        "code": code,
+        "expires_at": expires_at,
+        "gamja99_url": gamja99_url,
+        "discord_invite": discord_invite,
+    }
 
 @app.get("/api/user/me")
 def user_me(authorization: str = Header(default="")):
