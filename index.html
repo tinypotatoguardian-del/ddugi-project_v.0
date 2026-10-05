@@ -1348,24 +1348,42 @@ function openAuthModal(mode){
         return;
       }
 
-      // 로그인
+      // 로그인 — 일반 유저 먼저, 실패 시 관리자 계정 시도
       if(btn) btn.disabled=true;
       try{
         const res = await fetch('/api/user/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password:pw})});
-        const d = await res.json();
-        if(!res.ok){ showErr(d.detail||'아이디 또는 비밀번호가 틀렸어요.'); return; }
-        localStorage.setItem('ddugi_token', d.token);
-        currentUser = d;
-        updateAuthUI();
-        await syncSeedToServer();
-        if(d.mustChangePassword){
-          forcedPwChange = true;
-          openAuthModal('change_pw');
-          return;
+        if(res.ok){
+          const d = await res.json();
+          localStorage.setItem('ddugi_token', d.token);
+          currentUser = d;
+          updateAuthUI();
+          await syncSeedToServer();
+          if(d.mustChangePassword){
+            forcedPwChange = true;
+            openAuthModal('change_pw');
+            return;
+          }
+          hideModal();
+          const welcomeNick = currentUser.nickname || username;
+          showModal('<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">돌아오셨군요!</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+welcomeNick+'님 반가워요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
+        } else {
+          // 일반 로그인 실패 → 관리자 계정 시도
+          const adminRes = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empId:username, code:pw})});
+          if(adminRes.ok){
+            const ad = await adminRes.json();
+            localStorage.setItem('admin_token', ad.token);
+            localStorage.setItem('admin_role', ad.role);
+            localStorage.setItem('admin_emp_id', username);
+            empId = username; role = ad.role; isAdmin = true; isMaster = ad.role==='master';
+            updateAdminSlot();
+            hideModal();
+            renderSheet();
+            showModal('<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">'+(isMaster?'마스터':'관리자')+' 로그인됐어요</h3><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
+          } else {
+            const d = await res.json();
+            showErr(d.detail||'아이디 또는 비밀번호가 틀렸어요.');
+          }
         }
-        hideModal();
-        const welcomeNick = currentUser.nickname || username;
-        showModal('<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">돌아오셨군요!</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+welcomeNick+'님 반가워요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
       }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
       finally{ if(btn) btn.disabled=false; }
     }
