@@ -5211,16 +5211,11 @@ window.introAutoFill = function(){
 
   if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
 
-  setTimeout(()=>{
-    // 로그인 유저 → mydash, 비로그인 → s1
-    const dest = currentUser ? 'mydash' : 's1';
-    window._state.cur = dest; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
-    // 토스트 띄우기
-    const toast = document.getElementById('introToast');
-    if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },8000); }
-    // 비로그인자 CTA 팝업
-    if(!currentUser){ setTimeout(()=> showCtaPopup(), 600); }
-  }, 2500);
+  // 토스트 띄우기
+  const toast = document.getElementById('introToast');
+  if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },8000); }
+  // 비로그인자 CTA 팝업
+  if(!currentUser){ setTimeout(()=> showCtaPopup(), 1000); }
 };
 
 function renderIntroSection(){
