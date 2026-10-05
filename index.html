@@ -1247,7 +1247,7 @@ function openAuthModal(mode){
       '</p>'+
       '<div class="field"><label>아이디</label><input type="text" id="authUsername" placeholder="예: potato1, jimin" autocomplete="username" maxlength="20" style="text-transform:lowercase;"></div>'+
       (isRegister?
-        '<div class="field"><label>닉네임 (선택)</label><input type="text" id="authNick" placeholder="감자밭에서 불릴 이름 (비우면 아이디로)" maxlength="20"></div>'
+        '<div class="field"><label>감자명 <span style="font-size:11px;color:var(--ink-soft);">비우면 자동 배정 🥔</span></label><input type="text" id="authNick" placeholder="비우면 랜덤 감자명 배정" maxlength="20"></div>'
         :'')+
       '<div class="field"><label>비밀번호'+(isLogin?'':' <span style="font-size:11px;color:var(--ink-soft);">8자 이상, 영문+숫자</span>')+'</label>'+
         '<input type="password" id="authPw" placeholder="••••••••" autocomplete="'+(isLogin?'current-password':'new-password')+'">'+
@@ -1337,8 +1337,13 @@ function openAuthModal(mode){
           updateAuthUI();
           hideModal();
           await syncSeedToServer();
-          showModal('<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">감자밭에 오신 걸 환영해요!</h3><p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">'+(d.nickname||username)+'님의 씨앗이 기기 어디서나 유지돼요.</p><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
-        }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
+          showModal('<div style="text-align:center;padding:8px 0;">'+
+            '<div style="font-size:32px;margin-bottom:8px;">🥔</div>'+
+            '<h3 style="margin:0 0 8px;">환영해요!</h3>'+
+            '<p style="font-size:14px;color:var(--ink-soft);margin:0 0 16px;">배정된 감자명: <b style="color:var(--blueprint);">'+esc(d.nickname)+'</b><br><span style="font-size:12px;">마이페이지에서 바꿀 수 있어요</span></p>'+
+            '<button type="button" onclick="hideModal()" style="padding:8px 24px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;cursor:pointer;font-size:14px;">시작하기 🌱</button>'+
+          '</div>');
+         }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
         finally{ if(btn) btn.disabled=false; }
         return;
       }
@@ -2936,14 +2941,14 @@ function updateRulerAndNav(){
       return '<li><button type="button" class="navbtn sub" disabled>'+
         '<span class="num">'+s.num+'</span>'+esc(s.title)+'<span class="ex-note" style="margin-left:auto">'+esc(s.disabledNote||'준비 중')+'</span></button></li>';
     }
-    // 로그인 필요 섹션 — 보이지만 클릭 불가 + 🔒
+    // 로그인 필요 섹션 — 클릭 가능, 🔒 표시 (클릭하면 블러 오버레이 뜸)
     const needsLogin = !currentUser && !isAdmin && !LOGIN_FREE_SPECIALS.has(s.special);
     if(needsLogin){
       const isGrpHead = !!NAV_GROUPS[s.id];
       const m = isGrpHead ? NAV_GROUPS[s.id].match(/^([A-Z])\.\s*(.+)$/) : null;
       const num = m ? m[1] : s.num;
       const label = m ? m[2] : s.title;
-      return '<li><button type="button" class="navbtn'+(isGrpHead?'':' sub')+' dim" disabled style="opacity:0.4;cursor:not-allowed;" title="로그인 후 이용 가능해요">'+
+      return '<li><button type="button" class="navbtn'+(isGrpHead?'':' sub')+'" data-action="goto" data-target="'+s.id+'" style="opacity:0.55;" title="로그인 후 이용 가능해요">'+
         '<span class="num">'+esc(num)+'</span>'+esc(label)+'<span style="margin-left:auto;font-size:10px;">🔒</span></button></li>'+
         (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
     }
@@ -6209,17 +6214,17 @@ document.addEventListener('click', async function(e){
         sheet.style.position = 'relative';
         const overlay = document.createElement('div');
         overlay.id = 'loginBlurOverlay';
-        overlay.style.cssText = 'position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.style.cssText = 'position:absolute;inset:0;z-index:10;';
         overlay.innerHTML =
-          '<div style="backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);position:absolute;inset:0;background:rgba(0,0,0,0.25);border-radius:12px;"></div>'+
-          '<div style="position:relative;z-index:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 24px;max-width:320px;width:100%;text-align:center;">'+
-            '<div style="font-size:32px;margin-bottom:10px;">🔒</div>'+
-            '<div style="font-size:16px;font-weight:700;margin-bottom:6px;">로그인이 필요해요</div>'+
-            '<div style="font-size:13px;color:var(--ink-soft);margin-bottom:18px;line-height:1.6;">씨앗 정의서는 가입 후 이용할 수 있어요.</div>'+
+          '<div style="backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);position:absolute;inset:0;background:rgba(0,0,0,0.12);border-radius:12px;"></div>'+
+          '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:11;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px 22px;width:min(300px,90vw);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.22);">'+
+            '<div style="font-size:28px;margin-bottom:8px;">🔒</div>'+
+            '<div style="font-size:15px;font-weight:700;margin-bottom:4px;">로그인이 필요해요</div>'+
+            '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:16px;line-height:1.6;">씨앗 정의서는 가입 후 이용할 수 있어요.</div>'+
             '<div style="display:flex;flex-direction:column;gap:8px;">'+
-              '<button type="button" onclick="document.getElementById(\'loginBlurOverlay\').remove();openAuthModal(\'login\')" style="padding:10px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;">로그인</button>'+
-              '<button type="button" onclick="document.getElementById(\'loginBlurOverlay\').remove();openAuthModal(\'register\')" style="padding:10px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;cursor:pointer;">가입 신청</button>'+
-              '<a href="https://open.kakao.com/o/gJShrZPi" target="_blank" style="display:block;padding:10px;border-radius:8px;background:var(--panel);color:var(--ink-soft);border:1px solid var(--line);font-size:12px;text-decoration:none;">💬 오픈카톡방으로 안내받기</a>'+
+              '<button type="button" onclick="document.getElementById(\'loginBlurOverlay\').remove();openAuthModal(\'login\')" style="padding:9px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;">로그인</button>'+
+              '<button type="button" onclick="document.getElementById(\'loginBlurOverlay\').remove();openAuthModal(\'register\')" style="padding:9px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;cursor:pointer;">가입 신청</button>'+
+              '<a href="https://open.kakao.com/o/gJShrZPi" target="_blank" style="display:block;padding:9px;border-radius:8px;background:var(--panel);color:var(--ink-soft);border:1px solid var(--line);font-size:12px;text-decoration:none;">💬 오픈카톡방으로 안내받기</a>'+
             '</div>'+
           '</div>';
         sheet.appendChild(overlay);
