@@ -2217,7 +2217,14 @@ function renderMyDashSection(){
     '<button type="button" class="secondary" onclick="startNewSeed()">🌱 새 씨앗 시작하기</button>'+
     (hasAnyData ? '<button type="button" class="secondary" onclick="if(confirm(\'저장된 씨앗 내용을 전부 지울까요? 되돌릴 수 없어요.\')){'+'localStorage.clear();location.reload();'+'}">🗑️ 저장 데이터 초기화</button>' : '')+
     '</div>'+
-    (currentUser ? '<h3 style="margin-top:24px;">내 씨앗 목록</h3><div id="mySeedsList" class="hint">불러오는 중…</div>' : '')+
+    '<div style="margin-top:16px;background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">'+
+      '<div>'+
+        '<div style="font-size:14px;font-weight:700;color:var(--blueprint);margin-bottom:4px;">🥔 같이 더 공부해보고 싶어요?</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);">씨앗 정의서 피드백 · 감자밭 커뮤니티 · 레벨 판정</div>'+
+      '</div>'+
+      '<a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener" style="padding:10px 20px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
+    '</div>'+
+    (currentUser ? '<h3 style="margin-top:24px;">내 씨앗 목록</h3><div id="mySeedsList" class="hint">불러오는 중…</div>' : '')
   '</div>';
 }
 
@@ -5707,12 +5714,11 @@ document.addEventListener('change', function(e){
   }
 });
 
-document.addEventListener('click', function(e){
+document.addEventListener('click', async function(e){
   const btn = e.target.closest('[data-action]');
   if(!btn) return;
   const action = btn.getAttribute('data-action');
   const target = btn.getAttribute('data-target');
-
   if(action==='lp-refresh'){ renderSheet(); return; }
   // 역량 체크 전체 선택/해제 (계획 표에서는 이미 경험한 항목 제외)
   if(action==='lp-all' || action==='lp-none' || action==='lp-level'){
