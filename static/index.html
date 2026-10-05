@@ -1666,6 +1666,50 @@ window.setV = setV;
 window.showModal = showModal;
 window.hideModal = hideModal;
 window._saveConfirmHtml = saveConfirmHtml;
+
+// ── 심기 전 준비: 자동 판정 함수 ──────────────────────────────
+window.applyJudgeResult = function(judgment, reason){
+  setV('discover_result_state', judgment);
+  setV('discover_judge_reason', reason || '');
+  window._renderSheet();
+};
+
+window.runDiscoverJudge = async function(){
+  const btn = document.getElementById('judgeBtn');
+  if(btn){ btn.textContent='⏳ 판정 중...'; btn.disabled=true; }
+  const seedName  = (window._state?.fields?.s1_name || '').trim();
+  const workarea  = (window._state?.fields?.s1_workarea || '').trim();
+  const cat       = (window._state?.fields?.s1_cat || '').trim();
+  const freetext  = (window._state?.fields?.intro_freetext || '').trim();
+  const text = [seedName, workarea, cat, freetext].filter(Boolean).join(' / ');
+  const apiKey = (window._state?.fields?.user_claude_key || '').trim();
+  try{
+    const res = await fetch('/api/discover/judge', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text, api_key: apiKey})
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.detail||'오류');
+    window.applyJudgeResult(d.judgment, d.reason);
+    // 결과 표시
+    const resultEl = document.getElementById('judgeResult');
+    if(resultEl){
+      const labelMap = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의', unnecessary:'🥔 AI 불필요'};
+      const colorMap = {possible:'var(--ok)', redefine:'var(--blueprint)', unnecessary:'var(--ink)'};
+      const methodLabel = d.method==='ai' ? '🤖 Claude AI 판정' : '🔍 키워드 판정 (기본)';
+      resultEl.innerHTML = '<div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:12px;">'+
+        '<div style="font-weight:700;color:'+colorMap[d.judgment]+';margin-bottom:4px;">'+labelMap[d.judgment]+'</div>'+
+        '<div style="color:var(--ink-soft);line-height:1.6;margin-bottom:6px;">'+esc(d.reason)+'</div>'+
+        '<div style="font-size:11px;color:var(--ink-soft);">'+methodLabel+(d.method==='keyword'?' · <button type="button" onclick="document.getElementById(\'apiKeySetup\').style.display=\'block\'" style="font-size:11px;color:var(--blueprint);background:none;border:none;cursor:pointer;text-decoration:underline;">더 정확하게 하려면 →</button>':'')+'</div>'+
+      '</div>';
+    }
+  }catch(e){
+    const resultEl = document.getElementById('judgeResult');
+    if(resultEl) resultEl.innerHTML = '<div style="font-size:12px;color:var(--danger,#e74c3c);">판정 실패: '+esc(e.message)+'</div>';
+    if(btn){ btn.textContent='🤖 자동 판정받기'; btn.disabled=false; }
+  }
+};
 // 외부(window) 접근용
 window._setV = function(id, val){ setV(id, val); };
 window._getV = function(id, def){ return getV(id, def); };
@@ -5554,41 +5598,53 @@ function renderDiscoverSection(){
       '<div style="padding:14px 18px;border-bottom:1px solid var(--line-soft);">'+
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
           '<span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>'+
-          '<span style="font-size:14px;font-weight:700;color:var(--ink);">아래 프롬프트 복사 → AI에 붙여넣기</span>'+
+          '<span style="font-size:14px;font-weight:700;color:var(--ink);">AI가 필요한지 자동 판정</span>'+
         '</div>'+
-        '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;padding:8px 12px;background:var(--panel);border-radius:8px;line-height:1.7;">'+
-          '① 아래 복사 버튼 클릭 → ② ChatGPT / Claude 열기 → ③ 붙여넣고 답변 받기 → ④ 답변을 아래 STEP 2에 붙여넣기'+
-        '</div>'+
-        (step1Prompt
-          ? '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;max-height:160px;overflow-y:auto;" id="discoverStep1Prompt">'+esc(step1Prompt)+'</div>'+
-            '<div class="exportbar"><button type="button" id="discoverCopyBtn" onclick="(()=>{navigator.clipboard.writeText(document.getElementById(\'discoverStep1Prompt\').textContent).then(()=>{const b=document.getElementById(\'discoverCopyBtn\');b.textContent=\'✅ 복사됨! 이제 AI에 붙여넣어봐\';b.style.background=\'var(--ok)\';b.style.color=\'#fff\';setTimeout(()=>{b.textContent=\'📎 복사\';b.style.background=\'\';b.style.color=\'\';},4000);})})()" style="transition:all .2s;">📎 복사</button></div>'
+        (problemDesc
+          ? '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--ink-soft);line-height:1.6;margin-bottom:12px;white-space:pre-wrap;">'+esc(problemDesc.slice(0,200))+'</div>'+
+            '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'+
+              '<button type="button" id="judgeBtn" onclick="runDiscoverJudge()" style="padding:9px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;">🤖 자동 판정받기</button>'+
+              (getV('user_claude_key','')
+                ? '<span style="font-size:11px;color:var(--ok);">✅ Claude API 연동됨</span>'
+                : '<span style="font-size:11px;color:var(--ink-soft);">키워드 판정 (기본) · <button type="button" onclick="document.getElementById(\'apiKeySetup\').style.display=\'block\'" style="font-size:11px;color:var(--blueprint);background:none;border:none;cursor:pointer;text-decoration:underline;">API 키 연동하면 더 정확해요 →</button></span>'
+              )+
+            '</div>'+
+            // API 키 설정 안내 (접혀있음)
+            '<div id="apiKeySetup" style="display:none;margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;">'+
+              '<div style="font-size:13px;font-weight:700;margin-bottom:6px;">🔑 Claude API 키 연동</div>'+
+              '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;line-height:1.6;">'+
+                '1. <a href="https://console.anthropic.com" target="_blank" style="color:var(--blueprint);">console.anthropic.com</a> 접속<br>'+
+                '2. API Keys → Create Key<br>'+
+                '3. 아래에 붙여넣기 (브라우저에만 저장, 서버로 전송 안 됨)'+
+              '</div>'+
+              '<div style="display:flex;gap:8px;">'+
+                '<input type="password" id="claudeKeyInput" placeholder="sk-ant-..." style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:12px;">'+
+                '<button type="button" onclick="const k=document.getElementById(\'claudeKeyInput\').value.trim();if(k){setV(\'user_claude_key\',k);window._renderSheet();}" style="padding:8px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">저장</button>'+
+                (getV('user_claude_key','') ? '<button type="button" onclick="setV(\'user_claude_key\',\'\');window._renderSheet();" style="padding:8px 14px;border-radius:8px;background:var(--panel);color:var(--danger,#e74c3c);border:1px solid var(--danger,#e74c3c);font-size:12px;cursor:pointer;">삭제</button>' : '')+
+              '</div>'+
+            '</div>'+
+            // 판정 결과 표시 영역
+            '<div id="judgeResult" style="margin-top:12px;"></div>'
           : '<div style="font-size:12px;color:var(--ink-soft);">마음의 방 입구에서 고민을 먼저 적어줘!</div>'
         )+
       '</div>'+
-
-      // AI 답변 + 결과 선택
-      '<div style="padding:14px 18px;">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
-          '<span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>'+
-          '<span style="font-size:14px;font-weight:700;color:var(--ink);">AI 답변 붙여넣기 → 결과 선택</span>'+
+      // 수동 선택 (접혀있음)
+      '<details style="border-top:1px solid var(--line-soft);">'+
+        '<summary style="cursor:pointer;padding:10px 18px;font-size:12px;color:var(--ink-soft);list-style:none;">▶ 직접 선택하기 (AI한테 직접 물어봤어요)</summary>'+
+        '<div style="padding:14px 18px;">'+
+          '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;background:var(--panel);border-radius:8px;padding:8px 12px;">아래 프롬프트 복사 → AI에 붙여넣기 → 답변 보고 선택</div>'+
+          (step1Prompt
+            ? '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;max-height:120px;overflow-y:auto;" id="discoverStep1Prompt">'+esc(step1Prompt)+'</div>'+
+              '<div class="exportbar"><button type="button" id="discoverCopyBtn" onclick="(()=>{navigator.clipboard.writeText(document.getElementById(\'discoverStep1Prompt\').textContent).then(()=>{const b=document.getElementById(\'discoverCopyBtn\');b.textContent=\'✅ 복사됨!\';b.style.background=\'var(--ok)\';b.style.color=\'#fff\';setTimeout(()=>{b.textContent=\'📎 복사\';b.style.background=\'\';b.style.color=\'\';},3000);})})()" style="transition:all .2s;">📎 복사</button></div>'
+            : ''
+          )+
+          '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
+            '<button type="button" onclick="applyJudgeResult(\'possible\',\'직접 선택\')" style="padding:8px 14px;border-radius:8px;border:2px solid '+(resultState==='possible'?'var(--ok)':'var(--line)')+';background:'+(resultState==='possible'?'rgba(46,204,113,.1)':'var(--panel)')+';color:'+(resultState==='possible'?'var(--ok)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">✅ AI 써도 됨</button>'+
+            '<button type="button" onclick="applyJudgeResult(\'redefine\',\'직접 선택\')" style="padding:8px 14px;border-radius:8px;border:2px solid '+(resultState==='redefine'?'var(--blueprint)':'var(--line)')+';background:'+(resultState==='redefine'?'var(--blueprint-soft)':'var(--panel)')+';color:'+(resultState==='redefine'?'var(--blueprint)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">🔄 문제 다시 정의</button>'+
+            '<button type="button" onclick="applyJudgeResult(\'unnecessary\',\'직접 선택\')" style="padding:8px 14px;border-radius:8px;border:2px solid '+(resultState==='unnecessary'?'var(--ink)':'var(--line)')+';background:'+(resultState==='unnecessary'?'var(--panel)':'var(--panel)')+';color:'+(resultState==='unnecessary'?'var(--ink)':'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;">🥔 AI 불필요</button>'+
+          '</div>'+
         '</div>'+
-        '<textarea data-bind="discover_ai_answer" style="min-height:160px;font-size:12px;width:100%;box-sizing:border-box;" placeholder="AI 답변을 여기에 붙여넣어줘.&#10;(판단: / 이유: / 제안: 형식으로 왔을 거야)" oninput="window._renderSheet()">'+esc(getV('discover_ai_answer',''))+'</textarea>'+
-        (getV('discover_ai_answer','').trim()
-          ? '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
-              (()=>{
-                const btnStyle = (active, color) => 'padding:8px 16px;border-radius:8px;border:2px solid '+(active?color:'var(--line)')+';background:'+(active?color+'20':'var(--panel)')+';color:'+(active?color:'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;';
-                return (
-                  '<button type="button" onclick="setV(\'discover_result_state\',\'possible\');window._renderSheet();" style="'+btnStyle(resultState==='possible','var(--ok)')+'">✅ AI 써도 됨</button>'+
-                  '<button type="button" onclick="setV(\'discover_result_state\',\'redefine\');window._renderSheet();" style="'+btnStyle(resultState==='redefine','var(--blueprint)')+'">🔄 문제 다시 정의</button>'+
-                  '<button type="button" onclick="setV(\'discover_result_state\',\'unnecessary\');window._renderSheet();" style="'+btnStyle(resultState==='unnecessary','var(--ink)')+'">🥔 AI 불필요</button>'
-                );
-              })()+
-            '</div>'
-          : '<div style="margin-top:10px;font-size:12px;color:var(--ink-soft);padding:8px 12px;background:var(--panel);border-radius:8px;">'+
-              '👆 AI 답변을 붙여넣으면 아래 버튼이 활성화돼요'+
-            '</div>'
-        )+
-      '</div>'+
+      '</details>'+
     '</div>'+
 
     // STEP 2 (결과에 따라)

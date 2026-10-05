@@ -1658,6 +1658,101 @@ def list_guestbook():
     rows = db_fetchall(conn, "SELECT * FROM guestbook ORDER BY created_at DESC")
     return [dict(r) for r in rows]
 
+
+# ── AI 적합성 자동 판정 ──────────────────────────────────────────
+
+class JudgeIn(BaseModel):
+    text: str          # 문제 설명 (씨앗이름 + 자유텍스트 등)
+    api_key: str = ""  # 사용자 본인 Claude API 키 (없으면 키워드 판정)
+
+@app.post("/api/discover/judge")
+def discover_judge(body: JudgeIn):
+    """
+    AI 적합성 자동 판정.
+    api_key 있으면 Claude API 호출, 없으면 키워드 기반 판정.
+    반환: {judgment: 'possible'|'redefine'|'unnecessary', reason: str, method: 'ai'|'keyword'}
+    """
+    text = (body.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="판정할 내용을 입력해줘요.")
+
+    # ── Claude API 판정 ──────────────────────────────────────────
+    if body.api_key.strip():
+        try:
+            import urllib.request as _urllib
+            import json as _json
+            prompt = (
+                "아래 업무/문제가 AI 도구 활용에 적합한지 판단해줘.\n\n"
+                f"문제: {text}\n\n"
+                "아래 JSON 형식으로만 답해줘 (설명 없이):\n"
+                '{"judgment": "possible" | "redefine" | "unnecessary", "reason": "2~3줄 이유"}\n\n'
+                "판단 기준:\n"
+                "- possible: AI가 실질적으로 도움 될 수 있음\n"
+                "- redefine: 문제가 너무 막연하거나 더 명확히 해야 함\n"
+                "- unnecessary: AI보다 더 나은 방법이 있거나 AI가 필요 없음"
+            )
+            payload = _json.dumps({
+                "model": "claude-haiku-4-5",
+                "max_tokens": 256,
+                "messages": [{"role": "user", "content": prompt}]
+            }).encode()
+            req = _urllib.Request(
+                "https://api.anthropic.com/v1/messages",
+                data=payload,
+                headers={
+                    "x-api-key": body.api_key.strip(),
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json"
+                }
+            )
+            with _urllib.urlopen(req, timeout=15) as res:
+                data = _json.loads(res.read().decode())
+            raw = data["content"][0]["text"].strip()
+            # JSON 파싱
+            start = raw.find("{")
+            end = raw.rfind("}") + 1
+            result = _json.loads(raw[start:end])
+            judgment = result.get("judgment", "redefine")
+            if judgment not in ("possible", "redefine", "unnecessary"):
+                judgment = "redefine"
+            return {"judgment": judgment, "reason": result.get("reason", ""), "method": "ai"}
+        except Exception as e:
+            # API 실패 시 키워드 판정으로 폴백
+            pass
+
+    # ── 키워드 기반 판정 ─────────────────────────────────────────
+    t = text.lower()
+
+    possible_kw = ["반복", "매번", "자동화", "자동", "주기", "시간이", "오래", "귀찮", "매일", "매주",
+                   "엑셀", "취합", "정리", "분류", "요약", "번역", "초안", "작성", "검색", "분석",
+                   "보고서", "자소서", "피드백", "코드", "수행평가", "아이디어"]
+    redefine_kw = ["모르겠", "뭘해야", "막막", "어떻게", "뭔가", "잘 모", "어디서", "무엇을",
+                   "뭐부터", "어떤걸", "막연", "뭐가", "처음"]
+    unnecessary_kw = ["그냥", "간단", "쉬운", "쉽게", "직접", "말로", "전화", "대화", "회의",
+                      "관계", "감정", "설득", "협의"]
+
+    def score(kws):
+        return sum(1 for k in kws if k in t)
+
+    s_possible = score(possible_kw)
+    s_redefine = score(redefine_kw)
+    s_unnecessary = score(unnecessary_kw)
+
+    if s_redefine > s_possible and s_redefine > s_unnecessary:
+        judgment = "redefine"
+        reason = "문제가 아직 막연해요. 구체적으로 어떤 상황인지, 어떤 결과를 원하는지 더 적어줘요."
+    elif s_unnecessary > s_possible:
+        judgment = "unnecessary"
+        reason = "AI보다 더 빠른 방법이 있을 수 있어요. 직접 대화나 간단한 도구로 해결되는지 먼저 확인해봐요."
+    elif s_possible > 0:
+        judgment = "possible"
+        reason = "반복적이거나 정형화된 작업이 있어서 AI가 도움 될 수 있어요."
+    else:
+        judgment = "redefine"
+        reason = "조금 더 구체적으로 어떤 문제를 해결하고 싶은지 적어줘요."
+
+    return {"judgment": judgment, "reason": reason, "method": "keyword"}
+
 # 정적 프론트엔드 서빙 (반드시 API 라우트들 다음에 mount)
 app.mount("/", StaticFiles(directory=os.path.join(APP_DIR, "static"), html=True), name="static")
 
