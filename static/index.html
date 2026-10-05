@@ -1020,16 +1020,69 @@ function syncToDb(){
   dbWriteQueue = buildRemoteDoc();
   flushDbQueue();
 }
+// ── 씨앗 잠금 해제 모달 ───────────────────────────────────────
+// 수정 버튼 클릭 시: 수정 vs 새로 시작 선택
+function openUnlockModal(){
+  showModal(
+    '<div style="text-align:center;padding:8px 0;">'+
+    '<div style="font-size:28px;margin-bottom:8px;">🥔</div>'+
+    '<h3 style="margin:0 0 6px;font-size:16px;">무엇을 할까요?</h3>'+
+    '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">지금 씨앗을 수정하거나, 새 주제로 시작할 수 있어요.</p>'+
+    '<div style="display:flex;flex-direction:column;gap:8px;">'+
+      '<button type="button" onclick="doEditSeed()" style="padding:10px 16px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;">✏️ 이 씨앗 계속 수정</button>'+
+      '<button type="button" onclick="openNewSeedModal()" style="padding:10px 16px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:14px;cursor:pointer;">🌱 새 주제로 새로 시작</button>'+
+      '<button type="button" onclick="hideModal()" style="padding:8px;border:none;background:none;color:var(--ink-soft);font-size:13px;cursor:pointer;">취소</button>'+
+    '</div>'+
+    '</div>'
+  );
+}
+// 수정 선택 → 잠금만 해제
+function doEditSeed(){
+  state.completed = false; state.locked = false;
+  persist(); hideModal(); renderSheet();
+}
+// 새 씨앗 선택 → 기존 씨앗 처리 선택
+function openNewSeedModal(){
+  const hasData = Object.keys(state.fields||{}).length > 0;
+  showModal(
+    '<div style="text-align:center;padding:8px 0;">'+
+    '<div style="font-size:28px;margin-bottom:8px;">🌱</div>'+
+    '<h3 style="margin:0 0 6px;font-size:16px;">기존 씨앗은 어떻게 할까요?</h3>'+
+    '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;">새로 시작하면 지금 씨앗은 사라져요.</p>'+
+    '<div style="display:flex;flex-direction:column;gap:8px;">'+
+      (hasData
+        ? '<button type="button" onclick="doExportThenNew()" style="padding:10px 16px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;">💾 저장하고 새로 시작</button>'
+        : '')+
+      '<button type="button" onclick="doResetSeed()" style="padding:10px 16px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:14px;cursor:pointer;">🗑️ 그냥 지우고 새로 시작</button>'+
+      '<button type="button" onclick="openUnlockModal()" style="padding:8px;border:none;background:none;color:var(--ink-soft);font-size:13px;cursor:pointer;">← 뒤로</button>'+
+    '</div>'+
+    '</div>'
+  );
+}
+// md 내보내기 후 새 씨앗 시작
+function doExportThenNew(){
+  exportMd && exportMd();  // 기존 내보내기 함수 호출
+  setTimeout(()=>{ doResetSeed(); }, 300);
+}
+// 씨앗 초기화 (유저별 localStorage 키 기준)
+function doResetSeed(){
+  const uKey = currentUser ? ('ai_task_def_v1_'+currentUser.username) : STORE_KEY;
+  try{ localStorage.removeItem(uKey); localStorage.removeItem(DOCID_KEY+'_'+(currentUser?.username||'')); }catch(e){}
+  docId = Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+  state.fields = {}; state.locked = false; state.completed = false; state.cur = 's1';
+  gateReview = null;
+  persist(); hideModal(); renderSheet();
+}
+window.openUnlockModal = openUnlockModal;
+window.doEditSeed = doEditSeed;
+window.openNewSeedModal = openNewSeedModal;
+window.doExportThenNew = doExportThenNew;
+window.doResetSeed = doResetSeed;
+
 // 지금 씨앗은 서버에 그대로 두고(로그인했으면 /api/user/submissions에서 계속 보임),
 // 이 브라우저만 새 docId로 바꿔서 빈 씨앗을 새로 시작한다.
 function startNewSeed(){
-  if(!confirm('새 씨앗을 시작할까요? 지금 씨앗은 서버에 그대로 남고, 화면만 새로 시작해요.')) return;
-  docId = Date.now().toString(36)+Math.random().toString(36).slice(2,10);
-  try{ localStorage.setItem(DOCID_KEY, docId); }catch(e){}
-  state.fields = {}; state.locked = false; state.completed = false; state.cur = 's1';
-  gateReview = null;
-  persist();
-  renderSheet();
+  openNewSeedModal();
 }
 // 로그인 유저의 내 씨앗 목록 (전환용)
 async function loadMySeeds(){
@@ -2896,7 +2949,7 @@ function navFootHtml(sec){
       saveHtml =
         '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">'+
           '<button type="button" disabled style="padding:8px 18px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;">💾 저장</button>'+
-          '<button type="button" onclick="window._state.completed=false;window._state.locked=false;window._persist();window._renderSheet();" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
+          '<button type="button" onclick="openUnlockModal()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
           '<span style="font-size:12px;color:var(--ok);">✅ 완료됨</span>'+
         '</div>';
     } else if(state.locked){
@@ -2904,7 +2957,7 @@ function navFootHtml(sec){
       saveHtml =
         '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">'+
           '<button type="button" disabled style="padding:8px 18px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;">💾 저장</button>'+
-          '<button type="button" onclick="window._state.locked=false;window._persist();window._renderSheet();" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
+          '<button type="button" onclick="openUnlockModal()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:var(--paper);color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
           '<span style="font-size:12px;color:var(--ink-soft);">🔒 저장됨</span>'+
         '</div>';
     } else {
