@@ -1126,8 +1126,35 @@ def visit_stats(x_admin_token: str = Header(default="")):
 class UserRegisterIn(BaseModel):
     username: str
     password: str
-    nickname: str = ""
+    nickname: str = ""   # 비우면 서버가 감자명 자동 배정
     invite_code: str = ""
+
+# ── 감자명 자동 배정 ──────────────────────────────────────────
+_GAMJA_NAMES = [
+    "뜨끈감자","바삭감자","포실감자","달콤감자","쫄깃감자","보들감자","고소감자","촉촉감자",
+    "졸린감자","배고픈감자","신난감자","진지감자","통통감자","동그란감자","작은감자","큰감자",
+    "노란감자","보라감자","하얀감자","까만감자","새벽감자","아침감자","저녁감자","뜨거운감자",
+    "차가운감자","부드감자","포근감자","따뜻감자","시원감자","맑은감자","맛있는감자","귀여운감자",
+    "졸업감자","프리감자","취준감자","바쁜감자","한가한감자","조용한감자","활발한감자","느긋감자",
+    "재빠른감자","꼼꼼감자","엉뚱감자","진중한감자","유쾌한감자","소심한감자","대담한감자","끈기감자",
+    "호기심감자","탐구감자","창의감자","논리감자","감성감자","직관감자","분석감자","실행감자",
+]
+
+def _assign_gamja_name(conn) -> str:
+    """사용 중이지 않은 감자명 랜덤 배정. 모두 소진되면 번호 붙여서 반환."""
+    import random
+    pool = list(_GAMJA_NAMES)
+    random.shuffle(pool)
+    q = "SELECT nickname FROM users WHERE nickname=%s" if USE_PG else "SELECT nickname FROM users WHERE nickname=?"
+    for name in pool:
+        if not db_fetchone(conn, q, (name,)):
+            return name
+    # 모두 소진된 경우 번호 붙이기
+    for i in range(2, 999):
+        name = f"감자{i}"
+        if not db_fetchone(conn, q, (name,)):
+            return name
+    return "감자"
 
 class UserLoginIn(BaseModel):
     username: str
@@ -1184,7 +1211,7 @@ def user_register(body: UserRegisterIn):
         conn.close()
         raise HTTPException(status_code=409, detail="이미 사용 중인 아이디예요.")
     ph = hash_code(body.password)
-    nick = body.nickname.strip() or username
+    nick = body.nickname.strip() or _assign_gamja_name(conn)
     plan = "free"
     placeholder_email = username + "@noemail.local"
     if USE_PG:
