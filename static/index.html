@@ -4741,16 +4741,15 @@ function renderAIToolsSection(){
 
   window.aiToolsTab = function(id){
     window._aiToolsTab = id;
-    const el = document.getElementById('aiToolsBody');
-    if(el) el.innerHTML = bodyHtml();
+    const el = document.getElementById('aiToolsWrap');
+    if(el) el.innerHTML = tabHtml() + '<div id="aiToolsBody">'+bodyHtml()+'</div>';
   };
 
   return '<div class="frame">'+
     '<h2>🗺️ AI 도구 가이드</h2>'+
     '<div class="sub">생성형 AI가 뭔지, 어떤 도구가 있는지, 뭘 물어봐도 되는지</div>'+
     '<p style="font-size:13px;color:var(--ink-soft);margin:8px 0 20px;">AI 도구는 매달 업데이트돼요. 여기 내용은 2026년 기준이에요.</p>'+
-    tabHtml()+
-    '<div id="aiToolsBody">'+bodyHtml()+'</div>'+
+    '<div id="aiToolsWrap">'+tabHtml()+'<div id="aiToolsBody">'+bodyHtml()+'</div></div>'+
   '</div>';
 }
 
