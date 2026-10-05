@@ -1677,7 +1677,16 @@ window.applyJudgeResult = function(judgment, reason){
 
 window.runDiscoverJudge = async function(){
   const btn = document.getElementById('judgeBtn');
+  const resultEl = document.getElementById('judgeResult');
+  const _e = window._esc || (s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+
   if(btn){ btn.textContent='⏳ 판정 중...'; btn.disabled=true; }
+  if(resultEl) resultEl.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;">'+
+    '<span style="display:inline-block;width:18px;height:18px;border:2px solid var(--blueprint);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;"></span>'+
+    '<span style="font-size:13px;color:var(--ink-soft);">AI가 문제를 분석하고 있어요...</span>'+
+    '</div>'+
+    '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
 
   const seedName  = (window._state?.fields?.s1_name || '').trim();
   const workarea  = (window._state?.fields?.s1_workarea || '').trim();
@@ -1686,7 +1695,6 @@ window.runDiscoverJudge = async function(){
   const text = [seedName, workarea, cat, freetext].filter(Boolean).join(' / ');
   const apiKey = sessionStorage.getItem('_ddugi_tmp_key') || '';
 
-  let succeeded = false;
   try{
     const res = await fetch('/api/discover/judge', {
       method:'POST',
@@ -1696,41 +1704,33 @@ window.runDiscoverJudge = async function(){
     const d = await res.json();
     if(!res.ok) throw new Error(d.detail||'서버 오류');
 
-    // state 저장
     window._setV('discover_result_state', d.judgment);
     window._setV('discover_judge_reason', d.reason || '');
     window._setV('discover_judge_method', d.method || 'keyword');
     window._persist();
-    succeeded = true;
 
-    // 재렌더 없이 DOM 직접 업데이트
     const labelMap = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의', unnecessary:'🥔 AI 불필요'};
-    const colorMap = {possible:'#2ecc71', redefine:'#6c8ee8', unnecessary:'#555'};
-    const resultEl = document.getElementById('judgeResult');
+    const colorMap = {possible:'#2ecc71', redefine:'#6c8ee8', unnecessary:'#888'};
     if(resultEl){
       resultEl.innerHTML =
         '<div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:12px;">'+
-        '<div style="font-weight:700;color:'+colorMap[d.judgment]+';margin-bottom:4px;font-size:14px;">'+labelMap[d.judgment]+'</div>'+
-        (d.reason ? '<div style="color:var(--ink-soft);line-height:1.6;margin-bottom:8px;">'+esc(d.reason)+'</div>' : '')+
-        '<div style="font-size:11px;color:var(--ink-soft);margin-bottom:8px;">'+(d.method==='ai'?'🤖 Claude AI 판정':'🔍 키워드 판정')+'</div>'+
-        '<button type="button" onclick="window._setV(\'discover_result_state\',\'\');window._persist();window._renderSheet();" '+
-        'style="font-size:12px;padding:6px 14px;border-radius:8px;background:var(--panel);border:1px solid var(--line);cursor:pointer;">다시 판정</button>'+
+        '<div style="font-weight:700;color:'+colorMap[d.judgment]+';margin-bottom:6px;font-size:14px;">'+labelMap[d.judgment]+'</div>'+
+        (d.reason ? '<div style="color:var(--ink-soft);line-height:1.6;margin-bottom:8px;">'+_e(d.reason)+'</div>' : '')+
+        '<div style="display:flex;align-items:center;justify-content:space-between;">'+
+          '<span style="font-size:11px;color:var(--ink-soft);">'+(d.method==='ai'?'🤖 Claude AI 판정':'🔍 키워드 판정 (기본)')+'</span>'+
+          '<button type="button" onclick="window._setV(\'discover_result_state\',\'\');window._persist();window._renderSheet();" '+
+          'style="font-size:11px;padding:4px 10px;border-radius:6px;background:none;border:1px solid var(--line);color:var(--ink-soft);cursor:pointer;">다시 판정</button>'+
+        '</div>'+
         '</div>';
     }
-    // 버튼 복구
     if(btn){ btn.textContent='🤖 자동 판정받기'; btn.disabled=false; }
 
   } catch(e){
     console.error('[discover/judge]', e);
-    const freshBtn = document.getElementById('judgeBtn');
-    if(freshBtn){ freshBtn.textContent='🤖 자동 판정받기'; freshBtn.disabled=false; }
-    else if(btn){ btn.textContent='🤖 자동 판정받기'; btn.disabled=false; }
-    if(!succeeded){
-      const resultEl = document.getElementById('judgeResult');
-      if(resultEl) resultEl.innerHTML =
-        '<div style="font-size:12px;color:#e74c3c;padding:10px;background:rgba(231,76,60,.08);border-radius:8px;">'+
-        '❌ 판정 실패: '+esc(e.message)+'</div>';
-    }
+    if(btn){ btn.textContent='🤖 자동 판정받기'; btn.disabled=false; }
+    if(resultEl) resultEl.innerHTML =
+      '<div style="font-size:12px;color:#e74c3c;padding:10px;background:rgba(231,76,60,.08);border-radius:8px;">'+
+      '❌ 판정 실패: '+_e(e.message)+'</div>';
   }
 };
 // 외부(window) 접근용
@@ -1741,6 +1741,7 @@ window._persist = function(){ persist(); };
 function esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+window._esc = esc;
 
 /* ============== field rendering ============== */
 function fieldWrap(inner, field, extraClass){
