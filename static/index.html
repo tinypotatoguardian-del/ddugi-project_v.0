@@ -4905,6 +4905,63 @@ window.introGoToDiscover = function(){
   if(toast) toast.style.display='none';
   window._state.cur='discover'; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
 };
+
+// Discord 자기소개 파싱 → introFreeText + workarea + tool 자동 채우기
+window.parseDiscordIntro = function(){
+  const raw = (document.getElementById('discordImportText')||{}).value||'';
+  if(!raw.trim()){ alert('자기소개를 붙여넣어줘!'); return; }
+
+  // Q0~Q5 파싱
+  function extractQ(num){
+    const re = new RegExp(num+'[.．]\\s*(.+)','m');
+    const m = raw.match(re);
+    return m ? m[1].trim() : '';
+  }
+
+  const q0 = extractQ('0'); // 현재 상황 (직장인/취준/학생 + 업계)
+  const q1 = extractQ('1'); // 사용 AI
+  const q2 = extractQ('2'); // 사용 목적
+  const q3 = extractQ('3'); // 해본 것
+  const q4 = extractQ('4'); // 막히는 것
+  const q5 = extractQ('5'); // 해결하고 싶은 것
+
+  // 활동 영역 자동 선택
+  const WORK_AREA_MAP = [
+    {keywords:['직장','직딩','재직','회사'], value:'직장 업무'},
+    {keywords:['취준','취업준비','취업 준비','구직'], value:'학업'},
+    {keywords:['학생','대학','고등','중학','대학원'], value:'학업'},
+    {keywords:['프리랜서','부업','사업'], value:'개인 사업/부업'},
+  ];
+  let detectedArea = '';
+  for(const m of WORK_AREA_MAP){
+    if(m.keywords.some(k => q0.includes(k))){ detectedArea = m.value; break; }
+  }
+  if(detectedArea) setV('s1_workarea', detectedArea);
+
+  // 사용 도구 → s3_tool 힌트 저장
+  if(q1) setV('intro_discord_tool', q1);
+
+  // introFreeText 조합: Q3(해본것) + Q4(막히는것) + Q5(해결하고싶은것) 중심으로
+  const parts = [];
+  if(q0) parts.push('현재 상황: '+q0);
+  if(q2) parts.push('주로 사용하는 용도: '+q2);
+  if(q3 && q3 !== '없음' && q3 !== '없다') parts.push('AI로 해본 것: '+q3);
+  if(q4) parts.push('막히는 것: '+q4);
+  if(q5) parts.push('해결하고 싶은 것: '+q5);
+
+  const combined = parts.join('\n');
+  setV('intro_freetext', combined);
+
+  // UI 업데이트
+  const ta = document.getElementById('introFreeText');
+  if(ta){ ta.value = combined; introUpdateState(); }
+
+  // 메시지 + details 닫기
+  const msg = document.getElementById('discordImportMsg');
+  if(msg){ msg.style.display=''; msg.textContent = '✅ 채워졌어! 아래 내용 확인하고 "프롬프트 만들기" 눌러줘.'; }
+  const box = document.getElementById('discordImportBox');
+  if(box) box.removeAttribute('open');
+};
 window.introGenPrompt = function(){
   const text = (document.getElementById('introFreeText')||{}).value||'';
   if(text) setV('intro_freetext', text);
@@ -5044,6 +5101,19 @@ function renderIntroSection(){
       <span style="font-size:14px;font-weight:700;color:var(--ink);">뭘 해결하고 싶어?</span>
       <span style="font-size:12px;color:var(--ink-soft);">막막한 상황, 귀찮은 것, 어려운 것 — 뭐든</span>
     </div>
+    <!-- Discord 자기소개 불러오기 -->
+    <details id="discordImportBox" style="margin-bottom:12px;border:1px solid var(--blueprint-2);border-radius:8px;overflow:hidden;">
+      <summary style="cursor:pointer;list-style:none;padding:10px 14px;background:var(--blueprint-soft);font-size:12px;font-weight:700;color:var(--blueprint);display:flex;align-items:center;gap:6px;">
+        💬 Discord 자기소개 불러오기
+        <span style="font-weight:400;color:var(--ink-soft);margin-left:4px;">— 자기소개 복붙하면 자동으로 채워줘요</span>
+      </summary>
+      <div style="padding:12px 14px;">
+        <div style="font-size:11px;color:var(--ink-soft);margin-bottom:8px;">gate1 자기소개에 쓴 내용 그대로 붙여넣으면 돼요.</div>
+        <textarea id="discordImportText" placeholder="0. 직장인 / IT기획&#10;1. ChatGPT, Claude&#10;2. 업무 문서 초안 작성&#10;3. 보고서 자동화 시도해봄&#10;4. 원하는 결과가 잘 안 나옴&#10;5. 엑셀 정리 자동화하고 싶음" style="width:100%;min-height:100px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
+        <button type="button" onclick="parseDiscordIntro()" style="margin-top:8px;padding:6px 16px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">✨ 자동 채우기</button>
+        <div id="discordImportMsg" style="font-size:11px;margin-top:6px;color:var(--ok);display:none;"></div>
+      </div>
+    </details>
     <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:80px;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;" oninput="setV('intro_freetext',this.value);introUpdateState();">${esc(getV('intro_freetext',''))}</textarea>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
       <button type="button" onclick="introGenPrompt()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📋 프롬프트 만들기 →</button>
