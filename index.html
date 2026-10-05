@@ -5197,7 +5197,18 @@ function renderIntroSection(){
         )+
         '<button type="button" class="secondary" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>'+
         '<button type="button" class="secondary" data-action="goto" data-target="example">🥔 먼저 온 포테이토 보기</button>'+
-      '</div>'
+      '</div>'+
+      // 비로그인 카톡 CTA — 저장 완료 후 노출
+      (!currentUser && introSaved
+        ? '<div style="margin-top:14px;background:var(--blueprint-soft);border:1px solid var(--blueprint-2);border-radius:12px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">'+
+            '<div>'+
+              '<div style="font-size:13px;font-weight:700;color:var(--blueprint);margin-bottom:3px;">🥔 같이 더 공부해보고 싶어요?</div>'+
+              '<div style="font-size:12px;color:var(--ink-soft);">초대코드 받고 씨앗 정의서 이어서 써봐요</div>'+
+            '</div>'+
+            '<a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener" style="padding:9px 18px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
+          '</div>'
+        : ''
+      )
     )+
   '</div>';
 }
