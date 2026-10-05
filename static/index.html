@@ -1700,9 +1700,10 @@ window.runDiscoverJudge = async function(){
     window._persist();
     window._renderSheet();  // 재렌더 — 결과 자동 표시됨
   }catch(e){
+    console.error('[discover/judge] 오류:', e);
     if(btn){ btn.textContent='🤖 자동 판정받기'; btn.disabled=false; }
     const resultEl = document.getElementById('judgeResult');
-    if(resultEl) resultEl.innerHTML = '<div style="font-size:12px;color:var(--danger,#e74c3c);padding:8px;">판정 실패: '+esc(e.message)+'</div>';
+    if(resultEl) resultEl.innerHTML = '<div style="font-size:12px;color:var(--danger,#e74c3c);padding:8px;background:rgba(231,76,60,.08);border-radius:8px;">❌ 판정 실패: '+esc(e.message)+'<br><small>F12 콘솔에서 상세 에러 확인</small></div>';
   }
 };
 // 외부(window) 접근용
@@ -5629,7 +5630,7 @@ function renderDiscoverSection(){
                 '<div style="font-weight:700;color:'+colorMap[resultState]+';margin-bottom:4px;">'+labelMap[resultState]+'</div>'+
                 (reason ? '<div style="color:var(--ink-soft);line-height:1.6;margin-bottom:6px;">'+esc(reason)+'</div>' : '')+
                 '<div style="font-size:11px;color:var(--ink-soft);">'+(method==='ai'?'🤖 Claude AI 판정':'🔍 키워드 판정')+
-                  ' · <button type="button" onclick="setV(\'discover_result_state\',\'\');window._renderSheet();" style="font-size:11px;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;">다시 판정</button>'+
+                  ' · <button type="button" onclick="window._setV(\'discover_result_state\',\'\');window._setV(\'discover_judge_reason\',\'\');window._persist();window._renderSheet();" style="font-size:11px;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;">다시 판정</button>'+
                 '</div>'+
               '</div>';
             })() : '<div id="judgeResult" style="margin-top:12px;"></div>')
