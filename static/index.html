@@ -6493,11 +6493,13 @@ loadTaxonomy();
 tryAutoLogin();
 
 // 첫 방문자는 select.html로 안내 (역할 미선택 상태, 관리자 제외)
+// 지금은 잠시 꺼둠 — 다시 켜려면 아래 플래그를 true로
+const ROLE_BANNER_ENABLED = false;
 (function(){
   const role = localStorage.getItem('ddugi_role');
   const urlParams = new URLSearchParams(window.location.search);
   // role 있거나, URL에 role 파라미터 있거나, 관리자 로그인 상태면 스킵
-  if(!role && !urlParams.get('role') && !isAdmin){
+  if(ROLE_BANNER_ENABLED && !role && !urlParams.get('role') && !isAdmin){
     // 2초 후 유도 배너 표시 (바로 리디렉션하면 너무 강압적)
     setTimeout(()=>{
       const banner = document.createElement('div');
