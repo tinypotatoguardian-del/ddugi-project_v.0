@@ -2099,16 +2099,16 @@ function showCtaPopup(){
         두 가지 방법으로 합류할 수 있어요.
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-        <a href="https://open.kakao.com/o/gJShrZPi" target="_blank" rel="noopener"
-          style="display:block;padding:12px 20px;border-radius:10px;background:var(--blueprint);color:#fff;font-size:14px;font-weight:700;text-decoration:none;">
-          💬 오픈카톡방 참여하기
-          <div style="font-size:11px;font-weight:400;margin-top:2px;opacity:0.85;">참여 후 가입 안내 받기</div>
-        </a>
         <button type="button" onclick="hideModal();showAuthModal('register');"
-          style="padding:12px 20px;border-radius:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:14px;font-weight:700;cursor:pointer;">
+          style="padding:12px 20px;border-radius:10px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;">
           📝 가입 신청하기
-          <div style="font-size:11px;font-weight:400;margin-top:2px;color:var(--ink-soft);">바로 신청서 작성 → 승인 후 로그인</div>
+          <div style="font-size:11px;font-weight:400;margin-top:2px;opacity:0.85;">바로 신청서 작성 → 승인 후 로그인</div>
         </button>
+        <a href="https://open.kakao.com/o/gJShrZPi" target="_blank" rel="noopener"
+          style="display:block;padding:12px 20px;border-radius:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:14px;font-weight:700;text-decoration:none;">
+          💬 오픈카톡방 참여하기
+          <div style="font-size:11px;font-weight:400;margin-top:2px;color:var(--ink-soft);">참여 후 가입 안내 받기</div>
+        </a>
       </div>
       <div style="font-size:11px;color:var(--ink-soft);margin-bottom:12px;">신청 후 관리자 확인 → 계정 발급</div>
       <button type="button" onclick="hideModal();"
@@ -5206,7 +5206,10 @@ window.introAutoFill = function(){
 
   if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
 
-  setTimeout(()=>{ window._state.cur='s1'; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
+  setTimeout(()=>{
+    // 로그인 유저 → mydash, 비로그인 → s1
+    const dest = currentUser ? 'mydash' : 's1';
+    window._state.cur = dest; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
     // 토스트 띄우기
     const toast = document.getElementById('introToast');
     if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },8000); }
