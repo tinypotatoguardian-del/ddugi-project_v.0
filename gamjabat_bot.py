@@ -15,6 +15,8 @@ BOT_TOKEN        = os.environ.get("DISCORD_BOT_TOKEN", "")
 MSG_THREAD_COMMENT = """\
 자기소개 잘 봤어 🥔
 
+새싹감자 역할이 부여됐어!
+
 이제 여기 들어와서 회원가입 해봐!
 👉 gamja99.up.railway.app
 
@@ -59,12 +61,28 @@ bot = discord.Client(intents=intents)
 async def on_ready():
     print(f"[감자밭봇] 연결됨: {bot.user}")
 
-# ① 자기소개 새 스레드 → 자동 댓글
+# ① 자기소개 새 스레드 → 자동 댓글 + 새싹감자 역할 부여
+SEEDLING_ROLE_ID = int(os.environ.get("DISCORD_SEEDLING_ROLE_ID", "1555811319477964871"))
+
 @bot.event
 async def on_thread_create(thread: discord.Thread):
     if thread.parent_id != FORUM_CHANNEL_ID:
         return
     await asyncio.sleep(3)
+
+    # 새싹감자 역할 부여
+    try:
+        guild = bot.get_guild(GUILD_ID)
+        author = thread.owner
+        if guild and author:
+            role = guild.get_role(SEEDLING_ROLE_ID)
+            if role and role not in author.roles:
+                await author.add_roles(role, reason="gate1-자기소개 작성")
+                print(f"[감자밭봇] 새싹감자 역할 부여: {author.display_name}")
+    except Exception as e:
+        print(f"[감자밭봇] 역할 부여 오류: {e}")
+
+    # 환영 댓글
     try:
         await thread.send(MSG_THREAD_COMMENT)
         print(f"[감자밭봇] 자기소개 댓글: {thread.name}")

@@ -1818,7 +1818,26 @@ def discover_judge(body: JudgeIn):
 app.mount("/", StaticFiles(directory=os.path.join(APP_DIR, "static"), html=True), name="static")
 
 
+def _run_discord_bot():
+    """Discord 봇을 별도 스레드에서 실행"""
+    token = os.getenv("DISCORD_BOT_TOKEN", "")
+    if not token:
+        print("[bot] DISCORD_BOT_TOKEN 없음 — 봇 비활성화")
+        return
+    try:
+        import bot as discord_bot
+        discord_bot.bot.run(token)
+    except Exception as e:
+        print(f"[bot] 실행 오류: {e}")
+
+
 if __name__ == "__main__":
     import uvicorn
+    import threading
+
+    # Discord 봇 백그라운드 실행
+    bot_thread = threading.Thread(target=_run_discord_bot, daemon=True)
+    bot_thread.start()
+    print("[main] Discord 봇 스레드 시작됨")
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
