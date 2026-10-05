@@ -28,6 +28,31 @@ import os
 import secrets
 import sqlite3
 import time
+import urllib.request as _urllib_req
+
+# ── Discord 가입 알람 ──────────────────────────────────────────
+_DISCORD_BOT_TOKEN   = os.environ.get("DISCORD_BOT_TOKEN", "")
+_DISCORD_NOTIFY_CH   = os.environ.get("DISCORD_NOTIFY_CHANNEL", "")
+
+def _notify_discord(msg: str):
+    """회원가입 등 이벤트 발생 시 Discord 채널에 알람 전송."""
+    if not _DISCORD_BOT_TOKEN or not _DISCORD_NOTIFY_CH:
+        return
+    try:
+        data = json.dumps({"content": msg}).encode()
+        req = _urllib_req.Request(
+            f"https://discord.com/api/v10/channels/{_DISCORD_NOTIFY_CH}/messages",
+            data=data,
+            headers={
+                "Authorization": f"Bot {_DISCORD_BOT_TOKEN}",
+                "Content-Type": "application/json",
+                "User-Agent": "DiscordBot (https://discord.com, 10)",
+            },
+            method="POST",
+        )
+        _urllib_req.urlopen(req, timeout=5)
+    except Exception as e:
+        print(f"[Discord notify] 오류: {e}")
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Header, HTTPException, Request
@@ -1193,6 +1218,13 @@ def user_register(body: UserRegisterIn):
         conn.commit()
     conn.close()
     token = make_token(uid, username, plan)
+    # Discord 가입 알람
+    _notify_discord(
+        f"🥔 새 감자 가입!\n"
+        f"**닉네임:** {nick}  |  **아이디:** `{username}`\n"
+        f"**플랜:** {plan}  |  **초대코드:** `{invite_code}`\n"
+        f"*{now}*"
+    )
     return {"token": token, "userId": uid, "username": username, "nickname": nick, "plan": plan}
 
 @app.post("/api/user/login")

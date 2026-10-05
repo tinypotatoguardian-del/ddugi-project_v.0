@@ -500,7 +500,7 @@
 <footer id="appfoot"><details><summary>ddugi</summary><a href="https://www.threads.com/@tinypotato.guardian" target="_blank" style="color:var(--ink-soft);text-decoration:none;">@tinypotato.guardian</a><br><span style="font-size:10px;color:var(--ink-soft);"><a href="/TERMS.md" target="_blank" style="color:var(--ink-soft);">이용약관</a> · <a href="/PRIVACY.md" target="_blank" style="color:var(--ink-soft);">개인정보처리방침</a> · <a href="/LICENSE.md" target="_blank" style="color:var(--ink-soft);">라이선스</a></span></details></footer>
 <button type="button" id="toTop" aria-label="맨 위로">↑ 맨 위로</button>
 
-<div id="modalOverlay" onclick="if(event.target===this) hideModal()" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,.55);z-index:50;align-items:center;justify-content:center;padding:20px;">
+<div id="modalOverlay" onclick="if(event.target===this && !this.dataset.noBackdropClose) hideModal()" style="display:none;position:fixed;inset:0;background:rgba(10,14,18,.55);z-index:50;align-items:center;justify-content:center;padding:20px;">
   <div style="position:relative;max-width:360px;width:100%;">
     <button type="button" onclick="hideModal()" aria-label="닫기" style="position:absolute;top:-14px;right:-14px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:14px;cursor:pointer;z-index:1;">✕</button>
     <div id="modalBox" style="background:var(--panel);width:100%;padding:22px;border:1px solid var(--line);"></div>
@@ -1528,7 +1528,15 @@ function showChangelog(){
 
 function showModal(html){
   document.getElementById('modalBox').innerHTML = html;
-  document.getElementById('modalOverlay').style.display = 'flex';
+  const overlay = document.getElementById('modalOverlay');
+  overlay.style.display = 'flex';
+  overlay.dataset.noBackdropClose = '';  // 기본: 배경 클릭 시 닫힘
+}
+function showModalLocked(html){
+  document.getElementById('modalBox').innerHTML = html;
+  const overlay = document.getElementById('modalOverlay');
+  overlay.style.display = 'flex';
+  overlay.dataset.noBackdropClose = '1';  // 배경 클릭해도 안 닫힘
 }
 function hideModal(){
   document.getElementById('modalOverlay').style.display = 'none';
@@ -1658,6 +1666,74 @@ window.setV = setV;
 window.showModal = showModal;
 window.hideModal = hideModal;
 window._saveConfirmHtml = saveConfirmHtml;
+
+// ── 심기 전 준비: 자동 판정 함수 ──────────────────────────────
+window.applyJudgeResult = function(judgment, reason){
+  window._setV('discover_result_state', judgment);
+  window._setV('discover_judge_reason', reason || '');
+  window._persist();
+  window._renderSheet();
+};
+
+window.runDiscoverJudge = async function(){
+  const btn = document.getElementById('judgeBtn');
+  const resultEl = document.getElementById('judgeResult');
+  const _e = window._esc || (s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+
+  if(btn){ btn.textContent='⏳ 판정 중...'; btn.disabled=true; }
+  if(resultEl) resultEl.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;">'+
+    '<span style="display:inline-block;width:18px;height:18px;border:2px solid var(--blueprint);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;"></span>'+
+    '<span style="font-size:13px;color:var(--ink-soft);">AI가 문제를 분석하고 있어요...</span>'+
+    '</div>'+
+    '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+
+  const seedName  = (window._state?.fields?.s1_name || '').trim();
+  const workarea  = (window._state?.fields?.s1_workarea || '').trim();
+  const cat       = (window._state?.fields?.s1_cat || '').trim();
+  const freetext  = (window._state?.fields?.intro_freetext || '').trim();
+  const text = [seedName, workarea, cat, freetext].filter(Boolean).join(' / ');
+  const apiKey = sessionStorage.getItem('_ddugi_tmp_key') || '';
+
+  try{
+    const res = await fetch('/api/discover/judge', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text, api_key: apiKey})
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.detail||'서버 오류');
+
+    window._state.fields['discover_result_state'] = d.judgment;
+    window._state.fields['discover_judge_reason'] = d.reason || '';
+    window._state.fields['discover_judge_method'] = d.method || 'keyword';
+    try{ window._persist(); }catch(pe){ console.warn('persist:', pe); }
+
+    const labelMap = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의', unnecessary:'🥔 AI 불필요'};
+    const colorMap = {possible:'#2ecc71', redefine:'#6c8ee8', unnecessary:'#888'};
+    const freshEl = document.getElementById('judgeResult');
+    const target = freshEl || resultEl;
+    if(target){
+      target.innerHTML =
+        '<div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;">'+
+        '<div style="font-weight:700;color:'+colorMap[d.judgment]+';font-size:15px;margin-bottom:6px;">'+labelMap[d.judgment]+'</div>'+
+        (d.reason ? '<div style="color:var(--ink-soft);font-size:13px;line-height:1.7;margin-bottom:10px;">'+_e(d.reason)+'</div>' : '')+
+        '<div style="display:flex;align-items:center;justify-content:space-between;">'+
+          '<span style="font-size:11px;color:var(--ink-soft);">'+(d.method==='ai'?'🤖 Claude AI 판정':'🔍 키워드 판정')+'</span>'+
+          '<button type="button" onclick="window._state.fields[\'discover_result_state\']=\'\';window._persist();window._renderSheet();" '+
+          'style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:none;color:var(--ink-soft);cursor:pointer;">다시 판정</button>'+
+        '</div></div>';
+    }
+    if(btn){ btn.textContent='🤖 자동 판정받기'; btn.disabled=false; }
+
+  } catch(e){
+    console.error('[discover/judge]', e);
+    if(btn){ btn.textContent='🤖 자동 판정받기'; btn.disabled=false; }
+    if(resultEl) resultEl.innerHTML =
+      '<div style="font-size:12px;color:#e74c3c;padding:10px;background:rgba(231,76,60,.08);border-radius:8px;">'+
+      '❌ 판정 실패: '+_e(e.message)+'</div>';
+  }
+};
 // 외부(window) 접근용
 window._setV = function(id, val){ setV(id, val); };
 window._getV = function(id, def){ return getV(id, def); };
@@ -1666,6 +1742,7 @@ window._persist = function(){ persist(); };
 function esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+window._esc = esc;
 
 /* ============== field rendering ============== */
 function fieldWrap(inner, field, extraClass){
@@ -2089,11 +2166,51 @@ function saveConfirmHtml(){
     '</div>';
 }
 
+function showCtaPopup(){
+  showModalLocked(`
+    <div style="text-align:center;padding:8px 0 4px;">
+      <div style="font-size:36px;margin-bottom:8px;">🥔</div>
+      <h2 style="margin:0 0 6px;font-size:18px;">씨앗 정의서 완성!</h2>
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:20px;">
+        이 씨앗을 제대로 키우려면 커뮤니티가 필요해요.<br>
+        두 가지 방법으로 합류할 수 있어요.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+        <button type="button" onclick="hideModal();openAuthModal('register');"
+          style="padding:12px 20px;border-radius:10px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;">
+          📝 가입 신청하기
+          <div style="font-size:11px;font-weight:400;margin-top:2px;opacity:0.85;">바로 신청서 작성 → 승인 후 로그인</div>
+        </button>
+        <a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener"
+          style="display:block;padding:12px 20px;border-radius:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:14px;font-weight:700;text-decoration:none;">
+          💬 카톡으로 연락하기
+          <div style="font-size:11px;font-weight:400;margin-top:2px;color:var(--ink-soft);">오픈프로필 · 누구나</div>
+        </a>
+        <a href="https://open.kakao.com/o/gJShrZPi" target="_blank" rel="noopener"
+          style="display:block;padding:12px 20px;border-radius:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:14px;font-weight:700;text-decoration:none;">
+          🙋‍♀️ 감자밭 오픈채팅
+          <div style="font-size:11px;font-weight:400;margin-top:2px;color:var(--ink-soft);">커뮤니티 회원만</div>
+        </a>
+      </div>
+      <div style="font-size:11px;color:var(--ink-soft);margin-bottom:12px;">신청 후 관리자 확인 → 계정 발급</div>
+      <button type="button" onclick="hideModal();"
+        style="font-size:12px;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;">
+        나중에 할게요
+      </button>
+    </div>
+  `);
+}
+
 document.addEventListener('click', function(e){
   if(e.target.id==='saveConfirmYes'){
     hideModal();
     state.locked = true;
     persist(); renderSheet();
+    // 마지막 섹션(diag=3-3) 저장 시 → 비로그인이면 CTA 팝업
+    const lastSeedSection = 'diag';
+    if(state.cur === lastSeedSection && !currentUser){
+      setTimeout(()=> showCtaPopup(), 400);
+    }
   }
   if(e.target.id==='saveConfirmNo'){ hideModal(); }
 });
@@ -2223,7 +2340,7 @@ function renderMyDashSection(){
         '<div style="font-size:14px;font-weight:700;color:var(--blueprint);margin-bottom:4px;">🥔 같이 더 공부해보고 싶어요?</div>'+
         '<div style="font-size:12px;color:var(--ink-soft);">씨앗 정의서 피드백 · 감자밭 커뮤니티 · 레벨 판정</div>'+
       '</div>'+
-      '<a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener" style="padding:10px 20px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
+      '<a href="https://open.kakao.com/o/gJShrZPi" target="_blank" rel="noopener" style="padding:10px 20px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
     '</div>'+
     (currentUser ? '<h3 style="margin-top:24px;">내 씨앗 목록</h3><div id="mySeedsList" class="hint">불러오는 중…</div>' : '')
   '</div>';
@@ -2809,7 +2926,7 @@ function updateRulerAndNav(){
   const DEFAULT_OPEN = new Set(); // 비어있으면 A그룹(씨앗정의서)만 open
 
   // 로그인 없이 접근 가능한 special 섹션
-  const LOGIN_FREE_SPECIALS = new Set(['landing','curriculum','aitools','promptkit','intro','feedback','guestbook','roadmap','export']);
+  const LOGIN_FREE_SPECIALS = new Set(['landing','curriculum','aitools','promptkit','intro','discover','feedback','guestbook','roadmap','export']);
 
   function renderNavItem(s){
     const active = s.id===state.cur;
@@ -2837,7 +2954,7 @@ function updateRulerAndNav(){
     const dim = isSectionLocked(s);
     const st = sectionStatus(s);
     const stMark = st==='done' ? '<span class="sec-status st-done">완료</span>' : st==='partial' ? '<span class="sec-status st-partial">작성중</span>' : '<span class="dot"></span>';
-    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook'||s.special==='landing';
+    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook'||s.special==='landing'||s.special==='discover';
     return '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(isTop?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
       '<span class="num">'+s.num+'</span>'+esc(s.title)+stMark+'</button></li>'+
       (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
@@ -4239,6 +4356,16 @@ const AI_TOOLS_DATA = {
           weak: 'ChatGPT Plus 필요',
           models: [{ name: 'DALL-E 3', desc: '텍스트 → 고품질 이미지', tag: '이미지' }]
         },
+        {
+          name: 'Leonardo AI', url: 'https://leonardo.ai', type: '이미지 생성 AI',
+          free: true, paid: 'Pro $12/월',
+          best: '캐릭터 일관성 유지·포토스타일 고정',
+          weak: '무료 크레딧 제한',
+          models: [
+            { name: 'Leonardo Phoenix', desc: '텍스트 렌더링+고품질 이미지', tag: '추천' },
+            { name: 'Flux Dev', desc: '사실적 이미지', tag: '무료포함' },
+          ]
+        },
       ]
     },
     {
@@ -4599,6 +4726,7 @@ function renderAICompare(){
   const imageRows = [
     { situation:'캐리커처·얼굴 합성', tools:['Nano Banana'], reason:'얼굴 보존+캐리커처 특화, 4K, 14장 합성 가능' },
     { situation:'예쁜 이미지·아트워크', tools:['Midjourney'], reason:'미학·조명·구도 최고. 월 $10부터' },
+    { situation:'캐릭터·일관성 유지', tools:['Leonardo AI'], reason:'캐릭터 레퍼런스 고정 기능(포토스타일) 강점. 무료 플랜 있음' },
     { situation:'이미지 안에 글자 넣기', tools:['GPT Image 2','Ideogram'], reason:'텍스트 렌더링 정확도 최강' },
     { situation:'사실적인 사진 느낌', tools:['Flux 2','Imagen 4'], reason:'포토리얼리즘 최강, API 종량제' },
     { situation:'무료로 이미지 생성', tools:['Gemini','DALL-E (ChatGPT)'], reason:'Gemini 무료, ChatGPT Plus 번들' },
@@ -5169,13 +5297,17 @@ window.introAutoFill = function(){
   if(hypothesis) summary += '💡 <b>해결 방향 가설:</b> '+esc(hypothesis)+'<br>';
   summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>맞는지 꼭 확인하고 수정해줘!</b>';
 
-  if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary; }
+  if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary+
+    '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">'+
+      '<button type="button" onclick="window._state.cur=\'s1\';window._renderSheet();document.getElementById(\'main\').scrollTo(0,0);" style="padding:7px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">✏️ 씨앗 정의서 확인하기</button>'+
+      '<button type="button" onclick="window._state.cur=\'intro\';window._renderSheet();" style="padding:7px 14px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:12px;cursor:pointer;">← 마음의 방으로</button>'+
+    '</div>'; }
 
-  setTimeout(()=>{ window._state.cur='s1'; window._renderSheet(); document.getElementById('main').scrollTo(0,0);
-    // 토스트 띄우기
-    const toast = document.getElementById('introToast');
-    if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },8000); }
-  }, 2500);
+  // 토스트 띄우기
+  const toast = document.getElementById('introToast');
+  if(toast){ toast.style.display='flex'; setTimeout(()=>{ toast.style.display='none'; },8000); }
+  // 비로그인자 CTA 팝업
+  if(!currentUser){ setTimeout(()=> showCtaPopup(), 1000); }
 };
 
 function renderIntroSection(){
@@ -5295,7 +5427,7 @@ function renderIntroSection(){
               '<div style="font-size:13px;font-weight:700;color:var(--blueprint);margin-bottom:3px;">🥔 같이 더 공부해보고 싶어요?</div>'+
               '<div style="font-size:12px;color:var(--ink-soft);">초대코드 받고 씨앗 정의서 이어서 써봐요</div>'+
             '</div>'+
-            '<a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener" style="padding:9px 18px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
+            '<a href="https://open.kakao.com/o/gJShrZPi" target="_blank" rel="noopener" style="padding:9px 18px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">카톡으로 연락하기 →</a>'+
           '</div>'
         : ''
       )
@@ -5471,7 +5603,7 @@ function renderDiscoverSection(){
   }
 
   return '<div class="frame"><h2>🌱 심기 전 준비</h2>'+
-    '<div class="sub">AI가 필요한지 먼저 확인하고 — 필요하면 어떻게 물어볼지 설계해봐</div>'
+    '<div class="sub">AI가 필요한지 먼저 확인하고 — 필요하면 어떻게 물어볼지 설계해봐</div>'+
 
     // 감지된 내 문제
     (hasData
@@ -5491,37 +5623,75 @@ function renderDiscoverSection(){
       '<div style="padding:14px 18px;border-bottom:1px solid var(--line-soft);">'+
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
           '<span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>'+
-          '<span style="font-size:14px;font-weight:700;color:var(--ink);">이 프롬프트로 AI한테 먼저 물어봐</span>'+
-          '<span style="font-size:12px;color:var(--ink-soft);">AI가 필요한지부터 확인</span>'+
+          '<span style="font-size:14px;font-weight:700;color:var(--ink);">AI가 필요한지 자동 판정</span>'+
         '</div>'+
-        (step1Prompt
-          ? '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;max-height:160px;overflow-y:auto;" id="discoverStep1Prompt">'+esc(step1Prompt)+'</div>'+
-            '<div class="exportbar"><button type="button" onclick="(()=>{navigator.clipboard.writeText(document.getElementById(\'discoverStep1Prompt\').textContent).then(()=>{const b=event.target;b.textContent=\'✅ 복사됨\';setTimeout(()=>b.textContent=\'📎 복사\',1500);})})()\">📎 복사</button></div>'
+        (problemDesc
+          ? '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--ink-soft);line-height:1.6;margin-bottom:12px;white-space:pre-wrap;">'+esc(problemDesc.slice(0,200))+'</div>'+
+            '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'+
+              '<button type="button" id="judgeBtn" onclick="runDiscoverJudge()" style="padding:9px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;">🤖 자동 판정받기</button>'+
+              (getV('user_claude_key','')
+                ? '<span style="font-size:11px;color:var(--ok);">✅ Claude API 연동됨</span>'
+                : '<span style="font-size:11px;color:var(--ink-soft);">키워드 판정 (기본) · <button type="button" onclick="document.getElementById(\'apiKeySetup\').style.display=\'block\'" style="font-size:11px;color:var(--blueprint);background:none;border:none;cursor:pointer;text-decoration:underline;">API 키 연동하면 더 정확해요 →</button></span>'
+              )+
+            '</div>'+
+            // API 키 설정 안내 (접혀있음)
+            '<div id="apiKeySetup" style="display:none;margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;">'+
+              '<div style="font-size:13px;font-weight:700;margin-bottom:4px;">🔑 Claude API 키 연동</div>'+
+              '<div style="font-size:11px;color:var(--ok);margin-bottom:8px;">🔒 탭 닫으면 자동 삭제 · 서버에 저장 안 됨</div>'+
+              '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;line-height:1.6;">'+
+                '1. <a href="https://console.anthropic.com" target="_blank" style="color:var(--blueprint);">console.anthropic.com</a> 접속<br>'+
+                '2. API Keys → Create Key<br>'+
+                '3. 아래에 붙여넣기 (이 탭에서만 유효)'+
+              '</div>'+
+              '<div style="display:flex;gap:8px;">'+
+                '<input type="password" id="claudeKeyInput" placeholder="sk-ant-..." style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:12px;">'+
+                '<button type="button" onclick="const k=document.getElementById(\'claudeKeyInput\').value.trim();if(k){sessionStorage.setItem(\'_ddugi_tmp_key\',k);document.getElementById(\'apiKeySetup\').style.display=\'none\';const sp=document.getElementById(\'apiKeyStatus\');if(sp)sp.textContent=\'✅ Claude API 연동됨 (이 탭)\';}" style="padding:8px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">연동</button>'+
+                '<button type="button" onclick="sessionStorage.removeItem(\'_ddugi_tmp_key\');const sp=document.getElementById(\'apiKeyStatus\');if(sp)sp.textContent=\'키워드 판정 (기본)\';" style="padding:8px 14px;border-radius:8px;background:var(--panel);color:var(--ink-soft);border:1px solid var(--line);font-size:12px;cursor:pointer;">초기화</button>'+
+              '</div>'+
+            '</div>'+
+            // 판정 결과 — state에 있으면 여기서 표시
+            (resultState ? (()=>{
+              const labelMap = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의', unnecessary:'🥔 AI 불필요'};
+              const colorMap = {possible:'var(--ok)', redefine:'var(--blueprint)', unnecessary:'var(--ink)'};
+              const reason = getV('discover_judge_reason','');
+              const method = getV('discover_judge_method','keyword');
+              return '<div style="margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:12px;">'+
+                '<div style="font-weight:700;color:'+colorMap[resultState]+';margin-bottom:4px;">'+labelMap[resultState]+'</div>'+
+                (reason ? '<div style="color:var(--ink-soft);line-height:1.6;margin-bottom:6px;">'+esc(reason)+'</div>' : '')+
+                '<div style="font-size:11px;color:var(--ink-soft);">'+(method==='ai'?'🤖 Claude AI 판정':'🔍 키워드 판정')+
+                  ' · <button type="button" onclick="window._setV(\'discover_result_state\',\'\');window._setV(\'discover_judge_reason\',\'\');window._persist();window._renderSheet();" style="font-size:11px;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;">다시 판정</button>'+
+                '</div>'+
+              '</div>';
+            })() : '<div id="judgeResult" style="margin-top:12px;"></div>')
           : '<div style="font-size:12px;color:var(--ink-soft);">마음의 방 입구에서 고민을 먼저 적어줘!</div>'
         )+
       '</div>'+
-
-      // AI 답변 + 결과 선택
-      '<div style="padding:14px 18px;">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
-          '<span style="width:22px;height:22px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>'+
-          '<span style="font-size:14px;font-weight:700;color:var(--ink);">AI 답변 보고 결과 선택</span>'+
+      // 수동 선택 (접혀있음)
+      '<details style="border-top:1px solid var(--line-soft);">'+
+        '<summary style="cursor:pointer;padding:10px 18px;font-size:12px;color:var(--ink-soft);list-style:none;">▶ 직접 선택하기 (AI한테 직접 물어봤어요)</summary>'+
+        '<div style="padding:14px 18px;">'+
+          '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;background:var(--panel);border-radius:8px;padding:8px 12px;">아래 프롬프트 복사 → AI에 붙여넣기 → 답변 보고 선택</div>'+
+          (step1Prompt
+            ? '<div style="background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;max-height:120px;overflow-y:auto;" id="discoverStep1Prompt">'+esc(step1Prompt)+'</div>'+
+              '<div class="exportbar"><button type="button" id="discoverCopyBtn" onclick="(()=>{navigator.clipboard.writeText(document.getElementById(\'discoverStep1Prompt\').textContent).then(()=>{const b=document.getElementById(\'discoverCopyBtn\');b.textContent=\'✅ 복사됨!\';b.style.background=\'var(--ok)\';b.style.color=\'#fff\';setTimeout(()=>{b.textContent=\'📎 복사\';b.style.background=\'\';b.style.color=\'\';},3000);})})()" style="transition:all .2s;">📎 복사</button></div>'
+            : ''
+          )+
+          '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
+            ((['possible','redefine','unnecessary']).map(v => {
+              const labels = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의', unnecessary:'🥔 AI 불필요'};
+              const colors = {possible:'var(--ok)', redefine:'var(--blueprint)', unnecessary:'var(--ink)'};
+              const isSelected = resultState === v;
+              const isOther = resultState && !isSelected;
+              return '<button type="button" '+(isOther?'disabled':('onclick="applyJudgeResult(\''+v+'\',\'직접 선택\')"'))+
+                ' style="padding:8px 14px;border-radius:8px;border:2px solid '+(isSelected?colors[v]:'var(--line)')+
+                ';background:'+(isSelected?colors[v]+'20':'var(--panel)')+
+                ';color:'+(isSelected?colors[v]:(isOther?'var(--line)':'var(--ink-soft)'))+
+                ';font-size:13px;font-weight:700;cursor:'+(isOther?'not-allowed':'pointer')+
+                ';opacity:'+(isOther?'0.35':'1')+';">'+labels[v]+'</button>';
+            }).join(''))+
+          '</div>'
         '</div>'+
-        '<textarea data-bind="discover_ai_answer" style="min-height:160px;font-size:12px;width:100%;box-sizing:border-box;" placeholder="AI가 뭐라고 했어? (선택사항 — 기록용으로 붙여넣어도 돼)" oninput="window._renderSheet()">'+esc(getV('discover_ai_answer',''))+'</textarea>'+
-        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
-          (()=>{
-            const hasAnswer = !!getV('discover_ai_answer','').trim();
-            const btnStyle = (active, color) => hasAnswer
-              ? 'padding:8px 16px;border-radius:8px;border:2px solid '+(active?color:'var(--line)')+';background:'+(active?color+'20':'var(--panel)')+';color:'+(active?color:'var(--ink-soft)')+';font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;'
-              : 'padding:8px 16px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--line);font-size:13px;font-weight:700;cursor:not-allowed;opacity:0.4;';
-            return (
-              '<button type="button" '+(hasAnswer?'onclick="setV(\'discover_result_state\',\'possible\');window._renderSheet();"':'disabled')+' style="'+btnStyle(resultState==='possible','var(--ok)')+'">✅ AI 써도 됨</button>'+
-              '<button type="button" '+(hasAnswer?'onclick="setV(\'discover_result_state\',\'redefine\');window._renderSheet();"':'disabled')+' style="'+btnStyle(resultState==='redefine','var(--blueprint)')+'">🔄 문제 다시 정의</button>'+
-              '<button type="button" '+(hasAnswer?'onclick="setV(\'discover_result_state\',\'unnecessary\');window._renderSheet();"':'disabled')+' style="'+btnStyle(resultState==='unnecessary','var(--ink)')+'">🥔 AI 불필요</button>'
-            );
-          })()+
-        '</div>'+
-      '</div>'+
+      '</details>'+
     '</div>'+
 
     // STEP 2 (결과에 따라)
