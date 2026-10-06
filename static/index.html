@@ -2391,15 +2391,44 @@ function renderMyDashSection(){
   const seedName = getV('s1_name','') || '(아직 씨앗 이름을 안 썼어요)';
   const hasAnyData = SECTIONS.some(s=>!s.special && sectionFilled(s));
 
+  const status = state.completed ? '완료' : (state.locked ? '저장됨' : '작성중');
+  const statusBadge = status==='완료'
+    ? '<span style="padding:3px 10px;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-size:11px;font-weight:700;">✅ 완료</span>'
+    : status==='저장됨'
+    ? '<span style="padding:3px 10px;border-radius:999px;background:var(--panel);color:var(--ink-soft);font-size:11px;font-weight:700;">🔒 저장됨</span>'
+    : '<span style="padding:3px 10px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-size:11px;font-weight:700;">✏️ 작성중</span>';
+  const stageIdx = taskStageIdx({
+    completed: state.completed,
+    task: {
+      hasVerify: !!String(getV('verify_result','')).trim(),
+      hasRedefine: !!String(getV('re_core','')).trim(),
+      hasDiag: !!String(getV('diag_result','')).trim(),
+    }
+  });
+
   return '<div class="frame intro"><h2>☆ 나의 마음의 방</h2>'+
     '<div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--ink-soft);line-height:1.8;">'+
       '지금 작성 중인 씨앗이 어디까지 왔는지 한눈에 볼 수 있어.<br>'+
       '완료한 단계, 지금 있는 곳, 다음에 할 것까지 — 여기서 이어서 써줘.'+
     '</div>'+
-    '<div class="sub">지금 작성 중인 씨앗 기준</div>'+
-    '<div class="hint">아직 로그인이 없어서, 이 브라우저에 저장된 지금 씨앗 하나를 기준으로 보여줘요.</div>'+
-    '<h3>'+esc(seedName)+'</h3>'+
-    '<p>진척도: '+filled+' / '+TOTAL_SECTIONS+' 섹션 ('+pct+'%)</p>'+
+
+    // 진행 현황 카드 — 이름/상태/진행 단계/진척도 바를 한 장에
+    '<div style="border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;margin-bottom:16px;">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">'+
+        '<div style="font-size:16px;font-weight:700;color:var(--ink);">'+esc(seedName)+'</div>'+
+        statusBadge+
+      '</div>'+
+      '<div style="padding:16px 20px;">'+
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">'+
+          '<div style="flex:1;height:8px;background:var(--line-soft);border-radius:4px;overflow:hidden;">'+
+            '<div style="width:'+pct+'%;height:100%;background:var(--blueprint);border-radius:4px;transition:width .3s;"></div>'+
+          '</div>'+
+          '<span style="font-size:12px;color:var(--ink-soft);white-space:nowrap;">'+filled+' / '+TOTAL_SECTIONS+' 섹션 · '+pct+'%</span>'+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);">진행 단계: <b style="color:var(--ink);">'+esc(TASK_STAGE_LABELS[stageIdx])+'</b></div>'+
+      '</div>'+
+    '</div>'+
+
     aiLevelCardHtml(true)+
     '<h3>이번 씨앗에서 경험한 AI 역량</h3>'+
     (done.length ? '<div class="lvrec-items">'+done.map(i=>'<span class="lvrec-chip">'+esc(i)+'</span>').join('')+'</div>'
@@ -5307,11 +5336,8 @@ window.parseDiscordIntro = function(){
   const box = document.getElementById('discordImportBox');
   if(box) box.removeAttribute('open');
 };
-window.introGenPrompt = function(){
-  const text = (document.getElementById('introFreeText')||{}).value||'';
-  if(text) setV('intro_freetext', text);
-  if(!text.trim()){ alert('먼저 상황을 적어줘!'); return; }
-  const prompt = `아래 상황을 분석해서 항목을 채워줘.
+function buildIntroPrompt(text){
+  return `아래 상황을 분석해서 항목을 채워줘.
 반드시 아래 형식 그대로만 답해줘. 번호와 레이블은 그대로 두고 콜론 뒤만 채워줘.
 
 상황: "${text.trim()}"
@@ -5324,6 +5350,12 @@ window.introGenPrompt = function(){
 6. 핵심 문제: (진짜 해결하고 싶은 문제. 표면 말고 본질)
 7. 개선 기준: (뭐가 달라지면 이 업무가 좋아졌다고 할 수 있는지)
 8. 해결 방향 가설: (내가 생각하는 해결 방향, 첫 번째 시도 방향)`;
+}
+window.introGenPrompt = function(){
+  const text = (document.getElementById('introFreeText')||{}).value||'';
+  if(text) setV('intro_freetext', text);
+  if(!text.trim()){ alert('먼저 상황을 적어줘!'); return; }
+  const prompt = buildIntroPrompt(text);
   const skel = document.getElementById('introPromptSkel');
   const pt = document.getElementById('introPromptText');
   const pd = document.getElementById('introPromptDisplay');
@@ -5406,6 +5438,12 @@ window.introAutoFill = function(){
     const matched = Object.keys(freqMap).find(k => freq.includes(k));
     if(matched) window._setV('s2_freq', [matched]);
   }
+  // 입구에서 실제로 프롬프트 쓰고(2번) AI 결과를 받아서 썼으니(3번), 그 두 역량은 경험한 걸로 체크
+  // (나머지 L1 항목은 여기서 실제로 확인 안 됐으니 자동으로 체크하지 않음)
+  const earnedByIntro = ['프롬프트 작성 (질문·지시)','생성·요약·분석 활용'];
+  const doneNow = window._getV('lp_done',[]).slice();
+  earnedByIntro.forEach(i=>{ if(doneNow.indexOf(i)<0) doneNow.push(i); });
+  window._setV('lp_done', doneNow);
   window._persist();
 
   // 결과 요약
@@ -5434,6 +5472,12 @@ function renderIntroSection(){
   const body = introEditing
     ? taxBlockHtml('intro_html','시작하기(00) 안내문 — HTML', INTRO_HTML, 'HTML 태그 그대로 적으세요. 비워두고 저장하면 기본 안내문으로 돌아가요.')
     : INTRO_HTML;
+
+  // 새로고침·다른 메뉴 갔다와도 이미 만든 프롬프트/붙여넣은 답변이 그대로 보이게
+  // (프롬프트는 intro_freetext로부터 그때그때 똑같이 다시 만들어낼 수 있어서 따로 저장 안 해도 됨)
+  const savedFreetext = getV('intro_freetext','');
+  const savedPrompt = savedFreetext.trim() ? buildIntroPrompt(savedFreetext) : '';
+  const savedAiResult = getV('intro_ai_result','');
 
   const autoFillHtml = `
 <style>
@@ -5476,25 +5520,25 @@ function renderIntroSection(){
     </div>
   </div>
 
-  <!-- STEP 2 — 항상 보임, 스켈레톤 -->
+  <!-- STEP 2 — intro_freetext가 이미 있으면 프롬프트를 바로 보여줌 (새로고침해도 다시 스켈레톤으로 안 돌아가게) -->
   <div style="padding:18px 20px;border-bottom:1px solid var(--line-soft);background:var(--blueprint-soft);">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span style="width:22px;height:22px;border-radius:50%;background:var(--line);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="introStep2Num">2</span>
-      <span style="font-size:14px;font-weight:700;color:var(--ink-soft);" id="introStep2Label">이 프롬프트를 ChatGPT / Claude에 붙여넣어봐</span>
+      <span style="width:22px;height:22px;border-radius:50%;background:${savedPrompt?'var(--blueprint)':'var(--line)'};color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="introStep2Num">2</span>
+      <span style="font-size:14px;font-weight:${savedPrompt?'700':'400'};color:${savedPrompt?'var(--ink)':'var(--ink-soft)'};" id="introStep2Label">이 프롬프트를 ChatGPT / Claude에 붙여넣어봐</span>
     </div>
-    <div id="introPromptSkel" style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;min-height:80px;justify-content:center;">
+    <div id="introPromptSkel" style="display:${savedPrompt?'none':'flex'};flex-direction:column;gap:8px;padding:12px 14px;background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;min-height:80px;justify-content:center;">
       <div class="skel" style="height:12px;width:88%;"></div>
       <div class="skel" style="height:12px;width:72%;"></div>
       <div class="skel" style="height:12px;width:80%;"></div>
       <div class="skel" style="height:12px;width:55%;"></div>
       <div style="font-size:11px;color:var(--ink-soft);margin-top:6px;text-align:center;">고민을 입력하면 여기에 프롬프트가 생성돼요</div>
     </div>
-    <div id="introPromptDisplay" style="display:none;background:var(--paper);border:1px solid var(--blueprint-2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;"></div>
-    <textarea id="introPromptText" style="display:none;"></textarea>
-    <button type="button" onclick="introCopyPrompt()" id="introCopyBtn" disabled style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:12px;font-weight:600;cursor:not-allowed;opacity:0.45;transition:all .2s;">📎 복사</button>
+    <div id="introPromptDisplay" style="display:${savedPrompt?'block':'none'};background:var(--paper);border:1px solid var(--blueprint-2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;">${esc(savedPrompt)}</div>
+    <textarea id="introPromptText" style="display:none;">${esc(savedPrompt)}</textarea>
+    <button type="button" onclick="introCopyPrompt()" id="introCopyBtn" ${savedPrompt?'':'disabled'} style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid ${savedPrompt?'var(--blueprint)':'var(--line)'};background:${savedPrompt?'var(--paper)':'var(--panel)'};color:${savedPrompt?'var(--blueprint)':'var(--ink-soft)'};font-size:12px;font-weight:600;cursor:${savedPrompt?'pointer':'not-allowed'};opacity:${savedPrompt?'1':'0.45'};transition:all .2s;">📎 복사</button>
   </div>
 
-  <!-- STEP 3 — 항상 보임, 비활성 -->
+  <!-- STEP 3 — intro_ai_result가 이미 저장돼있으면 버튼도 바로 활성화 -->
   <div style="padding:18px 20px;">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
       <span style="width:22px;height:22px;border-radius:50%;background:var(--line);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
@@ -5504,9 +5548,9 @@ function renderIntroSection(){
       AI가 이런 형식으로 답할 거야 →
       <code style="display:block;margin-top:4px;font-size:11px;line-height:1.8;color:var(--ink);">1. 씨앗 이름: 보고서 취합 자동화&#10;2. 업무 목적: 매주 5개 팀 자료를 합쳐 보고서 작성&#10;3. 현재 프로세스: 파일 수신 → 수동 취합 → 보고서 작성</code>
     </div>
-    <textarea id="introAIResult" data-bind="intro_ai_result" placeholder="2번 프롬프트로 받은 AI 답변을 여기에 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;">${esc(getV('intro_ai_result',''))}</textarea>
+    <textarea id="introAIResult" data-bind="intro_ai_result" placeholder="2번 프롬프트로 받은 AI 답변을 여기에 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;">${esc(savedAiResult)}</textarea>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
-      <button type="button" id="introFillBtn" onclick="introAutoFill()" disabled style="padding:8px 20px;border-radius:8px;border:none;background:var(--line);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;transition:all .2s;">🌱 씨앗 정의서 자동채우기</button>
+      <button type="button" id="introFillBtn" onclick="introAutoFill()" ${savedAiResult.trim()?'':'disabled'} style="padding:8px 20px;border-radius:8px;border:none;background:${savedAiResult.trim()?'var(--ok)':'var(--line)'};color:${savedAiResult.trim()?'#fff':'var(--ink-soft)'};font-size:13px;font-weight:600;cursor:${savedAiResult.trim()?'pointer':'not-allowed'};opacity:${savedAiResult.trim()?'1':'0.45'};transition:all .2s;">🌱 씨앗 정의서 자동채우기</button>
       <span style="font-size:12px;color:var(--ink-soft);">AI가 채운 거니까 맞는지 꼭 확인해줘</span>
     </div>
     <div id="introFillMsg" style="display:none;margin-top:10px;font-size:12px;padding:10px 14px;border-radius:8px;line-height:1.7;"></div>
