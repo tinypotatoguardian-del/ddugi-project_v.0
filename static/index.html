@@ -5412,11 +5412,11 @@ window.introAutoFill = function(){
   if(freq)       summary += '⏱ <b>발생 빈도:</b> '+esc(freq)+'<br>';
   if(slow)       summary += '🐢 <b>시간 많이 드는 단계:</b> '+esc(slow)+'<br>';
   if(hypothesis) summary += '💡 <b>해결 방향 가설:</b> '+esc(hypothesis)+'<br>';
-  summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>맞는지 꼭 확인하고 수정해줘!</b>';
+  summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>다음으로 AI가 정말 필요한지부터 확인해보자.</b>';
 
   if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary+
     '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">'+
-      '<button type="button" onclick="window._state.cur=\'s1\';window._renderSheet();document.getElementById(\'main\').scrollTo(0,0);" style="padding:7px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">✏️ 씨앗 정의서 확인하기</button>'+
+      '<button type="button" onclick="window._state.cur=\'discover\';window._renderSheet();document.getElementById(\'main\').scrollTo(0,0);" style="padding:7px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">🌱 AI 활용 가능한지 먼저 확인하기</button>'+
       '<button type="button" onclick="window._state.cur=\'intro\';window._renderSheet();" style="padding:7px 14px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:12px;cursor:pointer;">← 마음의 방으로</button>'+
     '</div>'; }
 
@@ -5517,8 +5517,8 @@ function renderIntroSection(){
     t.id = 'introToast';
     t.style.cssText = 'display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:14px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);align-items:center;gap:12px;';
     t.innerHTML = '<span>🌱 씨앗 정의서에 채워뒀어!</span>'+
-      '<button type="button" onclick="introGoToSeed()" style="padding:6px 14px;border-radius:8px;border:none;background:#fff;color:var(--ok);font-size:13px;font-weight:700;cursor:pointer;margin-left:12px;">01 씨앗 심기 →</button>'+
-      '<button type="button" onclick="introGoToDiscover()" style="padding:6px 14px;border-radius:8px;border:2px solid #fff;background:transparent;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-left:8px;">00 씨앗 찾기 →</button>'+
+      '<button type="button" onclick="introGoToDiscover()" style="padding:6px 14px;border-radius:8px;border:none;background:#fff;color:var(--ok);font-size:13px;font-weight:700;cursor:pointer;margin-left:12px;">00 AI 활용 가능한지 확인 →</button>'+
+      '<button type="button" onclick="introGoToSeed()" style="padding:6px 14px;border-radius:8px;border:2px solid #fff;background:transparent;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-left:8px;">01 씨앗 심기로 바로 →</button>'+
       '<button type="button" onclick="document.getElementById(\'introToast\').style.display=\'none\'" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px;margin-left:8px;">✕</button>';
     document.body.appendChild(t);
   }
@@ -5637,8 +5637,19 @@ function renderDiscoverSection(){
     ? ('씨앗: '+seedName+(workarea?'\n영역: '+workarea:'')+(cat?'\n카테고리: '+cat:'')+(freetext?'\n원문 설명: '+freetext:''))
     : freetext || '';
 
+  // 문제 종류(카테고리)별로 판정 때 더 중요하게 볼 포인트 — 같은 질문이라도 종류에 따라 판단 기준이 다름
+  const JUDGE_HINT_BY_CAT = {
+    '① 업무관리형': '이 일이 얼마나 반복적인지, 규칙이 명확한지, 예외 상황이 자주 생기는지를 중요하게 봐줘.',
+    '② 정보검색·지식형': '최신성이 중요한 정보인지, 틀리면 안 되는 정보(사실 확인 필요한 것)인지를 중요하게 봐줘.',
+    '③ 분석·판단지원형': '판단에 쓸 데이터가 실제로 있는지, 최종 결정은 사람이 해야 맞는 일인지를 중요하게 봐줘.',
+    '④ 문서·보고 자동화형': '문서 형식이 어느 정도 정해져 있는지, 매번 내용이 크게 달라지는 문서인지를 중요하게 봐줘.',
+    '⑤ 업무 프로세스 자동화형': '여러 시스템/도구를 연결해야 하는지, 지금 가진 도구만으로 되는지를 중요하게 봐줘.',
+  };
+  const judgeHint = JUDGE_HINT_BY_CAT[cat] || '';
+
   const step1Prompt = problemDesc
     ? ('아래 업무/문제를 보고, AI가 정말 필요한지 먼저 판단해줘.\n\n'+problemDesc+'\n\n'+
+       (judgeHint ? '판단할 때 특히 이 부분을 신경써줘: '+judgeHint+'\n\n' : '')+
        '아래 형식으로 답해줘:\n\n'+
        '1. 판단: [AI 활용 가능 / AI 불필요 / 문제 재정의 필요] 중 하나\n'+
        '2. 이유: (2~3줄)\n'+
@@ -5732,6 +5743,17 @@ function renderDiscoverSection(){
       : '<div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--ink-soft);">'+
           '📌 아직 고민을 안 적었어요. <button type="button" data-action="goto" data-target="intro" style="font-size:13px;color:var(--blueprint);background:none;border:none;cursor:pointer;text-decoration:underline;">마음의 방 입구</button>에서 먼저 적어줘요.'+
         '</div>'
+    )+
+
+    // 문제 종류 선택 — 아직 안 골랐으면 여기서 먼저 고르게 해서 판정 프롬프트를 종류에 맞게 최적화
+    (hasData && !cat
+      ? '<div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:14px 18px;margin-bottom:20px;">'+
+          '<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;">🏷️ 어떤 종류의 문제인가요? 고르면 판정 프롬프트가 더 정확해져요</div>'+
+          '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+
+            Object.keys(CATEGORIES).map(c=>'<button type="button" onclick="window._setV(\'s1_cat\',\''+c+'\');window._renderSheet();" style="padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);font-size:12px;cursor:pointer;">'+esc(c)+'</button>').join('')+
+          '</div>'+
+        '</div>'
+      : ''
     )+
 
     // STEP 1
