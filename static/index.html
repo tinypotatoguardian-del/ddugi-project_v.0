@@ -2377,7 +2377,8 @@ function renderTaskListBody(){
       '<td>'+esc(v.ip||'-')+'</td>'+
       '<td>'+esc(t.cat||'-')+(t.target&&t.target.length ? '<br><small>'+esc(t.target.join(', '))+'</small>' : '')+'</td>'+
       '<td>'+esc(TASK_STAGE_LABELS[v.stageIdx])+'</td><td>'+esc(learn)+'</td><td>'+esc(rec)+'</td><td>'+esc(when)+'</td>'+
-      '<td><button type="button" class="chip-btn" data-action="submission-delete" data-target="'+esc(v.docId)+'">삭제</button></td></tr>';
+      '<td><button type="button" class="chip-btn" data-action="submission-view" data-target="'+esc(v.docId)+'">보기</button> '+
+        '<button type="button" class="chip-btn" data-action="submission-delete" data-target="'+esc(v.docId)+'">삭제</button></td></tr>';
   }).join('');
   body.innerHTML = '<table class="dtable"><thead><tr><th>씨앗 이름</th><th>부서·담당자</th><th>IP</th><th>카테고리·대상</th><th>진행 단계</th><th>학습 레벨</th><th>인정 레벨</th><th>마지막 저장</th><th></th></tr></thead><tbody>'+trs+'</tbody></table>';
 }
@@ -2912,6 +2913,7 @@ async function renderDashboard(){
         '<td style="font-size:11px;">'+idCell+'<br><span style="color:var(--ink-soft);">'+esc(v.ip||'-')+'</span></td>'+
         '<td style="font-size:11px;color:var(--ink-soft);">'+esc(when)+'</td>'+
         '<td style="font-size:11px;color:var(--ink-soft);">'+esc(rec)+'</td>'+
+        '<td><button type="button" class="chip-btn" data-action="submission-view" data-target="'+esc(v.docId)+'">보기</button></td>'+
       '</tr>';
     }).join('');
 
@@ -2941,7 +2943,7 @@ async function renderDashboard(){
         : '')+
       '<h3 style="margin:16px 0 8px">씨앗 진행 현황</h3>'+
       '<table class="dtable"><thead><tr>'+
-        '<th>씨앗 이름</th><th>상태</th><th>입력 현황</th><th>단계</th><th>아이디/IP</th><th>마지막 저장</th><th>인정 레벨</th>'+
+        '<th>씨앗 이름</th><th>상태</th><th>입력 현황</th><th>단계</th><th>아이디/IP</th><th>마지막 저장</th><th>인정 레벨</th><th></th>'+
       '</tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
@@ -6160,6 +6162,23 @@ document.addEventListener('click', async function(e){
         if(r.ok){ idEl.value=''; nameEl.value=''; codeEl.value=''; msg.textContent=''; renderAccounts(); }
         else{ msg.textContent = await adminErrorText(r); }
       }).catch(()=>{ msg.textContent = '서버에 연결할 수 없어요.'; });
+    return;
+  }
+  if(action==='submission-view'){
+    showModal('<div class="hint">불러오는 중…</div>');
+    fetch('/api/submissions/'+encodeURIComponent(target))
+      .then(async r=>{
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const d = await r.json();
+        const original = state.fields;
+        state.fields = d.fields || {};
+        let md = '';
+        try{ md = buildMarkdown(); } finally { state.fields = original; }
+        document.getElementById('modalBox').innerHTML =
+          '<h2 style="margin-top:0;font-size:16px;">📄 작성 세부내용</h2>'+
+          '<pre style="max-height:70vh;overflow-y:auto;white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:12.5px;line-height:1.7;background:var(--panel);border:1px solid var(--line-soft);border-radius:8px;padding:14px 16px;margin:0;">'+esc(md)+'</pre>';
+      })
+      .catch(e=>{ document.getElementById('modalBox').innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>'; });
     return;
   }
   if(action==='submission-delete'){
