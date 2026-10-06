@@ -5329,9 +5329,12 @@ window.parseDiscordIntro = function(){
   const ta = document.getElementById('introFreeText');
   if(ta){ ta.value = combined; introUpdateState(); }
 
+  // 프롬프트도 바로 연계해서 생성
+  if(combined.trim() && window.introGenPrompt) window.introGenPrompt();
+
   // 메시지 + details 닫기
   const msg = document.getElementById('discordImportMsg');
-  if(msg){ msg.style.display=''; msg.textContent = '✅ 채워졌어! 아래 내용 확인하고 "프롬프트 만들기" 눌러줘.'; }
+  if(msg){ msg.style.display=''; msg.textContent = '✅ 채워졌어! 아래 프롬프트까지 바로 만들어졌어.'; }
   const box = document.getElementById('discordImportBox');
   if(box) box.removeAttribute('open');
 };
@@ -5492,7 +5495,8 @@ function renderIntroSection(){
       <span style="font-size:14px;font-weight:700;color:var(--ink);">뭘 해결하고 싶어?</span>
       <span style="font-size:12px;color:var(--ink-soft);">막막한 상황, 귀찮은 것, 어려운 것 — 뭐든</span>
     </div>
-    <!-- Discord 자기소개 불러오기 -->
+    <!-- Discord 자기소개 불러오기 (로그인한 회원만) -->
+    ${currentUser ? `
     <details id="discordImportBox" style="margin-bottom:12px;border:1px solid var(--blueprint-2);border-radius:8px;overflow:hidden;">
       <summary style="cursor:pointer;list-style:none;padding:10px 14px;background:var(--blueprint-soft);font-size:12px;font-weight:700;color:var(--blueprint);display:flex;align-items:center;gap:6px;">
         💬 Discord 자기소개 불러오기
@@ -5504,7 +5508,7 @@ function renderIntroSection(){
         <button type="button" onclick="parseDiscordIntro()" style="margin-top:8px;padding:6px 16px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">✨ 자동 채우기</button>
         <div id="discordImportMsg" style="font-size:11px;margin-top:6px;color:var(--ok);display:none;"></div>
       </div>
-    </details>
+    </details>` : ''}
     <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:80px;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;" oninput="setV('intro_freetext',this.value);introUpdateState();">${esc(getV('intro_freetext',''))}</textarea>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
       <button type="button" onclick="introGenPrompt()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📋 프롬프트 만들기 →</button>
