@@ -757,7 +757,7 @@ const SECTIONS = [
   SUBHEAD('기본 정보'),
   T('s1_name','씨앗 이름','예: 매장 재고 확인·발주 자동화 검토 / 예약 노쇼 알림 / 문의 답변 초안 작성', true),
   Object.assign(CL('s1_workarea','나의 활동 영역', [], true), {optsFn:()=>WORK_AREAS}),
-  T('s1_workarea_etc','활동 영역 직접 입력 (기타 선택 시)','예: 연구, 창작, 봉사 등'),
+  T('s1_workarea_etc','활동 영역 직접 입력 (기타 선택 시)','예: 돌봄(육아·간병), 재테크/투자 관리, 동아리·모임 운영, 봉사활동, 취미 창작(글·그림·음악), 건강관리, 여행 계획 등'),
   Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>{ const area=getV('s1_workarea',''); if(!area||area==='업무/사업 처리하기') return Object.keys(CATEGORIES); if(area==='공부·연구 과제하기') return ['② 정보검색·지식형','③ 분석·판단지원형','① 업무관리형']; if(area==='채용 서류 준비하기') return ['④ 문서·보고 자동화형','② 정보검색·지식형','③ 분석·판단지원형']; if(area==='집안일/개인 생활') return ['① 업무관리형','② 정보검색·지식형']; return Object.keys(CATEGORIES); }}),
   Object.assign(CL('s1_catsub','세부 목적 (카테고리를 고르면 나옵니다)', [], true), {optsFn:()=>CATEGORIES[getV('s1_cat','')]||[]}),
   CL('s1_target','대상 (무엇을 다루나)', TARGETS, true),
