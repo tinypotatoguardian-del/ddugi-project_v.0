@@ -550,7 +550,7 @@ let CATEGORIES = {
   '⑤ 업무 프로세스 자동화형': ['반복 입력','자료 취합','데이터 정리','검토/분류','여러 시스템 간 정보 전달']
 };
 // 업무 영역: 이 고민거리가 내 삶의 어느 영역 일인지 (기타는 직접 입력)
-let WORK_AREAS = ['직장 업무','이직/커리어 전환','취업 준비','사업·프리랜서','학업/연구','집안일/개인 생활','기타 (직접 입력)'];
+let WORK_AREAS = ['업무/사업 처리하기','채용 서류 준비하기','공부·연구 과제하기','집안일/개인 생활','기타 (직접 입력)'];
 // 고민거리 카테고리(문제의 종류)와 별개인 두 축: 무엇을 다루나(대상) × 어떤 일인가(업무 유형)
 // 업계 안 가리게 범용으로: 제조업 전용 용어(소재/공정/양산 등) 빼고 어디서나 쓸 수 있는 말로
 let TARGETS = ['고객/문의','상품·서비스','데이터·자료','문서·보고','시설·재고','사람·일정','기타'];
@@ -758,7 +758,7 @@ const SECTIONS = [
   T('s1_name','씨앗 이름','예: 매장 재고 확인·발주 자동화 검토 / 예약 노쇼 알림 / 문의 답변 초안 작성', true),
   Object.assign(CL('s1_workarea','나의 활동 영역', [], true), {optsFn:()=>WORK_AREAS}),
   T('s1_workarea_etc','활동 영역 직접 입력 (기타 선택 시)','예: 연구, 창작, 봉사 등'),
-  Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>{ const area=getV('s1_workarea',''); if(!area||area==='직장 업무') return Object.keys(CATEGORIES); if(area==='사업·프리랜서') return ['① 업무관리형','③ 분석·판단지원형','④ 문서·보고 자동화형','⑤ 업무 프로세스 자동화형']; if(area==='학업/연구') return ['② 정보검색·지식형','③ 분석·판단지원형','① 업무관리형']; if(area==='취업 준비'||area==='이직/커리어 전환') return ['④ 문서·보고 자동화형','② 정보검색·지식형','③ 분석·판단지원형']; if(area==='집안일/개인 생활') return ['① 업무관리형','② 정보검색·지식형']; return Object.keys(CATEGORIES); }}),
+  Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>{ const area=getV('s1_workarea',''); if(!area||area==='업무/사업 처리하기') return Object.keys(CATEGORIES); if(area==='공부·연구 과제하기') return ['② 정보검색·지식형','③ 분석·판단지원형','① 업무관리형']; if(area==='채용 서류 준비하기') return ['④ 문서·보고 자동화형','② 정보검색·지식형','③ 분석·판단지원형']; if(area==='집안일/개인 생활') return ['① 업무관리형','② 정보검색·지식형']; return Object.keys(CATEGORIES); }}),
   Object.assign(CL('s1_catsub','세부 목적 (카테고리를 고르면 나옵니다)', [], true), {optsFn:()=>CATEGORIES[getV('s1_cat','')]||[]}),
   CL('s1_target','대상 (무엇을 다루나)', TARGETS, true),
   CL('s1_worktype','작업 성격 (AI 적합성 판단에 사용)', WORK_TYPES, true),
@@ -5301,12 +5301,9 @@ window.parseDiscordIntro = function(){
 
   // 활동 영역 자동 선택
   const WORK_AREA_MAP = [
-    {keywords:['이직','커리어 전환','커리어전환'], value:'이직/커리어 전환'},
-    {keywords:['직장','직딩','재직','회사'], value:'직장 업무'},
-    {keywords:['취준','취업준비','취업 준비','구직'], value:'취업 준비'},
-    {keywords:['대학원','연구','논문'], value:'학업/연구'},
-    {keywords:['학생','대학','고등','중학'], value:'학업/연구'},
-    {keywords:['프리랜서','부업','사업','N잡','n잡'], value:'사업·프리랜서'},
+    {keywords:['이직','커리어 전환','커리어전환','취준','취업준비','취업 준비','구직','자소서','이력서'], value:'채용 서류 준비하기'},
+    {keywords:['대학원','연구','논문','학생','대학','고등','중학'], value:'공부·연구 과제하기'},
+    {keywords:['직장','직딩','재직','회사','프리랜서','부업','사업','N잡','n잡'], value:'업무/사업 처리하기'},
   ];
   let detectedArea = '';
   for(const m of WORK_AREA_MAP){
@@ -5735,7 +5732,7 @@ function renderDiscoverSection(){
     }
   };
   // 카테고리(+업무영역)로 어떤 예시를 보여줄지 결정
-  const exampleKey = (workarea==='취업 준비'||workarea==='이직/커리어 전환') ? '자소서'
+  const exampleKey = workarea==='채용 서류 준비하기' ? '자소서'
     : cat==='② 정보검색·지식형' ? '수행평가'
     : EXAMPLES[cat] ? cat
     : '보고서';
