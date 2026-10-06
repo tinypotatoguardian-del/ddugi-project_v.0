@@ -5747,6 +5747,9 @@ function renderDiscoverSection(){
           '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">🥔 나쁜 예</b> — 막연한 질문<br><span style="white-space:pre-wrap;">'+esc(exampleSet.a)+'</span></div>'+
           '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">🙂 괜찮은 예</b> — 구체화됨<br><span style="white-space:pre-wrap;">'+esc(exampleSet.b)+'</span></div>'+
           '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">✅ 좋은 예</b> — 역할+상황+제약+요청<br><span style="white-space:pre-wrap;">'+esc(exampleSet.c)+'</span></div>'+
+          (exampleKey==='자소서'
+            ? '<div style="font-size:11px;color:var(--ink-soft);border-top:1px solid var(--line-soft);padding-top:8px;">💡 자소서는 지원처마다 주제·분량이 달라져서, 매번 처음부터 쓰기보다 "내 경험 조각들"(프로젝트, 성과, 에피소드)을 메모장 등에 로컬로 정리해두고 필요한 부분만 골라 AI에 붙여넣는 방식을 추천해요. 로컬 RAG(내 자료 중 관련된 것만 찾아 쓰는 방식)와 비슷한 개념이에요 — 민감한 개인 경험을 서버에 저장하지 않아도 돼요.</div>'
+            : '')+
         '</div>'+
       '</details>'
     : '';
