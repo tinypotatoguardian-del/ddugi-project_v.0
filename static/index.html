@@ -4981,13 +4981,15 @@ function renderAIQuestions(){
 
 
 function renderCurriculumSection(){
-  // 학생 / 대학생·취준 / 직장인 3탭 버전
-  window._curriculumTab = window._curriculumTab || 'teen';
+  // 업무 영역(01번 WORK_AREAS)과 동일한 5개 기준으로 통일
+  window._curriculumTab = window._curriculumTab || 'work';
 
   const tabs = [
-    { id:'teen',   label:'📚 학생', desc:'AI 첫 만남부터 진로 탐색까지' },
-    { id:'career', label:'💼 대학생·취준', desc:'공부·자소서·직무 연결하기' },
-    { id:'work',   label:'🏢 직장인', desc:'업무 보조·자동화·AX 설계' }
+    { id:'work',   label:'🏢 업무/사업 처리하기', desc:'업무 보조·자동화·AX 설계' },
+    { id:'career', label:'💼 채용 서류 준비하기', desc:'공부·자소서·직무 연결하기' },
+    { id:'teen',   label:'📚 공부·연구 과제하기', desc:'AI 첫 만남부터 진로 탐색까지' },
+    { id:'home',   label:'🏠 집안일/개인 생활', desc:'준비 중' },
+    { id:'etc',    label:'✨ 기타', desc:'준비 중' }
   ];
 
   const levels = {
@@ -5094,7 +5096,9 @@ function renderCurriculumSection(){
         cases:[{who:'IT기업 PM · 8년차', what:'"AI 도입하자"는 경영진 지시 → 어디서 시작해야 할지 몰랐음.', result:'ddugi로 5개 업무 후보 탐색 → AI 필요한 것 2개·불필요한 것 3개 구분 → 우선순위 명확해짐'},{who:'제조업 팀장 · 20년차', what:'보고서 AI 자동 생성 만들었는데 직원들이 안 씀.', result:'사용자 인터뷰 → "결과물 믿을 수가 없어요" → Human-in-the-loop 구조로 재설계'}],
         mission:{time:'30분', task:'ddugi 씨앗 찾기(00번)에서 팀의 업무를 자유롭게 설명하고\nAI가 찾아주는 개선 후보 2~3개 받아보기.\n→ "적합" 판정 받은 것만 다음 단계로\n→ 개발 역량 없어도 OK — 업무 재설계가 핵심', check:'AI 적합·부적합 판정 결과를 팀에 공유할 수 있겠다 싶으면 성공.', link:true},
         next:'AI 때문에 업무 방식 자체가 바뀌었는가?', nextLv:null}
-    ]
+    ],
+    home: [],
+    etc: []
   };
 
   function tHtml(){
@@ -5164,7 +5168,8 @@ function renderCurriculumSection(){
     const el=document.getElementById('curricWrap'); if(el) el.innerHTML=buildC3();
   };
   function buildC3(){
-    const tab=window._curriculumTab||'teen', list=levels[tab];
+    const tab=window._curriculumTab||'work', list=levels[tab];
+    if(!list.length) return tHtml()+'<div style="padding:40px 20px;text-align:center;color:var(--ink-soft);font-size:13px;border:1px solid var(--line-soft);border-radius:var(--radius);">🛠️ 준비 중이에요. 곧 채워질게요!</div>';
     return tHtml()+accHtml(list);
   }
   return '<div id="curricWrap">'+buildC3()+'</div>';
