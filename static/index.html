@@ -2684,6 +2684,7 @@ function renderDashboardSection(){
   return '<div class="frame"><h2>☰ 마음의 방 전경</h2><div class="sub">ADMIN VIEW</div>'+
     '<div class="hint">전체 팀원의 작성 현황이에요 (작성자 이름 기준으로 한 명당 최신 것 하나만). 새로고침으로 최신 상태를 다시 불러올 수 있어요.</div>'+
     '<div class="exportbar"><button type="button" id="refreshDash" class="secondary">새로고침</button>'+
+    '<button type="button" class="secondary" data-action="submission-delete-empty">🗑️ 빈 기록 전체 삭제</button>'+
     '<button type="button" class="secondary" data-admin-pw>비밀번호 변경</button>'+
     '<button type="button" id="adminLogoutBtn2" class="secondary">관리자 모드 끄기</button></div>'+
     // 초대코드 관리 (마스터/관리자)
@@ -6172,7 +6173,11 @@ document.addEventListener('click', async function(e){
     if(!confirm('아무 항목도 안 채운 빈 기록을 전부 지울까요? 되돌릴 수 없어요.')) return;
     fetch('/api/admin/submissions/empty', {method:'DELETE', headers: authHeaders()})
       .then(async r=>{
-        if(r.ok){ const d = await r.json(); alert(d.deleted+'건 지웠어요.'); renderTaskList(); }
+        if(r.ok){
+          const d = await r.json(); alert(d.deleted+'건 지웠어요.');
+          if(document.getElementById('taskListBody')) renderTaskList();
+          if(document.getElementById('dashboardBody')) renderDashboard();
+        }
         else alert(await adminErrorText(r));
       })
       .catch(()=>alert('서버에 연결할 수 없어요.'));
