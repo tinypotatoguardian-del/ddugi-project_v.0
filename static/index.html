@@ -4983,7 +4983,6 @@ function renderAIQuestions(){
 function renderCurriculumSection(){
   // 학생 / 대학생·취준 / 직장인 3탭 버전
   window._curriculumTab = window._curriculumTab || 'teen';
-  window._curriculumIdx = window._curriculumIdx || 0;
 
   const tabs = [
     { id:'teen',   label:'📚 학생', desc:'AI 첫 만남부터 진로 탐색까지' },
@@ -5108,29 +5107,23 @@ function renderCurriculumSection(){
       }).join('')+'</div>';
   }
 
-  function fHtml(list){
-    return '<div style="display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;">' +
-      list.map((l,i)=>{
-        const a=i===(window._curriculumIdx||0);
-        return '<button type="button" onclick="curricSelect('+i+')" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;">'+
-          '<div style="width:52px;height:52px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';transition:all .15s;">'+
-            '<span style="font-size:9px;font-weight:700;color:'+(a?'var(--blueprint)':'var(--placeholder)')+'">'+l.lv.replace('LV.','Step ')+'</span>'+
-            '<span style="font-size:17px;">'+l.icon+'</span>'+
-          '</div>'+
-          '<span style="font-size:10px;color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';text-align:center;max-width:60px;line-height:1.3;word-break:keep-all;">'+l.title+'</span>'+
-        '</button>'+(i<list.length-1?'<div style="width:28px;height:2px;background:var(--line);margin-bottom:20px;flex-shrink:0;"></div>':'');
-      }).join('')+'</div>';
+  function accHtml(list){
+    return list.map((l,i)=>
+      '<details id="curricStep'+i+'" '+(i===0?'open':'')+' style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;">'+
+        '<summary style="cursor:pointer;list-style:none;padding:16px 20px;display:flex;align-items:center;gap:14px;background:var(--panel);">'+
+          '<div style="width:44px;height:44px;border-radius:10px;background:var(--blueprint-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">'+
+            '<span style="font-size:9px;color:var(--blueprint);font-weight:700;">'+l.lv.replace('LV.','Step ')+'</span><span style="font-size:18px;">'+l.icon+'</span></div>'+
+          '<div style="flex:1;"><div style="font-size:16px;font-weight:700;color:var(--ink);">'+l.title+'</div>'+
+            '<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:2px;">'+l.q+'</div></div>'+
+          '<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--line-soft);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
+        '</summary>'+
+        bHtml(l,i)+
+      '</details>'
+    ).join('');
   }
 
-  function cHtml(l,i){
-    return '<div style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">'+
-      '<div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;">'+
-        '<div style="width:44px;height:44px;border-radius:10px;background:var(--blueprint-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">'+
-          '<span style="font-size:9px;color:var(--blueprint);font-weight:700;">'+l.lv.replace('LV.','Step ')+'</span><span style="font-size:18px;">'+l.icon+'</span></div>'+
-        '<div style="flex:1;"><div style="font-size:16px;font-weight:700;color:var(--ink);">'+l.title+'</div>'+
-          '<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:2px;">'+l.q+'</div></div>'+
-        '<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--line-soft);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
-      '</div>'+
+  function bHtml(l,i){
+    return '<div style="border-top:1px solid var(--line);">'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;">'+
         '<div style="padding:16px 20px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);">'+
           '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);margin-bottom:8px;">배우는 것</div>'+
@@ -5162,23 +5155,17 @@ function renderCurriculumSection(){
       '<div style="padding:12px 20px;background:var(--panel);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
         '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);">'+(l.nextLv?'다음 레벨 조건':'이후')+'</span>'+
         '<span style="font-size:12px;color:var(--ink);flex:1;">'+l.next+'</span>'+
-        (l.nextLv?'<button type="button" onclick="curricSelect('+(i+1)+')" style="font-size:12px;padding:5px 14px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--blueprint);font-weight:600;cursor:pointer;">'+l.nextLv+'</button>':'')+
+        (l.nextLv?'<button type="button" onclick="const d=document.getElementById(\'curricStep'+(i+1)+'\');if(d){d.open=true;d.scrollIntoView({behavior:\'smooth\',block:\'start\'});}" style="font-size:12px;padding:5px 14px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--blueprint);font-weight:600;cursor:pointer;">'+l.nextLv+'</button>':'')+
       '</div></div>';
   }
 
   window.curricTab = function(id){
-    window._curriculumTab=id; window._curriculumIdx=0;
-    const el=document.getElementById('curricWrap'); if(el) el.innerHTML=buildC3();
-  };
-  window.curricSelect = function(idx){
-    window._curriculumIdx=idx;
+    window._curriculumTab=id;
     const el=document.getElementById('curricWrap'); if(el) el.innerHTML=buildC3();
   };
   function buildC3(){
     const tab=window._curriculumTab||'teen', list=levels[tab];
-    const idx=Math.min(window._curriculumIdx||0, list.length-1);
-    window._curriculumIdx=idx;
-    return tHtml()+fHtml(list)+cHtml(list[idx],idx);
+    return tHtml()+accHtml(list);
   }
   return '<div id="curricWrap">'+buildC3()+'</div>';
 }
