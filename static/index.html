@@ -550,7 +550,7 @@ let CATEGORIES = {
   '⑤ 업무 프로세스 자동화형': ['반복 입력','자료 취합','데이터 정리','검토/분류','여러 시스템 간 정보 전달']
 };
 // 업무 영역: 이 고민거리가 내 삶의 어느 영역 일인지 (기타는 직접 입력)
-let WORK_AREAS = ['직장 업무','개인 사업/부업','학업','집안일/개인 생활','기타 (직접 입력)'];
+let WORK_AREAS = ['직장 업무','개인 사업/부업','학업','취업 준비','집안일/개인 생활','기타 (직접 입력)'];
 // 고민거리 카테고리(문제의 종류)와 별개인 두 축: 무엇을 다루나(대상) × 어떤 일인가(업무 유형)
 // 업계 안 가리게 범용으로: 제조업 전용 용어(소재/공정/양산 등) 빼고 어디서나 쓸 수 있는 말로
 let TARGETS = ['고객/문의','상품·서비스','데이터·자료','문서·보고','시설·재고','사람·일정','기타'];
@@ -758,7 +758,7 @@ const SECTIONS = [
   T('s1_name','씨앗 이름','예: 매장 재고 확인·발주 자동화 검토 / 예약 노쇼 알림 / 문의 답변 초안 작성', true),
   Object.assign(CL('s1_workarea','나의 활동 영역', [], true), {optsFn:()=>WORK_AREAS}),
   T('s1_workarea_etc','활동 영역 직접 입력 (기타 선택 시)','예: 연구, 창작, 봉사 등'),
-  Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>{ const area=getV('s1_workarea',''); if(!area||area==='직장 업무') return Object.keys(CATEGORIES); if(area==='개인 사업/부업') return ['① 업무관리형','③ 분석·판단지원형','④ 문서·보고 자동화형','⑤ 업무 프로세스 자동화형']; if(area==='학업') return ['② 정보검색·지식형','③ 분석·판단지원형','① 업무관리형']; if(area==='집안일/개인 생활') return ['① 업무관리형','② 정보검색·지식형']; return Object.keys(CATEGORIES); }}),
+  Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>{ const area=getV('s1_workarea',''); if(!area||area==='직장 업무') return Object.keys(CATEGORIES); if(area==='개인 사업/부업') return ['① 업무관리형','③ 분석·판단지원형','④ 문서·보고 자동화형','⑤ 업무 프로세스 자동화형']; if(area==='학업') return ['② 정보검색·지식형','③ 분석·판단지원형','① 업무관리형']; if(area==='취업 준비') return ['④ 문서·보고 자동화형','② 정보검색·지식형','③ 분석·판단지원형']; if(area==='집안일/개인 생활') return ['① 업무관리형','② 정보검색·지식형']; return Object.keys(CATEGORIES); }}),
   Object.assign(CL('s1_catsub','세부 목적 (카테고리를 고르면 나옵니다)', [], true), {optsFn:()=>CATEGORIES[getV('s1_cat','')]||[]}),
   CL('s1_target','대상 (무엇을 다루나)', TARGETS, true),
   CL('s1_worktype','작업 성격 (AI 적합성 판단에 사용)', WORK_TYPES, true),
@@ -5302,7 +5302,7 @@ window.parseDiscordIntro = function(){
   // 활동 영역 자동 선택
   const WORK_AREA_MAP = [
     {keywords:['직장','직딩','재직','회사'], value:'직장 업무'},
-    {keywords:['취준','취업준비','취업 준비','구직'], value:'학업'},
+    {keywords:['취준','취업준비','취업 준비','구직'], value:'취업 준비'},
     {keywords:['학생','대학','고등','중학','대학원'], value:'학업'},
     {keywords:['프리랜서','부업','사업'], value:'개인 사업/부업'},
   ];
@@ -5732,6 +5732,22 @@ function renderDiscoverSection(){
       c:'역할: 수행평가 멘토\n과목: 사회문화 고2\n조건: 설문 가능, 통계 자료 활용, 4주 안에 완성\n형식: 주제명 / 탐구 가능한 이유 / 예상 결론 / 함정\n\n위 형식으로 3개 제안해줘.'
     }
   };
+  // 카테고리(+업무영역)로 어떤 예시를 보여줄지 결정
+  const exampleKey = workarea==='취업 준비' ? '자소서'
+    : cat==='② 정보검색·지식형' ? '수행평가'
+    : EXAMPLES[cat] ? cat
+    : '보고서';
+  const exampleSet = EXAMPLES[exampleKey];
+  const examplesHtml = exampleSet
+    ? '<details style="margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;">'+
+        '<summary style="cursor:pointer;padding:10px 14px;font-size:12px;color:var(--ink-soft);list-style:none;">▶ 이렇게 비교해보면 좋아요 (나쁜 예 / 괜찮은 예 / 좋은 예)</summary>'+
+        '<div style="padding:4px 14px 14px;display:flex;flex-direction:column;gap:8px;">'+
+          '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">🥔 나쁜 예</b> — 막연한 질문<br><span style="white-space:pre-wrap;">'+esc(exampleSet.a)+'</span></div>'+
+          '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">🙂 괜찮은 예</b> — 구체화됨<br><span style="white-space:pre-wrap;">'+esc(exampleSet.b)+'</span></div>'+
+          '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">✅ 좋은 예</b> — 역할+상황+제약+요청<br><span style="white-space:pre-wrap;">'+esc(exampleSet.c)+'</span></div>'+
+        '</div>'+
+      '</details>'
+    : '';
 
   // 내 프롬프트 조립
   const customKey = 'discover_step2_prompt';
@@ -5850,6 +5866,7 @@ function renderDiscoverSection(){
             })() : '<div id="judgeResult" style="margin-top:12px;"></div>')
           : '<div style="font-size:12px;color:var(--ink-soft);">마음의 방 입구에서 고민을 먼저 적어줘!</div>'
         )+
+        examplesHtml+
       '</div>'+
       // 수동 선택 (접혀있음)
       '<details style="border-top:1px solid var(--line-soft);">'+
