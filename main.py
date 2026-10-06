@@ -1730,6 +1730,7 @@ def list_guestbook():
 class JudgeIn(BaseModel):
     text: str          # 문제 설명 (씨앗이름 + 자유텍스트 등)
     api_key: str = ""  # 사용자 본인 Claude API 키 (없으면 키워드 판정)
+    has_plan: bool = False  # 핵심 문제·해결 방향 가설이 이미 구조화되어 있는지
 
 @app.post("/api/discover/judge")
 def discover_judge(body: JudgeIn):
@@ -1747,9 +1748,13 @@ def discover_judge(body: JudgeIn):
         try:
             import urllib.request as _urllib
             import json as _json
+            plan_note = (
+                "\n\n참고: 이 문제는 핵심 문제와 해결 방향 가설까지 이미 구체화되어 있어요. "
+                "막연하다는 이유로 'redefine'을 주지 마세요." if body.has_plan else ""
+            )
             prompt = (
                 "아래 업무/문제가 AI 도구 활용에 적합한지 판단해줘.\n\n"
-                f"문제: {text}\n\n"
+                f"문제: {text}{plan_note}\n\n"
                 "아래 JSON 형식으로만 답해줘 (설명 없이):\n"
                 '{"judgment": "possible" | "redefine" | "unnecessary", "reason": "2~3줄 이유"}\n\n'
                 "판단 기준:\n"
@@ -1804,7 +1809,11 @@ def discover_judge(body: JudgeIn):
     s_redefine = score(redefine_kw)
     s_unnecessary = score(unnecessary_kw)
 
-    if s_redefine > s_possible and s_redefine > s_unnecessary:
+    if body.has_plan:
+        # 핵심 문제·해결 방향 가설이 이미 구조화돼 있으면 "막연함" 키워드만으로 재정의를 요구하지 않음
+        judgment = "possible"
+        reason = "핵심 문제와 해결 방향까지 이미 구체화되어 있어요. 이대로 진행해도 돼요."
+    elif s_redefine > s_possible and s_redefine > s_unnecessary:
         judgment = "redefine"
         reason = "문제가 아직 막연해요. 구체적으로 어떤 상황인지, 어떤 결과를 원하는지 더 적어줘요."
     elif s_unnecessary > s_possible:

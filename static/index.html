@@ -1764,14 +1764,17 @@ window.runDiscoverJudge = async function(){
   const workarea  = String(window._state?.fields?.s1_workarea || '').trim();
   const cat       = String(window._state?.fields?.s1_cat || '').trim();
   const freetext  = String(window._state?.fields?.intro_freetext || '').trim();
-  const text = [seedName, workarea, cat, freetext].filter(Boolean).join(' / ');
+  const core      = String(window._state?.fields?.s2_core || '').trim();
+  const hypo      = String(window._state?.fields?.s1_hypo || '').trim();
+  const text = [seedName, workarea, cat, freetext, core, hypo].filter(Boolean).join(' / ');
+  const hasPlan = !!(core || hypo);
   const apiKey = sessionStorage.getItem('_ddugi_tmp_key') || '';
 
   try{
     const res = await fetch('/api/discover/judge', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({text, api_key: apiKey})
+      body: JSON.stringify({text, api_key: apiKey, has_plan: hasPlan})
     });
     const d = await res.json();
     if(!res.ok) throw new Error(d.detail||'서버 오류');
@@ -4486,13 +4489,20 @@ const AI_TOOLS_DATA = {
         {
           name: 'ChatGPT', url: 'https://chat.openai.com', type: '대화형 AI',
           free: true, paid: '플러스 $20/월',
-          best: '일상 대화·글쓰기·공부·코딩',
+          best: '일상 대화·글쓰기·공부',
           weak: '최신 정보 없을 수 있음 (무료 기준)',
           models: [
             { name: 'GPT-4o', desc: '현재 가장 강력. 글·이미지·음성 다 처리', tag: '최신' },
             { name: 'GPT-4o mini', desc: '빠르고 가벼운 버전. 무료 사용자용', tag: '무료' },
-            { name: 'o3 / o4-mini', desc: '수학·코딩·논리 추론에 특화된 모델', tag: '추론' },
+            { name: 'o3 / o4-mini', desc: '수학·논리 추론에 특화된 모델', tag: '추론' },
           ]
+        },
+        {
+          name: 'Codex', url: 'https://chatgpt.com/codex', type: '코딩 전문 AI',
+          free: false, paid: 'ChatGPT Plus 포함',
+          best: '코딩·코드 작성/리뷰·터미널에서 작업 실행',
+          weak: '일반 대화·글쓰기 용도로는 안 맞음',
+          models: [{ name: 'codex-1', desc: 'OpenAI의 코딩 특화 모델. 실제 코드 실행까지', tag: '코딩' }]
         },
         {
           name: 'Sora', url: 'https://sora.com', type: '영상 생성 AI',
@@ -4675,7 +4685,7 @@ const AI_TOOLS_DATA = {
     { situation: '공부·개념 이해', tools: ['ChatGPT', 'Gemini'], reason: '쉬운 설명 잘 해줌. Gemini는 유튜브 영상도 분석 가능' },
     { situation: '최신 정보·뉴스', tools: ['Perplexity', 'Gemini', 'Grok'], reason: '실시간 웹 검색 + 출처 제공' },
     { situation: '긴 문서 분석·논문', tools: ['NotebookLM', 'Claude', 'Gemini'], reason: '긴 문서 처리 능력 우수' },
-    { situation: '코딩·개발', tools: ['Claude', 'ChatGPT', 'DeepSeek'], reason: 'Claude가 코드 품질 높음. DeepSeek는 무료로 고성능' },
+    { situation: '코딩·개발', tools: ['Claude', 'Codex', 'DeepSeek'], reason: 'Claude가 코드 품질 높음. Codex는 OpenAI의 코딩 전문 AI. DeepSeek는 무료로 고성능' },
     { situation: '이미지 만들기', tools: ['Gemini', 'DALL-E'], reason: 'Gemini는 무료 포함. DALL-E는 ChatGPT Plus 필요' },
     { situation: '한국어 특화', tools: ['CLOVA X', 'ChatGPT', 'Claude'], reason: 'CLOVA X는 한국어 뉘앙스 강함' },
     { situation: '수학·논리 문제', tools: ['DeepSeek-R1', 'GPT o3', 'Claude'], reason: '추론 특화 모델들' },
