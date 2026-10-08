@@ -1137,34 +1137,42 @@ class UserRegisterIn(BaseModel):
     username: str
     password: str
     nickname: str = ""   # 비우면 서버가 감자명 자동 배정
-    invite_code: str = ""
 
-# ── 감자명 자동 배정 ──────────────────────────────────────────
-_GAMJA_NAMES = [
-    "뜨끈감자","바삭감자","포실감자","달콤감자","쫄깃감자","보들감자","고소감자","촉촉감자",
-    "졸린감자","배고픈감자","신난감자","진지감자","통통감자","동그란감자","작은감자","큰감자",
-    "노란감자","보라감자","하얀감자","까만감자","새벽감자","아침감자","저녁감자","뜨거운감자",
-    "차가운감자","부드감자","포근감자","따뜻감자","시원감자","맑은감자","맛있는감자","귀여운감자",
-    "졸업감자","프리감자","취준감자","바쁜감자","한가한감자","조용한감자","활발한감자","느긋감자",
-    "재빠른감자","꼼꼼감자","엉뚱감자","진중한감자","유쾌한감자","소심한감자","대담한감자","끈기감자",
-    "호기심감자","탐구감자","창의감자","논리감자","감성감자","직관감자","분석감자","실행감자",
-]
+# ── 감자명 랜덤 생성 (조합형 무한 생성) ─────────────────────────
+_GAMJA_COLOR   = ["빨간","노란","초록","파란","보라","주황","하얀","까만","분홍","금빛","은빛","투명한","무지개","파릇한","누런","연두"]
+_GAMJA_STATE   = ["바삭","포실","뜨끈","차가운","촉촉","고소한","달콤한","쫄깃","보들","짭짤한","매운","담백한","포근한","부드러운","탄","삶은","구운","튀긴","날"]
+_GAMJA_MOOD    = ["졸린","신난","설레는","화난","멍한","지친","배고픈","뿌듯한","당황한","진지한","느긋한","조용한","활발한","엉뚱한","꼼꼼한","대담한"]
+_GAMJA_SHAPE   = ["동그란","통통한","작은","큰","반쪽","쪼그란","납작한","뾰족한","길쭉한","퉁퉁한"]
+_GAMJA_ACTION  = ["굴러온","솟아난","숨은","늦은","빠른","걸어온","날아온","떠내려온","심긴","캐낸"]
+_GAMJA_SEASON  = ["새벽","아침","봄날","여름","가을","겨울","비오는날","맑은날","안개낀","눈오는날"]
+_GAMJA_EXTRA   = ["우주","바다속","산꼭대기","지하","옥상","골목","창가","이불속","서랍속","주머니속"]
+
+def _random_gamja_name() -> str:
+    import random
+    patterns = [
+        lambda: random.choice(_GAMJA_COLOR) + random.choice(_GAMJA_STATE) + "감자",
+        lambda: random.choice(_GAMJA_STATE) + random.choice(_GAMJA_MOOD) + "감자",
+        lambda: random.choice(_GAMJA_MOOD) + "감자",
+        lambda: random.choice(_GAMJA_ACTION) + "감자",
+        lambda: random.choice(_GAMJA_SEASON) + random.choice(_GAMJA_STATE) + "감자",
+        lambda: random.choice(_GAMJA_SHAPE) + random.choice(_GAMJA_COLOR) + "감자",
+        lambda: random.choice(_GAMJA_EXTRA) + "감자",
+        lambda: random.choice(_GAMJA_COLOR) + random.choice(_GAMJA_MOOD) + "감자",
+        lambda: random.choice(_GAMJA_STATE) + random.choice(_GAMJA_SHAPE) + "감자",
+        lambda: random.choice(_GAMJA_ACTION) + random.choice(_GAMJA_STATE) + "감자",
+    ]
+    return random.choice(patterns)()
 
 def _assign_gamja_name(conn) -> str:
-    """사용 중이지 않은 감자명 랜덤 배정. 모두 소진되면 번호 붙여서 반환."""
+    """중복 없는 감자명 생성. 조합형으로 사실상 무한."""
     import random
-    pool = list(_GAMJA_NAMES)
-    random.shuffle(pool)
     q = "SELECT nickname FROM users WHERE nickname=%s" if USE_PG else "SELECT nickname FROM users WHERE nickname=?"
-    for name in pool:
+    for _ in range(50):
+        name = _random_gamja_name()
         if not db_fetchone(conn, q, (name,)):
             return name
-    # 모두 소진된 경우 번호 붙이기
-    for i in range(2, 999):
-        name = f"감자{i}"
-        if not db_fetchone(conn, q, (name,)):
-            return name
-    return "감자"
+    # 50번 충돌 시 타임스탬프 붙여서 반환
+    return f"감자{int(time.time()) % 100000}"
 
 class UserLoginIn(BaseModel):
     username: str

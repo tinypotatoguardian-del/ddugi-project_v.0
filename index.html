@@ -550,7 +550,7 @@ let CATEGORIES = {
   '⑤ 업무 프로세스 자동화형': ['반복 입력','자료 취합','데이터 정리','검토/분류','여러 시스템 간 정보 전달']
 };
 // 업무 영역: 이 고민거리가 내 삶의 어느 영역 일인지 (기타는 직접 입력)
-let WORK_AREAS = ['직장 업무','개인 사업/부업','학업','집안일/개인 생활','기타 (직접 입력)'];
+let WORK_AREAS = ['업무/사업 처리하기','채용 서류 준비하기','공부·연구 과제하기','집안일/개인 생활','기타 (직접 입력)'];
 // 고민거리 카테고리(문제의 종류)와 별개인 두 축: 무엇을 다루나(대상) × 어떤 일인가(업무 유형)
 // 업계 안 가리게 범용으로: 제조업 전용 용어(소재/공정/양산 등) 빼고 어디서나 쓸 수 있는 말로
 let TARGETS = ['고객/문의','상품·서비스','데이터·자료','문서·보고','시설·재고','사람·일정','기타'];
@@ -757,8 +757,8 @@ const SECTIONS = [
   SUBHEAD('기본 정보'),
   T('s1_name','씨앗 이름','예: 매장 재고 확인·발주 자동화 검토 / 예약 노쇼 알림 / 문의 답변 초안 작성', true),
   Object.assign(CL('s1_workarea','나의 활동 영역', [], true), {optsFn:()=>WORK_AREAS}),
-  T('s1_workarea_etc','활동 영역 직접 입력 (기타 선택 시)','예: 연구, 창작, 봉사 등'),
-  Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>{ const area=getV('s1_workarea',''); if(!area||area==='직장 업무') return Object.keys(CATEGORIES); if(area==='개인 사업/부업') return ['① 업무관리형','③ 분석·판단지원형','④ 문서·보고 자동화형','⑤ 업무 프로세스 자동화형']; if(area==='학업') return ['② 정보검색·지식형','③ 분석·판단지원형','① 업무관리형']; if(area==='집안일/개인 생활') return ['① 업무관리형','② 정보검색·지식형']; return Object.keys(CATEGORIES); }}),
+  T('s1_workarea_etc','활동 영역 직접 입력 (기타 선택 시)','예: 돌봄(육아·간병), 재테크/투자 관리, 동아리·모임 운영, 봉사활동, 취미 창작(글·그림·음악), 건강관리, 여행 계획 등'),
+  Object.assign(RD('s1_cat','씨앗 카테고리 (문제의 종류)', []), {optsFn:()=>{ const area=getV('s1_workarea',''); if(!area||area==='업무/사업 처리하기') return Object.keys(CATEGORIES); if(area==='공부·연구 과제하기') return ['② 정보검색·지식형','③ 분석·판단지원형','① 업무관리형']; if(area==='채용 서류 준비하기') return ['④ 문서·보고 자동화형','② 정보검색·지식형','③ 분석·판단지원형']; if(area==='집안일/개인 생활') return ['① 업무관리형','② 정보검색·지식형']; return Object.keys(CATEGORIES); }}),
   Object.assign(CL('s1_catsub','세부 목적 (카테고리를 고르면 나옵니다)', [], true), {optsFn:()=>CATEGORIES[getV('s1_cat','')]||[]}),
   CL('s1_target','대상 (무엇을 다루나)', TARGETS, true),
   CL('s1_worktype','작업 성격 (AI 적합성 판단에 사용)', WORK_TYPES, true),
@@ -1585,7 +1585,7 @@ function showChangelog(){
     '<h2 style="margin:0 0 16px;font-size:17px;">📋 업데이트 이력</h2>'+
     log.map(l=>'<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line-soft);">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'+
-        '<span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;'+( tagColor[l.tag]||'')+'">'+l.tag+'</span>'+
+        '<span style="font-size:11px;padding:3px 10px;border-radius:999px;font-weight:700;'+( tagColor[l.tag]||'')+'">'+l.tag+'</span>'+
         '<span style="font-size:14px;font-weight:700;color:var(--ink);">'+l.title+'</span>'+
         '<span style="font-size:11px;color:var(--ink-soft);margin-left:auto;">'+l.date+'</span>'+
       '</div>'+
@@ -1764,14 +1764,17 @@ window.runDiscoverJudge = async function(){
   const workarea  = String(window._state?.fields?.s1_workarea || '').trim();
   const cat       = String(window._state?.fields?.s1_cat || '').trim();
   const freetext  = String(window._state?.fields?.intro_freetext || '').trim();
-  const text = [seedName, workarea, cat, freetext].filter(Boolean).join(' / ');
+  const core      = String(window._state?.fields?.s2_core || '').trim();
+  const hypo      = String(window._state?.fields?.s1_hypo || '').trim();
+  const text = [seedName, workarea, cat, freetext, core, hypo].filter(Boolean).join(' / ');
+  const hasPlan = !!(core || hypo);
   const apiKey = sessionStorage.getItem('_ddugi_tmp_key') || '';
 
   try{
     const res = await fetch('/api/discover/judge', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({text, api_key: apiKey})
+      body: JSON.stringify({text, api_key: apiKey, has_plan: hasPlan})
     });
     const d = await res.json();
     if(!res.ok) throw new Error(d.detail||'서버 오류');
@@ -2377,7 +2380,8 @@ function renderTaskListBody(){
       '<td>'+esc(v.ip||'-')+'</td>'+
       '<td>'+esc(t.cat||'-')+(t.target&&t.target.length ? '<br><small>'+esc(t.target.join(', '))+'</small>' : '')+'</td>'+
       '<td>'+esc(TASK_STAGE_LABELS[v.stageIdx])+'</td><td>'+esc(learn)+'</td><td>'+esc(rec)+'</td><td>'+esc(when)+'</td>'+
-      '<td><button type="button" class="chip-btn" data-action="submission-delete" data-target="'+esc(v.docId)+'">삭제</button></td></tr>';
+      '<td><button type="button" class="chip-btn" data-action="submission-view" data-target="'+esc(v.docId)+'">보기</button> '+
+        '<button type="button" class="chip-btn" data-action="submission-delete" data-target="'+esc(v.docId)+'">삭제</button></td></tr>';
   }).join('');
   body.innerHTML = '<table class="dtable"><thead><tr><th>씨앗 이름</th><th>부서·담당자</th><th>IP</th><th>카테고리·대상</th><th>진행 단계</th><th>학습 레벨</th><th>인정 레벨</th><th>마지막 저장</th><th></th></tr></thead><tbody>'+trs+'</tbody></table>';
 }
@@ -2390,15 +2394,44 @@ function renderMyDashSection(){
   const seedName = getV('s1_name','') || '(아직 씨앗 이름을 안 썼어요)';
   const hasAnyData = SECTIONS.some(s=>!s.special && sectionFilled(s));
 
+  const status = state.completed ? '완료' : (state.locked ? '저장됨' : '작성중');
+  const statusBadge = status==='완료'
+    ? '<span style="padding:3px 10px;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-size:11px;font-weight:700;">✅ 완료</span>'
+    : status==='저장됨'
+    ? '<span style="padding:3px 10px;border-radius:999px;background:var(--panel);color:var(--ink-soft);font-size:11px;font-weight:700;">🔒 저장됨</span>'
+    : '<span style="padding:3px 10px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-size:11px;font-weight:700;">✏️ 작성중</span>';
+  const stageIdx = taskStageIdx({
+    completed: state.completed,
+    task: {
+      hasVerify: !!String(getV('verify_result','')).trim(),
+      hasRedefine: !!String(getV('re_core','')).trim(),
+      hasDiag: !!String(getV('diag_result','')).trim(),
+    }
+  });
+
   return '<div class="frame intro"><h2>☆ 나의 마음의 방</h2>'+
     '<div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--ink-soft);line-height:1.8;">'+
       '지금 작성 중인 씨앗이 어디까지 왔는지 한눈에 볼 수 있어.<br>'+
       '완료한 단계, 지금 있는 곳, 다음에 할 것까지 — 여기서 이어서 써줘.'+
     '</div>'+
-    '<div class="sub">지금 작성 중인 씨앗 기준</div>'+
-    '<div class="hint">아직 로그인이 없어서, 이 브라우저에 저장된 지금 씨앗 하나를 기준으로 보여줘요.</div>'+
-    '<h3>'+esc(seedName)+'</h3>'+
-    '<p>진척도: '+filled+' / '+TOTAL_SECTIONS+' 섹션 ('+pct+'%)</p>'+
+
+    // 진행 현황 카드 — 이름/상태/진행 단계/진척도 바를 한 장에
+    '<div style="border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;margin-bottom:16px;">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">'+
+        '<div style="font-size:16px;font-weight:700;color:var(--ink);">'+esc(seedName)+'</div>'+
+        statusBadge+
+      '</div>'+
+      '<div style="padding:16px 20px;">'+
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">'+
+          '<div style="flex:1;height:8px;background:var(--line-soft);border-radius:4px;overflow:hidden;">'+
+            '<div style="width:'+pct+'%;height:100%;background:var(--blueprint);border-radius:4px;transition:width .3s;"></div>'+
+          '</div>'+
+          '<span style="font-size:12px;color:var(--ink-soft);white-space:nowrap;">'+filled+' / '+TOTAL_SECTIONS+' 섹션 · '+pct+'%</span>'+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);">진행 단계: <b style="color:var(--ink);">'+esc(TASK_STAGE_LABELS[stageIdx])+'</b></div>'+
+      '</div>'+
+    '</div>'+
+
     aiLevelCardHtml(true)+
     '<h3>이번 씨앗에서 경험한 AI 역량</h3>'+
     (done.length ? '<div class="lvrec-items">'+done.map(i=>'<span class="lvrec-chip">'+esc(i)+'</span>').join('')+'</div>'
@@ -2684,6 +2717,7 @@ function renderDashboardSection(){
   return '<div class="frame"><h2>☰ 마음의 방 전경</h2><div class="sub">ADMIN VIEW</div>'+
     '<div class="hint">전체 팀원의 작성 현황이에요 (작성자 이름 기준으로 한 명당 최신 것 하나만). 새로고침으로 최신 상태를 다시 불러올 수 있어요.</div>'+
     '<div class="exportbar"><button type="button" id="refreshDash" class="secondary">새로고침</button>'+
+    '<button type="button" class="secondary" data-action="submission-delete-empty">🗑️ 빈 기록 전체 삭제</button>'+
     '<button type="button" class="secondary" data-admin-pw>비밀번호 변경</button>'+
     '<button type="button" id="adminLogoutBtn2" class="secondary">관리자 모드 끄기</button></div>'+
     // 초대코드 관리 (마스터/관리자)
@@ -2827,7 +2861,7 @@ async function loadInviteCodes(){
       list.map(c =>
         '<tr style="border-bottom:1px solid var(--line-soft);">'+
           '<td style="padding:6px 8px;font-size:12px;font-weight:600;letter-spacing:1px;color:'+statusColor(c.status)+';">'+esc(c.code)+'</td>'+
-          '<td style="padding:6px 8px;"><span style="padding:2px 8px;border-radius:999px;font-size:11px;background:'+statusBg(c.status)+';color:'+statusColor(c.status)+';">'+esc(c.status)+'</span></td>'+
+          '<td style="padding:6px 8px;"><span style="padding:3px 10px;border-radius:999px;font-size:11px;background:'+statusBg(c.status)+';color:'+statusColor(c.status)+';">'+esc(c.status)+'</span></td>'+
           '<td style="padding:6px 8px;font-size:12px;color:var(--ink-soft);">'+(c.expires_at?c.expires_at.slice(0,16):'-')+'</td>'+
           '<td style="padding:6px 8px;font-size:12px;color:var(--ink-soft);">'+esc(c.used_by||'-')+'</td>'+
         '</tr>'
@@ -2896,10 +2930,10 @@ async function renderDashboard(){
       const when = v.updatedAt ? new Date(v.updatedAt).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
       const status = v.status || '작성중';
       const statusBadge = status==='완료'
-        ? '<span style="padding:2px 8px;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-size:11px;">✅ 완료</span>'
+        ? '<span style="padding:3px 10px;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-size:11px;">✅ 완료</span>'
         : status==='저장됨'
-        ? '<span style="padding:2px 8px;border-radius:999px;background:var(--panel);color:var(--ink-soft);font-size:11px;">🔒 저장됨</span>'
-        : '<span style="padding:2px 8px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-size:11px;">✏️ 작성중</span>';
+        ? '<span style="padding:3px 10px;border-radius:999px;background:var(--panel);color:var(--ink-soft);font-size:11px;">🔒 저장됨</span>'
+        : '<span style="padding:3px 10px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-size:11px;">✏️ 작성중</span>';
       const seedName = v.task && v.task.seedName ? esc(v.task.seedName) : (v.name ? esc(v.name) : '<span style="color:var(--ink-soft);">미입력</span>');
       const rec = v.gateReview && v.gateReview.decision==='인정' ? lvLabel(gateLevelNum(v.gateReview.level)) : '-';
       const idCell = v.username ? '👤 '+esc(v.username) : '<span style="color:var(--ink-soft);">계정 없음</span>';
@@ -2911,6 +2945,7 @@ async function renderDashboard(){
         '<td style="font-size:11px;">'+idCell+'<br><span style="color:var(--ink-soft);">'+esc(v.ip||'-')+'</span></td>'+
         '<td style="font-size:11px;color:var(--ink-soft);">'+esc(when)+'</td>'+
         '<td style="font-size:11px;color:var(--ink-soft);">'+esc(rec)+'</td>'+
+        '<td><button type="button" class="chip-btn" data-action="submission-view" data-target="'+esc(v.docId)+'">보기</button></td>'+
       '</tr>';
     }).join('');
 
@@ -2940,7 +2975,7 @@ async function renderDashboard(){
         : '')+
       '<h3 style="margin:16px 0 8px">씨앗 진행 현황</h3>'+
       '<table class="dtable"><thead><tr>'+
-        '<th>씨앗 이름</th><th>상태</th><th>입력 현황</th><th>단계</th><th>아이디/IP</th><th>마지막 저장</th><th>인정 레벨</th>'+
+        '<th>씨앗 이름</th><th>상태</th><th>입력 현황</th><th>단계</th><th>아이디/IP</th><th>마지막 저장</th><th>인정 레벨</th><th></th>'+
       '</tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){
     out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
@@ -4271,7 +4306,7 @@ function renderCurriculumBlock(){
           '<div style="font-size:16px;font-weight:700;color:var(--ink);">'+l.title+'</div>'+
           '<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:2px;">'+l.q+'</div>'+
         '</div>'+
-        '<span style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
+        '<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--line-soft);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
       '</div>'+
       // 2열 그리드
       '<div style="display:grid;grid-template-columns:1fr 1fr;">'+
@@ -4429,10 +4464,12 @@ const AI_TOOLS_DATA = {
   // 생성형 AI란?
   intro: {
     title: '생성형 AI가 뭔가요?',
-    body: '생성형 AI(Generative AI)는 텍스트·이미지·음악 등을 새로 만들어내는 AI예요.\n\n사람이 말을 걸면 → AI가 글을 읽고 → 가장 자연스러운 대답을 만들어냅니다.\n마치 엄청난 양의 책을 읽은 사람이 질문에 답해주는 것과 비슷해요.\n\n단, AI는 학습한 데이터 기반으로 답하기 때문에 틀릴 수 있고, "안다고 생각하는 것"을 자신있게 틀리게 말하기도 해요. 이걸 환각(Hallucination)이라고 해요.',
+    body: '생성형 AI(Generative AI)는 텍스트·이미지·음악 등을 새로 만들어내는 AI예요.\n\n사람이 말을 걸면 → AI가 글을 읽고 → 가장 자연스러운 대답을 만들어냅니다.\n마치 엄청난 양의 책을 읽은 사람이 질문에 답해주는 것과 비슷해요.\n\nLLM과 생성형 AI는 같은 말이 아니에요. LLM(대규모 언어 모델)은 "텍스트"를 다루도록 학습된 AI 모델 하나를 가리키고, 생성형 AI는 텍스트·이미지·음악·코드 등 "새로운 것을 만들어내는 AI 전체"를 가리키는 더 큰 범주예요. 즉 ChatGPT·Claude 같은 챗봇은 LLM이면서 동시에 생성형 AI의 한 종류고, 이미지를 그려주는 AI(예: Midjourney)는 생성형 AI이지만 LLM은 아니에요.\n\n생성형 AI는 "뭘 만들어내느냐"로 종류를 나눠볼 수 있어요.\n· 📝 텍스트 생성 — ChatGPT, Claude, Gemini (글 쓰기·대화·코드도 여기 포함)\n· 🖼️ 이미지 생성 — Midjourney, DALL·E, Stable Diffusion (말로 설명하면 그림을 그려줌)\n· 🎬 영상 생성 — Sora, Runway (텍스트나 이미지로 짧은 영상을 만들어줌)\n· 🎵 음악/음성 생성 — Suno(작곡), ElevenLabs(목소리) (텍스트로 노래·음성을 만들어줌)\n\n다루는 결과물(텍스트/이미지/영상/음성)만 다르고, "학습한 데이터를 바탕으로 새로운 걸 만들어낸다"는 원리는 다 같아요.\n\n단, AI는 학습한 데이터 기반으로 답하기 때문에 틀릴 수 있고, "안다고 생각하는 것"을 자신있게 틀리게 말하기도 해요. 이걸 환각(Hallucination)이라고 해요.',
     terms: [
       { word: 'LLM (대규모 언어 모델)', easy: '엄청 많은 글을 읽고 학습한 AI 두뇌', detail: 'Large Language Model. 수십억 개의 텍스트를 학습한 AI 모델. ChatGPT·Claude·Gemini 모두 LLM 기반이에요.' },
       { word: '생성형 AI', easy: '새로운 것을 만들어내는 AI', detail: '기존 데이터를 바탕으로 텍스트·이미지·음악·코드 등을 새롭게 만드는 AI. 단순 검색과 달리 "창작"을 해요.' },
+      { word: '이미지 생성 AI', easy: '말로 설명하면 그림을 그려주는 AI', detail: '"노을 지는 바다, 수채화 느낌"처럼 글로 설명하면 그에 맞는 이미지를 만들어줘요. Midjourney·DALL·E·Stable Diffusion이 대표적.' },
+      { word: '영상/음악 생성 AI', easy: '글로 영상이나 노래를 만들어주는 AI', detail: '텍스트나 이미지를 넣으면 짧은 영상(Sora, Runway)이나 노래(Suno)를 만들어줘요. 아직 완벽하진 않지만 빠르게 좋아지고 있어요.' },
       { word: '환각 (Hallucination)', easy: 'AI가 없는 걸 있다고 만들어내는 것', detail: 'AI가 모르는 내용을 확신하며 틀리게 말하는 현상. 유명인 이름·날짜·사실 등에서 자주 발생. 항상 중요한 내용은 직접 확인하세요.' },
       { word: '프롬프트', easy: 'AI에게 하는 말·질문·명령', detail: 'AI에게 주는 입력 텍스트. 어떻게 물어보느냐에 따라 결과가 크게 달라져요.' },
       { word: '모델', easy: 'AI의 두뇌 버전', detail: '같은 서비스라도 GPT-4o, GPT-4 mini처럼 성능·가격이 다른 버전이 있어요. 최신 모델이 보통 더 똑똑해요.' },
@@ -4452,13 +4489,20 @@ const AI_TOOLS_DATA = {
         {
           name: 'ChatGPT', url: 'https://chat.openai.com', type: '대화형 AI',
           free: true, paid: '플러스 $20/월',
-          best: '일상 대화·글쓰기·공부·코딩',
+          best: '일상 대화·글쓰기·공부',
           weak: '최신 정보 없을 수 있음 (무료 기준)',
           models: [
             { name: 'GPT-4o', desc: '현재 가장 강력. 글·이미지·음성 다 처리', tag: '최신' },
             { name: 'GPT-4o mini', desc: '빠르고 가벼운 버전. 무료 사용자용', tag: '무료' },
-            { name: 'o3 / o4-mini', desc: '수학·코딩·논리 추론에 특화된 모델', tag: '추론' },
+            { name: 'o3 / o4-mini', desc: '수학·논리 추론에 특화된 모델', tag: '추론' },
           ]
+        },
+        {
+          name: 'Codex', url: 'https://chatgpt.com/codex', type: '코딩 전문 AI',
+          free: false, paid: 'ChatGPT Plus 포함',
+          best: '코딩·코드 작성/리뷰·터미널에서 작업 실행',
+          weak: '일반 대화·글쓰기 용도로는 안 맞음',
+          models: [{ name: 'codex-1', desc: 'OpenAI의 코딩 특화 모델. 실제 코드 실행까지', tag: '코딩' }]
         },
         {
           name: 'Sora', url: 'https://sora.com', type: '영상 생성 AI',
@@ -4641,7 +4685,7 @@ const AI_TOOLS_DATA = {
     { situation: '공부·개념 이해', tools: ['ChatGPT', 'Gemini'], reason: '쉬운 설명 잘 해줌. Gemini는 유튜브 영상도 분석 가능' },
     { situation: '최신 정보·뉴스', tools: ['Perplexity', 'Gemini', 'Grok'], reason: '실시간 웹 검색 + 출처 제공' },
     { situation: '긴 문서 분석·논문', tools: ['NotebookLM', 'Claude', 'Gemini'], reason: '긴 문서 처리 능력 우수' },
-    { situation: '코딩·개발', tools: ['Claude', 'ChatGPT', 'DeepSeek'], reason: 'Claude가 코드 품질 높음. DeepSeek는 무료로 고성능' },
+    { situation: '코딩·개발', tools: ['Claude', 'Codex', 'DeepSeek'], reason: 'Claude가 코드 품질 높음. Codex는 OpenAI의 코딩 전문 AI. DeepSeek는 무료로 고성능' },
     { situation: '이미지 만들기', tools: ['Gemini', 'DALL-E'], reason: 'Gemini는 무료 포함. DALL-E는 ChatGPT Plus 필요' },
     { situation: '한국어 특화', tools: ['CLOVA X', 'ChatGPT', 'Claude'], reason: 'CLOVA X는 한국어 뉘앙스 강함' },
     { situation: '수학·논리 문제', tools: ['DeepSeek-R1', 'GPT o3', 'Claude'], reason: '추론 특화 모델들' },
@@ -4724,7 +4768,7 @@ function renderAIToolsSection(){
     return '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">' +
       tabs.map(t => {
         const a = window._aiToolsTab === t.id;
-        return '<button type="button" onclick="aiToolsTab(\''+t.id+'\')" style="padding:9px 14px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
+        return '<button type="button" onclick="aiToolsTab(\''+t.id+'\')" style="flex:1;min-width:140px;padding:9px 14px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
           t.label+'<br><span style="font-size:11px;opacity:.65;">'+t.desc+'</span>'+
         '</button>';
       }).join('') + '</div>';
@@ -4741,16 +4785,15 @@ function renderAIToolsSection(){
 
   window.aiToolsTab = function(id){
     window._aiToolsTab = id;
-    const el = document.getElementById('aiToolsBody');
-    if(el) el.innerHTML = bodyHtml();
+    const el = document.getElementById('aiToolsWrap');
+    if(el) el.innerHTML = tabHtml() + '<div id="aiToolsBody">'+bodyHtml()+'</div>';
   };
 
   return '<div class="frame">'+
     '<h2>🗺️ AI 도구 가이드</h2>'+
     '<div class="sub">생성형 AI가 뭔지, 어떤 도구가 있는지, 뭘 물어봐도 되는지</div>'+
     '<p style="font-size:13px;color:var(--ink-soft);margin:8px 0 20px;">AI 도구는 매달 업데이트돼요. 여기 내용은 2026년 기준이에요.</p>'+
-    tabHtml()+
-    '<div id="aiToolsBody">'+bodyHtml()+'</div>'+
+    '<div id="aiToolsWrap">'+tabHtml()+'<div id="aiToolsBody">'+bodyHtml()+'</div></div>'+
   '</div>';
 }
 
@@ -4950,14 +4993,15 @@ function renderAIQuestions(){
 
 
 function renderCurriculumSection(){
-  // 학생 / 대학생·취준 / 직장인 3탭 버전
-  window._curriculumTab = window._curriculumTab || 'teen';
-  window._curriculumIdx = window._curriculumIdx || 0;
+  // 업무 영역(01번 WORK_AREAS)과 동일한 5개 기준으로 통일
+  window._curriculumTab = window._curriculumTab || 'work';
 
   const tabs = [
-    { id:'teen',   label:'📚 학생', desc:'AI 첫 만남부터 진로 탐색까지' },
-    { id:'career', label:'💼 대학생·취준', desc:'공부·자소서·직무 연결하기' },
-    { id:'work',   label:'🏢 직장인', desc:'업무 보조·자동화·AX 설계' }
+    { id:'work',   label:'🏢 업무/사업 처리하기', desc:'업무 보조·자동화·AX 설계' },
+    { id:'career', label:'💼 채용 서류 준비하기', desc:'공부·자소서·직무 연결하기' },
+    { id:'teen',   label:'📚 공부·연구 과제하기', desc:'AI 첫 만남부터 진로 탐색까지' },
+    { id:'home',   label:'🏠 집안일/개인 생활', desc:'식단·장보기·가계부·일정 관리' },
+    { id:'etc',    label:'✨ 기타', desc:'돌봄·재테크·모임 운영·취미 등' }
   ];
 
   const levels = {
@@ -5064,6 +5108,52 @@ function renderCurriculumSection(){
         cases:[{who:'IT기업 PM · 8년차', what:'"AI 도입하자"는 경영진 지시 → 어디서 시작해야 할지 몰랐음.', result:'ddugi로 5개 업무 후보 탐색 → AI 필요한 것 2개·불필요한 것 3개 구분 → 우선순위 명확해짐'},{who:'제조업 팀장 · 20년차', what:'보고서 AI 자동 생성 만들었는데 직원들이 안 씀.', result:'사용자 인터뷰 → "결과물 믿을 수가 없어요" → Human-in-the-loop 구조로 재설계'}],
         mission:{time:'30분', task:'ddugi 씨앗 찾기(00번)에서 팀의 업무를 자유롭게 설명하고\nAI가 찾아주는 개선 후보 2~3개 받아보기.\n→ "적합" 판정 받은 것만 다음 단계로\n→ 개발 역량 없어도 OK — 업무 재설계가 핵심', check:'AI 적합·부적합 판정 결과를 팀에 공유할 수 있겠다 싶으면 성공.', link:true},
         next:'AI 때문에 업무 방식 자체가 바뀌었는가?', nextLv:null}
+    ],
+    home: [
+      {lv:'LV.0', icon:'🌱', title:'AI 처음 만남', tag:'완전 처음',
+        q:'"AI가 집안일에도 도움이 된다고?"',
+        learn:['집안일도 반복 업무라는 것 — 식단, 장보기, 청소 루틴', 'ChatGPT·Claude한테 오늘 저녁 메뉴 물어보기', 'AI가 알려준 정보도 틀릴 수 있다는 것 (환각)', '검색하기 vs AI에게 물어보기 차이'],
+        terms:[['AI','사람처럼 대화하며 답해주는 프로그램'],['환각','AI가 모르는 걸 아는 척 하는 것'],['프롬프트','AI에게 하는 말·질문']],
+        cases:[{who:'3인 가족 · 주부', what:'매주 장보기 목록 짜는 게 귀찮아서 "이번 주 저녁 메뉴 5개랑 장볼 재료 목록 짜줘" 요청.', result:'매주 10분이면 식단+장보기 목록이 끝남'},{who:'1인 가구 · 직장인', what:'"자취방 청소 루틴 좀 짜줘, 일주일에 2번만 할 수 있게" 요청.', result:'현실적인 루틴을 받고 바로 적용'}],
+        mission:{time:'5분', task:'ChatGPT나 Claude에 "이번 주 저녁 메뉴 3개 추천해줘. 재료 많이 안 겹치게" 물어보기', check:'메뉴 3개 + 재료 목록이 나왔으면 성공.'},
+        next:'AI에게 일상적인 질문을 3번 이상 해봤다', nextLv:'LV.1 →'},
+      {lv:'LV.1', icon:'🔍', title:'일상에 적용하기', tag:'써봤지만 애매함',
+        q:'"그냥 묻는 거 말고 내 상황에 맞게 쓰고 싶어"',
+        learn:['내 상황(가족 수, 예산, 알레르기 등)을 먼저 알려주고 물어보기', '같은 질문도 조건을 더 주면 답이 달라진다', '가계부·일정 관리에 AI 활용하기', 'AI 추천을 그대로 따르기 전에 내 상황과 맞는지 확인하기'],
+        terms:[['맥락(컨텍스트)','AI에게 미리 알려주는 배경 정보'],['예산 관리','수입과 지출을 계획하고 기록하는 것']],
+        cases:[{who:'4인 가족', what:'"예산 월 50만원, 알레르기 있는 아이 한 명"까지 알려주고 식단 요청.', result:'진짜 쓸 수 있는 식단표를 받음. 전과 달리 안 버려짐'},{who:'신혼부부', what:'가계부를 AI에게 보여주고 "이번 달 지출 중 줄일 수 있는 항목 짚어줘" 요청.', result:'외식비가 제일 크다는 걸 알고 바로 줄임'}],
+        mission:{time:'10분', task:'가족 수, 예산, 선호 등 내 상황 2~3가지를 먼저 알려주고 식단이나 집안일 계획을 짜달라고 요청해보기', check:'구체적인 조건이 반영된 답을 받았으면 성공.'},
+        next:'내 상황을 알려주고 받은 답이 실제로 더 쓸만했다', nextLv:'LV.2 →'},
+      {lv:'LV.2', icon:'⚙️', title:'생활을 통째로 관리하기', tag:'생활 심화',
+        q:'"매번 물어보는 거 말고 자동으로 관리되면 좋겠는데"',
+        learn:['반복되는 생활 루틴(청소, 장보기, 가계부) 자동 정리', 'AI에게 매주 체크리스트 만들어달라고 하기', '캘린더 앱과 AI 조합해서 일정 관리', '가족 구성원과 역할 분담까지 AI로 정리하기'],
+        terms:[['루틴','반복해서 하는 일의 순서'],['체크리스트','빠뜨리지 않게 확인하는 목록']],
+        cases:[{who:'맞벌이 부부', what:'매주 집안일 분담표를 AI에게 "둘 다 공평하게" 짜달라고 요청.', result:'매주 반복되던 분담 갈등이 줄어듦'},{who:'육아 중인 부모', what:'아이 스케줄(병원·학원·놀이)을 AI에게 정리해달라고 요청 후 캘린더에 반영.', result:'매주 일정 놓치는 일이 줄어듦'}],
+        mission:{time:'15분', task:'한 주 동안 반복되는 집안일 3가지를 AI에게 말하고 "체크리스트로 정리해줘" 요청, 실제로 한 주 써보기', check:'체크리스트를 1주일간 실제로 사용해봤으면 성공.'},
+        next:'AI로 짠 계획을 실제 생활에 1주일 이상 적용해봤다', nextLv:null}
+    ],
+    etc: [
+      {lv:'LV.0', icon:'🌱', title:'AI 처음 만남', tag:'완전 처음',
+        q:'"내가 하는 건 딱히 \'업무\'도 \'공부\'도 아닌데, AI가 도움될까?"',
+        learn:['AI는 업무·공부가 아니어도 쓸 수 있다 — 취미, 돌봄, 재테크, 모임 운영 등', 'ChatGPT·Claude에 내 상황을 그냥 설명하고 물어보기', 'AI가 틀릴 수 있다는 것 (환각)', '정보 검색과 AI에게 물어보기의 차이'],
+        terms:[['AI','대화하듯 답해주는 프로그램'],['환각','AI가 모르는 걸 아는 척 하는 것']],
+        cases:[{who:'부모님 간병 중인 직장인', what:'"80대 부모님 복지 혜택 뭐가 있는지 알려줘" 요청.', result:'몰랐던 지원제도 2개를 찾아서 신청함'},{who:'동호회 총무', what:'"회비 걷고 정산하는 거 엑셀로 쉽게 하는 법 알려줘" 요청.', result:'매번 헷갈리던 정산을 간단한 표로 정리함'}],
+        mission:{time:'5분', task:'지금 하고 있는 돌봄·모임·취미·재테크 중 하나를 골라서 AI에게 "이거 좀 도와줘"라고 말 걸어보기', check:'AI가 뭔가 답했으면 성공.'},
+        next:'내 상황을 AI에게 설명하고 답을 받아봤다', nextLv:'LV.1 →'},
+      {lv:'LV.1', icon:'🔍', title:'내 상황에 맞게 쓰기', tag:'써봤지만 애매함',
+        q:'"그냥 묻는 거 말고 내 상황에 딱 맞게 쓰고 싶어"',
+        learn:['내 상황(목표, 예산, 시간 등)을 구체적으로 알려주고 물어보기', '같은 질문도 조건을 더 주면 답이 달라진다', '재테크·모임·돌봄 각각에 맞는 체크리스트 받기', 'AI 답변을 그대로 믿지 않고 직접 확인하는 습관'],
+        terms:[['맥락(컨텍스트)','AI에게 미리 알려주는 배경 정보'],['체크리스트','빠뜨리지 않게 확인하는 목록']],
+        cases:[{who:'재테크 초보 직장인', what:'"월급 300만원, 저축 목표 월 50만원"까지 알려주고 포트폴리오 조언 요청.', result:'내 상황에 맞는 현실적인 플랜을 받음'},{who:'봉사 동아리 운영진', what:'"대학생 20명, 주말 하루"라고 알려주고 봉사 프로그램 기획 요청.', result:'실행 가능한 프로그램 3개를 받아서 그대로 진행'}],
+        mission:{time:'10분', task:'내 상황(목표·예산·인원 등 구체적인 조건 2~3개)을 먼저 알려주고 계획이나 조언을 요청해보기', check:'조건이 반영된 답을 받았으면 성공.'},
+        next:'구체적인 조건을 주고 받은 답이 실제로 더 쓸만했다', nextLv:'LV.2 →'},
+      {lv:'LV.2', icon:'⚙️', title:'꾸준히 관리하기', tag:'심화',
+        q:'"한 번 물어보는 거 말고 꾸준히 관리하고 싶어"',
+        learn:['반복되는 할 일(정산, 보고, 기록)을 AI로 템플릿화하기', 'AI에게 매번 같은 형식으로 기록 요청하기', '모임·돌봄·재테크 기록을 모아뒀다가 AI에게 분석 요청하기', '내가 직접 판단해야 할 것과 AI에게 맡길 것 구분하기'],
+        terms:[['템플릿','매번 같은 형식으로 쓰는 틀'],['기록 관리','시간이 지나도 비교할 수 있게 쌓아두는 것']],
+        cases:[{who:'1인 자영업 겸 재테크 관리자', what:'매달 지출·투자 기록을 AI에게 "지난 3개월과 비교해줘" 요청.', result:'새는 돈을 발견하고 지출 구조를 바꿈'},{who:'다자녀 돌봄 가정', what:'아이들 병원 기록, 일정을 AI가 매달 정리해주는 루틴을 만듦.', result:'놓치는 일정이 줄고 가족 간 공유도 쉬워짐'}],
+        mission:{time:'15분', task:'최근 한 달간의 기록(가계부, 모임 활동, 돌봄 일지 등) 하나를 AI에게 보여주고 "패턴이나 개선점을 짚어줘" 요청해보기', check:'패턴이나 개선점을 1개 이상 받았으면 성공.'},
+        next:'AI로 발견한 개선점을 실제로 한 번 이상 적용해봤다', nextLv:null}
     ]
   };
 
@@ -5071,35 +5161,29 @@ function renderCurriculumSection(){
     return '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">' +
       tabs.map(t=>{
         const a = window._curriculumTab===t.id;
-        return '<button type="button" onclick="curricTab(\''+t.id+'\')" style="padding:10px 16px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
+        return '<button type="button" onclick="curricTab(\''+t.id+'\')" style="flex:1;min-width:104px;padding:10px 16px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
           t.label+'<br><span style="font-size:11px;opacity:.65;">'+t.desc+'</span>'+
         '</button>';
       }).join('')+'</div>';
   }
 
-  function fHtml(list){
-    return '<div style="display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;">' +
-      list.map((l,i)=>{
-        const a=i===(window._curriculumIdx||0);
-        return '<button type="button" onclick="curricSelect('+i+')" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;">'+
-          '<div style="width:52px;height:52px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';transition:all .15s;">'+
-            '<span style="font-size:9px;font-weight:700;color:'+(a?'var(--blueprint)':'var(--placeholder)')+'">'+l.lv.replace('LV.','Step ')+'</span>'+
-            '<span style="font-size:17px;">'+l.icon+'</span>'+
-          '</div>'+
-          '<span style="font-size:10px;color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';text-align:center;max-width:60px;line-height:1.3;word-break:keep-all;">'+l.title+'</span>'+
-        '</button>'+(i<list.length-1?'<div style="width:28px;height:2px;background:var(--line);margin-bottom:20px;flex-shrink:0;"></div>':'');
-      }).join('')+'</div>';
+  function accHtml(list){
+    return list.map((l,i)=>
+      '<details id="curricStep'+i+'" '+(i===0?'open':'')+' style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;">'+
+        '<summary style="cursor:pointer;list-style:none;padding:16px 20px;display:flex;align-items:center;gap:14px;background:var(--panel);">'+
+          '<div style="width:44px;height:44px;border-radius:10px;background:var(--blueprint-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">'+
+            '<span style="font-size:9px;color:var(--blueprint);font-weight:700;">'+l.lv.replace('LV.','Step ')+'</span><span style="font-size:18px;">'+l.icon+'</span></div>'+
+          '<div style="flex:1;"><div style="font-size:16px;font-weight:700;color:var(--ink);">'+l.title+'</div>'+
+            '<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:2px;">'+l.q+'</div></div>'+
+          '<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--line-soft);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
+        '</summary>'+
+        bHtml(l,i)+
+      '</details>'
+    ).join('');
   }
 
-  function cHtml(l,i){
-    return '<div style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">'+
-      '<div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;">'+
-        '<div style="width:44px;height:44px;border-radius:10px;background:var(--blueprint-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">'+
-          '<span style="font-size:9px;color:var(--blueprint);font-weight:700;">'+l.lv.replace('LV.','Step ')+'</span><span style="font-size:18px;">'+l.icon+'</span></div>'+
-        '<div style="flex:1;"><div style="font-size:16px;font-weight:700;color:var(--ink);">'+l.title+'</div>'+
-          '<div style="font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:2px;">'+l.q+'</div></div>'+
-        '<span style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;flex-shrink:0;">'+l.tag+'</span>'+
-      '</div>'+
+  function bHtml(l,i){
+    return '<div style="border-top:1px solid var(--line);">'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;">'+
         '<div style="padding:16px 20px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);">'+
           '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);margin-bottom:8px;">배우는 것</div>'+
@@ -5131,23 +5215,18 @@ function renderCurriculumSection(){
       '<div style="padding:12px 20px;background:var(--panel);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
         '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);">'+(l.nextLv?'다음 레벨 조건':'이후')+'</span>'+
         '<span style="font-size:12px;color:var(--ink);flex:1;">'+l.next+'</span>'+
-        (l.nextLv?'<button type="button" onclick="curricSelect('+(i+1)+')" style="font-size:12px;padding:5px 14px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--blueprint);font-weight:600;cursor:pointer;">'+l.nextLv+'</button>':'')+
+        (l.nextLv?'<button type="button" onclick="const d=document.getElementById(\'curricStep'+(i+1)+'\');if(d){d.open=true;d.scrollIntoView({behavior:\'smooth\',block:\'start\'});}" style="font-size:12px;padding:5px 14px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--blueprint);font-weight:600;cursor:pointer;">'+l.nextLv+'</button>':'')+
       '</div></div>';
   }
 
   window.curricTab = function(id){
-    window._curriculumTab=id; window._curriculumIdx=0;
-    const el=document.getElementById('curricWrap'); if(el) el.innerHTML=buildC3();
-  };
-  window.curricSelect = function(idx){
-    window._curriculumIdx=idx;
+    window._curriculumTab=id;
     const el=document.getElementById('curricWrap'); if(el) el.innerHTML=buildC3();
   };
   function buildC3(){
-    const tab=window._curriculumTab||'teen', list=levels[tab];
-    const idx=Math.min(window._curriculumIdx||0, list.length-1);
-    window._curriculumIdx=idx;
-    return tHtml()+fHtml(list)+cHtml(list[idx],idx);
+    const tab=window._curriculumTab||'work', list=levels[tab];
+    if(!list.length) return tHtml()+'<div style="padding:40px 20px;text-align:center;color:var(--ink-soft);font-size:13px;border:1px solid var(--line-soft);border-radius:var(--radius);">🛠️ 준비 중이에요. 곧 채워질게요!</div>';
+    return tHtml()+accHtml(list);
   }
   return '<div id="curricWrap">'+buildC3()+'</div>';
 }
@@ -5270,10 +5349,9 @@ window.parseDiscordIntro = function(){
 
   // 활동 영역 자동 선택
   const WORK_AREA_MAP = [
-    {keywords:['직장','직딩','재직','회사'], value:'직장 업무'},
-    {keywords:['취준','취업준비','취업 준비','구직'], value:'학업'},
-    {keywords:['학생','대학','고등','중학','대학원'], value:'학업'},
-    {keywords:['프리랜서','부업','사업'], value:'개인 사업/부업'},
+    {keywords:['이직','커리어 전환','커리어전환','취준','취업준비','취업 준비','구직','자소서','이력서'], value:'채용 서류 준비하기'},
+    {keywords:['대학원','연구','논문','학생','대학','고등','중학'], value:'공부·연구 과제하기'},
+    {keywords:['직장','직딩','재직','회사','프리랜서','부업','사업','N잡','n잡'], value:'업무/사업 처리하기'},
   ];
   let detectedArea = '';
   for(const m of WORK_AREA_MAP){
@@ -5299,17 +5377,17 @@ window.parseDiscordIntro = function(){
   const ta = document.getElementById('introFreeText');
   if(ta){ ta.value = combined; introUpdateState(); }
 
+  // 프롬프트도 바로 연계해서 생성
+  if(combined.trim() && window.introGenPrompt) window.introGenPrompt();
+
   // 메시지 + details 닫기
   const msg = document.getElementById('discordImportMsg');
-  if(msg){ msg.style.display=''; msg.textContent = '✅ 채워졌어! 아래 내용 확인하고 "프롬프트 만들기" 눌러줘.'; }
+  if(msg){ msg.style.display=''; msg.textContent = '✅ 채워졌어! 아래 프롬프트까지 바로 만들어졌어.'; }
   const box = document.getElementById('discordImportBox');
   if(box) box.removeAttribute('open');
 };
-window.introGenPrompt = function(){
-  const text = (document.getElementById('introFreeText')||{}).value||'';
-  if(text) setV('intro_freetext', text);
-  if(!text.trim()){ alert('먼저 상황을 적어줘!'); return; }
-  const prompt = `아래 상황을 분석해서 항목을 채워줘.
+function buildIntroPrompt(text){
+  return `아래 상황을 분석해서 항목을 채워줘.
 반드시 아래 형식 그대로만 답해줘. 번호와 레이블은 그대로 두고 콜론 뒤만 채워줘.
 
 상황: "${text.trim()}"
@@ -5322,6 +5400,12 @@ window.introGenPrompt = function(){
 6. 핵심 문제: (진짜 해결하고 싶은 문제. 표면 말고 본질)
 7. 개선 기준: (뭐가 달라지면 이 업무가 좋아졌다고 할 수 있는지)
 8. 해결 방향 가설: (내가 생각하는 해결 방향, 첫 번째 시도 방향)`;
+}
+window.introGenPrompt = function(){
+  const text = (document.getElementById('introFreeText')||{}).value||'';
+  if(text) setV('intro_freetext', text);
+  if(!text.trim()){ alert('먼저 상황을 적어줘!'); return; }
+  const prompt = buildIntroPrompt(text);
   const skel = document.getElementById('introPromptSkel');
   const pt = document.getElementById('introPromptText');
   const pd = document.getElementById('introPromptDisplay');
@@ -5404,6 +5488,12 @@ window.introAutoFill = function(){
     const matched = Object.keys(freqMap).find(k => freq.includes(k));
     if(matched) window._setV('s2_freq', [matched]);
   }
+  // 입구에서 실제로 프롬프트 쓰고(2번) AI 결과를 받아서 썼으니(3번), 그 두 역량은 경험한 걸로 체크
+  // (나머지 L1 항목은 여기서 실제로 확인 안 됐으니 자동으로 체크하지 않음)
+  const earnedByIntro = ['프롬프트 작성 (질문·지시)','생성·요약·분석 활용'];
+  const doneNow = window._getV('lp_done',[]).slice();
+  earnedByIntro.forEach(i=>{ if(doneNow.indexOf(i)<0) doneNow.push(i); });
+  window._setV('lp_done', doneNow);
   window._persist();
 
   // 결과 요약
@@ -5413,11 +5503,11 @@ window.introAutoFill = function(){
   if(freq)       summary += '⏱ <b>발생 빈도:</b> '+esc(freq)+'<br>';
   if(slow)       summary += '🐢 <b>시간 많이 드는 단계:</b> '+esc(slow)+'<br>';
   if(hypothesis) summary += '💡 <b>해결 방향 가설:</b> '+esc(hypothesis)+'<br>';
-  summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>맞는지 꼭 확인하고 수정해줘!</b>';
+  summary += '<br>씨앗 정의서(01번)에 채워뒀어. <b>다음으로 AI가 정말 필요한지부터 확인해보자.</b>';
 
   if(msg){ msg.style.display='block'; msg.style.background='var(--ok-soft)'; msg.style.color='var(--ok)'; msg.innerHTML=summary+
     '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">'+
-      '<button type="button" onclick="window._state.cur=\'s1\';window._renderSheet();document.getElementById(\'main\').scrollTo(0,0);" style="padding:7px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">✏️ 씨앗 정의서 확인하기</button>'+
+      '<button type="button" onclick="window._state.cur=\'discover\';window._renderSheet();document.getElementById(\'main\').scrollTo(0,0);" style="padding:7px 14px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">🌱 AI 활용 가능한지 먼저 확인하기</button>'+
       '<button type="button" onclick="window._state.cur=\'intro\';window._renderSheet();" style="padding:7px 14px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:12px;cursor:pointer;">← 마음의 방으로</button>'+
     '</div>'; }
 
@@ -5433,6 +5523,12 @@ function renderIntroSection(){
     ? taxBlockHtml('intro_html','시작하기(00) 안내문 — HTML', INTRO_HTML, 'HTML 태그 그대로 적으세요. 비워두고 저장하면 기본 안내문으로 돌아가요.')
     : INTRO_HTML;
 
+  // 새로고침·다른 메뉴 갔다와도 이미 만든 프롬프트/붙여넣은 답변이 그대로 보이게
+  // (프롬프트는 intro_freetext로부터 그때그때 똑같이 다시 만들어낼 수 있어서 따로 저장 안 해도 됨)
+  const savedFreetext = getV('intro_freetext','');
+  const savedPrompt = savedFreetext.trim() ? buildIntroPrompt(savedFreetext) : '';
+  const savedAiResult = getV('intro_ai_result','');
+
   const autoFillHtml = `
 <style>
 @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
@@ -5447,7 +5543,8 @@ function renderIntroSection(){
       <span style="font-size:14px;font-weight:700;color:var(--ink);">뭘 해결하고 싶어?</span>
       <span style="font-size:12px;color:var(--ink-soft);">막막한 상황, 귀찮은 것, 어려운 것 — 뭐든</span>
     </div>
-    <!-- Discord 자기소개 불러오기 -->
+    <!-- Discord 자기소개 불러오기 (로그인한 회원만) -->
+    ${currentUser ? `
     <details id="discordImportBox" style="margin-bottom:12px;border:1px solid var(--blueprint-2);border-radius:8px;overflow:hidden;">
       <summary style="cursor:pointer;list-style:none;padding:10px 14px;background:var(--blueprint-soft);font-size:12px;font-weight:700;color:var(--blueprint);display:flex;align-items:center;gap:6px;">
         💬 Discord 자기소개 불러오기
@@ -5459,7 +5556,7 @@ function renderIntroSection(){
         <button type="button" onclick="parseDiscordIntro()" style="margin-top:8px;padding:6px 16px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">✨ 자동 채우기</button>
         <div id="discordImportMsg" style="font-size:11px;margin-top:6px;color:var(--ok);display:none;"></div>
       </div>
-    </details>
+    </details>` : ''}
     <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:80px;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;" oninput="setV('intro_freetext',this.value);introUpdateState();">${esc(getV('intro_freetext',''))}</textarea>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
       <button type="button" onclick="introGenPrompt()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📋 프롬프트 만들기 →</button>
@@ -5474,25 +5571,25 @@ function renderIntroSection(){
     </div>
   </div>
 
-  <!-- STEP 2 — 항상 보임, 스켈레톤 -->
+  <!-- STEP 2 — intro_freetext가 이미 있으면 프롬프트를 바로 보여줌 (새로고침해도 다시 스켈레톤으로 안 돌아가게) -->
   <div style="padding:18px 20px;border-bottom:1px solid var(--line-soft);background:var(--blueprint-soft);">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span style="width:22px;height:22px;border-radius:50%;background:var(--line);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="introStep2Num">2</span>
-      <span style="font-size:14px;font-weight:700;color:var(--ink-soft);" id="introStep2Label">이 프롬프트를 ChatGPT / Claude에 붙여넣어봐</span>
+      <span style="width:22px;height:22px;border-radius:50%;background:${savedPrompt?'var(--blueprint)':'var(--line)'};color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="introStep2Num">2</span>
+      <span style="font-size:14px;font-weight:${savedPrompt?'700':'400'};color:${savedPrompt?'var(--ink)':'var(--ink-soft)'};" id="introStep2Label">이 프롬프트를 ChatGPT / Claude에 붙여넣어봐</span>
     </div>
-    <div id="introPromptSkel" style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;min-height:80px;justify-content:center;">
+    <div id="introPromptSkel" style="display:${savedPrompt?'none':'flex'};flex-direction:column;gap:8px;padding:12px 14px;background:var(--paper);border:1px solid var(--line-soft);border-radius:8px;min-height:80px;justify-content:center;">
       <div class="skel" style="height:12px;width:88%;"></div>
       <div class="skel" style="height:12px;width:72%;"></div>
       <div class="skel" style="height:12px;width:80%;"></div>
       <div class="skel" style="height:12px;width:55%;"></div>
       <div style="font-size:11px;color:var(--ink-soft);margin-top:6px;text-align:center;">고민을 입력하면 여기에 프롬프트가 생성돼요</div>
     </div>
-    <div id="introPromptDisplay" style="display:none;background:var(--paper);border:1px solid var(--blueprint-2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;"></div>
-    <textarea id="introPromptText" style="display:none;"></textarea>
-    <button type="button" onclick="introCopyPrompt()" id="introCopyBtn" disabled style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:12px;font-weight:600;cursor:not-allowed;opacity:0.45;transition:all .2s;">📎 복사</button>
+    <div id="introPromptDisplay" style="display:${savedPrompt?'block':'none'};background:var(--paper);border:1px solid var(--blueprint-2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--ink);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;">${esc(savedPrompt)}</div>
+    <textarea id="introPromptText" style="display:none;">${esc(savedPrompt)}</textarea>
+    <button type="button" onclick="introCopyPrompt()" id="introCopyBtn" ${savedPrompt?'':'disabled'} style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid ${savedPrompt?'var(--blueprint)':'var(--line)'};background:${savedPrompt?'var(--paper)':'var(--panel)'};color:${savedPrompt?'var(--blueprint)':'var(--ink-soft)'};font-size:12px;font-weight:600;cursor:${savedPrompt?'pointer':'not-allowed'};opacity:${savedPrompt?'1':'0.45'};transition:all .2s;">📎 복사</button>
   </div>
 
-  <!-- STEP 3 — 항상 보임, 비활성 -->
+  <!-- STEP 3 — intro_ai_result가 이미 저장돼있으면 버튼도 바로 활성화 -->
   <div style="padding:18px 20px;">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
       <span style="width:22px;height:22px;border-radius:50%;background:var(--line);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
@@ -5502,9 +5599,9 @@ function renderIntroSection(){
       AI가 이런 형식으로 답할 거야 →
       <code style="display:block;margin-top:4px;font-size:11px;line-height:1.8;color:var(--ink);">1. 씨앗 이름: 보고서 취합 자동화&#10;2. 업무 목적: 매주 5개 팀 자료를 합쳐 보고서 작성&#10;3. 현재 프로세스: 파일 수신 → 수동 취합 → 보고서 작성</code>
     </div>
-    <textarea id="introAIResult" data-bind="intro_ai_result" placeholder="2번 프롬프트로 받은 AI 답변을 여기에 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;">${esc(getV('intro_ai_result',''))}</textarea>
+    <textarea id="introAIResult" data-bind="intro_ai_result" placeholder="2번 프롬프트로 받은 AI 답변을 여기에 붙여넣어줘" style="width:100%;min-height:90px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;">${esc(savedAiResult)}</textarea>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
-      <button type="button" id="introFillBtn" onclick="introAutoFill()" disabled style="padding:8px 20px;border-radius:8px;border:none;background:var(--line);color:var(--ink-soft);font-size:13px;font-weight:600;cursor:not-allowed;opacity:0.45;transition:all .2s;">🌱 씨앗 정의서 자동채우기</button>
+      <button type="button" id="introFillBtn" onclick="introAutoFill()" ${savedAiResult.trim()?'':'disabled'} style="padding:8px 20px;border-radius:8px;border:none;background:${savedAiResult.trim()?'var(--ok)':'var(--line)'};color:${savedAiResult.trim()?'#fff':'var(--ink-soft)'};font-size:13px;font-weight:600;cursor:${savedAiResult.trim()?'pointer':'not-allowed'};opacity:${savedAiResult.trim()?'1':'0.45'};transition:all .2s;">🌱 씨앗 정의서 자동채우기</button>
       <span style="font-size:12px;color:var(--ink-soft);">AI가 채운 거니까 맞는지 꼭 확인해줘</span>
     </div>
     <div id="introFillMsg" style="display:none;margin-top:10px;font-size:12px;padding:10px 14px;border-radius:8px;line-height:1.7;"></div>
@@ -5518,8 +5615,8 @@ function renderIntroSection(){
     t.id = 'introToast';
     t.style.cssText = 'display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:14px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);align-items:center;gap:12px;';
     t.innerHTML = '<span>🌱 씨앗 정의서에 채워뒀어!</span>'+
-      '<button type="button" onclick="introGoToSeed()" style="padding:6px 14px;border-radius:8px;border:none;background:#fff;color:var(--ok);font-size:13px;font-weight:700;cursor:pointer;margin-left:12px;">01 씨앗 심기 →</button>'+
-      '<button type="button" onclick="introGoToDiscover()" style="padding:6px 14px;border-radius:8px;border:2px solid #fff;background:transparent;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-left:8px;">00 씨앗 찾기 →</button>'+
+      '<button type="button" onclick="introGoToDiscover()" style="padding:6px 14px;border-radius:8px;border:none;background:#fff;color:var(--ok);font-size:13px;font-weight:700;cursor:pointer;margin-left:12px;">00 AI 활용 가능한지 확인 →</button>'+
+      '<button type="button" onclick="introGoToSeed()" style="padding:6px 14px;border-radius:8px;border:2px solid #fff;background:transparent;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-left:8px;">01 씨앗 심기로 바로 →</button>'+
       '<button type="button" onclick="document.getElementById(\'introToast\').style.display=\'none\'" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px;margin-left:8px;">✕</button>';
     document.body.appendChild(t);
   }
@@ -5587,7 +5684,7 @@ function renderPromptKitSection(){
     return '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">' +
       tabs.map(t => {
         const a = window._promptTab === t.id;
-        return '<button type="button" onclick="promptKitTab(\''+t.id+'\')" style="padding:10px 16px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
+        return '<button type="button" onclick="promptKitTab(\''+t.id+'\')" style="flex:1;min-width:104px;padding:10px 16px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
           t.label+'<br><span style="font-size:11px;opacity:.65;">'+t.desc+'</span>'+
         '</button>';
       }).join('') + '</div>';
@@ -5599,7 +5696,7 @@ function renderPromptKitSection(){
       list.map((p,i) =>
         '<div style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">'+
           '<div style="padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">'+
-            '<span style="font-size:10px;padding:3px 8px;border-radius:6px;background:var(--blueprint-soft);color:var(--blueprint);font-weight:700;white-space:nowrap;margin-top:2px;">'+p.tag+'</span>'+
+            '<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-weight:700;white-space:nowrap;margin-top:2px;">'+p.tag+'</span>'+
             '<div style="flex:1;">'+
               '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;">'+p.title+'</div>'+
               '<div style="font-size:12px;color:var(--ink-soft);">'+p.desc+'</div>'+
@@ -5638,8 +5735,19 @@ function renderDiscoverSection(){
     ? ('씨앗: '+seedName+(workarea?'\n영역: '+workarea:'')+(cat?'\n카테고리: '+cat:'')+(freetext?'\n원문 설명: '+freetext:''))
     : freetext || '';
 
+  // 문제 종류(카테고리)별로 판정 때 더 중요하게 볼 포인트 — 같은 질문이라도 종류에 따라 판단 기준이 다름
+  const JUDGE_HINT_BY_CAT = {
+    '① 업무관리형': '이 일이 얼마나 반복적인지, 규칙이 명확한지, 예외 상황이 자주 생기는지를 중요하게 봐줘.',
+    '② 정보검색·지식형': '최신성이 중요한 정보인지, 틀리면 안 되는 정보(사실 확인 필요한 것)인지를 중요하게 봐줘.',
+    '③ 분석·판단지원형': '판단에 쓸 데이터가 실제로 있는지, 최종 결정은 사람이 해야 맞는 일인지를 중요하게 봐줘.',
+    '④ 문서·보고 자동화형': '문서 형식이 어느 정도 정해져 있는지, 매번 내용이 크게 달라지는 문서인지를 중요하게 봐줘.',
+    '⑤ 업무 프로세스 자동화형': '여러 시스템/도구를 연결해야 하는지, 지금 가진 도구만으로 되는지를 중요하게 봐줘.',
+  };
+  const judgeHint = JUDGE_HINT_BY_CAT[cat] || '';
+
   const step1Prompt = problemDesc
     ? ('아래 업무/문제를 보고, AI가 정말 필요한지 먼저 판단해줘.\n\n'+problemDesc+'\n\n'+
+       (judgeHint ? '판단할 때 특히 이 부분을 신경써줘: '+judgeHint+'\n\n' : '')+
        '아래 형식으로 답해줘:\n\n'+
        '1. 판단: [AI 활용 가능 / AI 불필요 / 문제 재정의 필요] 중 하나\n'+
        '2. 이유: (2~3줄)\n'+
@@ -5675,6 +5783,25 @@ function renderDiscoverSection(){
       c:'역할: 수행평가 멘토\n과목: 사회문화 고2\n조건: 설문 가능, 통계 자료 활용, 4주 안에 완성\n형식: 주제명 / 탐구 가능한 이유 / 예상 결론 / 함정\n\n위 형식으로 3개 제안해줘.'
     }
   };
+  // 카테고리(+업무영역)로 어떤 예시를 보여줄지 결정
+  const exampleKey = workarea==='채용 서류 준비하기' ? '자소서'
+    : cat==='② 정보검색·지식형' ? '수행평가'
+    : EXAMPLES[cat] ? cat
+    : '보고서';
+  const exampleSet = EXAMPLES[exampleKey];
+  const examplesHtml = exampleSet
+    ? '<details style="margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;">'+
+        '<summary style="cursor:pointer;padding:10px 14px;font-size:12px;color:var(--ink-soft);list-style:none;">▶ 이렇게 비교해보면 좋아요 (나쁜 예 / 괜찮은 예 / 좋은 예)</summary>'+
+        '<div style="padding:4px 14px 14px;display:flex;flex-direction:column;gap:8px;">'+
+          '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">🥔 나쁜 예</b> — 막연한 질문<br><span style="white-space:pre-wrap;">'+esc(exampleSet.a)+'</span></div>'+
+          '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">🙂 괜찮은 예</b> — 구체화됨<br><span style="white-space:pre-wrap;">'+esc(exampleSet.b)+'</span></div>'+
+          '<div style="font-size:11px;color:var(--ink-soft);"><b style="color:var(--ink);">✅ 좋은 예</b> — 역할+상황+제약+요청<br><span style="white-space:pre-wrap;">'+esc(exampleSet.c)+'</span></div>'+
+          (exampleKey==='자소서'
+            ? '<div style="font-size:11px;color:var(--ink-soft);border-top:1px solid var(--line-soft);padding-top:8px;">💡 자소서는 지원처마다 주제·분량이 달라져서, 매번 처음부터 쓰기보다 "내 경험 조각들"(프로젝트, 성과, 에피소드)을 메모장 등에 로컬로 정리해두고 필요한 부분만 골라 AI에 붙여넣는 방식을 추천해요. 로컬 RAG(내 자료 중 관련된 것만 찾아 쓰는 방식)와 비슷한 개념이에요 — 민감한 개인 경험을 서버에 저장하지 않아도 돼요.</div>'
+            : '')+
+        '</div>'+
+      '</details>'
+    : '';
 
   // 내 프롬프트 조립
   const customKey = 'discover_step2_prompt';
@@ -5735,6 +5862,17 @@ function renderDiscoverSection(){
         '</div>'
     )+
 
+    // 문제 종류 선택 — 아직 안 골랐으면 여기서 먼저 고르게 해서 판정 프롬프트를 종류에 맞게 최적화
+    (hasData && !cat
+      ? '<div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:14px 18px;margin-bottom:20px;">'+
+          '<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;">🏷️ 어떤 종류의 문제인가요? 고르면 판정 프롬프트가 더 정확해져요</div>'+
+          '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+
+            Object.keys(CATEGORIES).map(c=>'<button type="button" onclick="window._setV(\'s1_cat\',\''+c+'\');window._renderSheet();" style="padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);font-size:12px;cursor:pointer;">'+esc(c)+'</button>').join('')+
+          '</div>'+
+        '</div>'
+      : ''
+    )+
+
     // STEP 1
     '<div style="border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;margin-bottom:20px;">'+
       '<div style="padding:14px 18px;border-bottom:1px solid var(--line-soft);">'+
@@ -5782,6 +5920,7 @@ function renderDiscoverSection(){
             })() : '<div id="judgeResult" style="margin-top:12px;"></div>')
           : '<div style="font-size:12px;color:var(--ink-soft);">마음의 방 입구에서 고민을 먼저 적어줘!</div>'
         )+
+        examplesHtml+
       '</div>'+
       // 수동 선택 (접혀있음)
       '<details style="border-top:1px solid var(--line-soft);">'+
@@ -6140,6 +6279,23 @@ document.addEventListener('click', async function(e){
       }).catch(()=>{ msg.textContent = '서버에 연결할 수 없어요.'; });
     return;
   }
+  if(action==='submission-view'){
+    showModal('<div class="hint">불러오는 중…</div>');
+    fetch('/api/submissions/'+encodeURIComponent(target))
+      .then(async r=>{
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const d = await r.json();
+        const original = state.fields;
+        state.fields = d.fields || {};
+        let md = '';
+        try{ md = buildMarkdown(); } finally { state.fields = original; }
+        document.getElementById('modalBox').innerHTML =
+          '<h2 style="margin-top:0;font-size:16px;">📄 작성 세부내용</h2>'+
+          '<pre style="max-height:70vh;overflow-y:auto;white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:12.5px;line-height:1.7;background:var(--panel);border:1px solid var(--line-soft);border-radius:8px;padding:14px 16px;margin:0;">'+esc(md)+'</pre>';
+      })
+      .catch(e=>{ document.getElementById('modalBox').innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>'; });
+    return;
+  }
   if(action==='submission-delete'){
     if(!confirm('이 씨앗 기록을 지울까요? 되돌릴 수 없어요.')) return;
     fetch('/api/submissions/'+encodeURIComponent(target), {method:'DELETE', headers: authHeaders()})
@@ -6151,7 +6307,11 @@ document.addEventListener('click', async function(e){
     if(!confirm('아무 항목도 안 채운 빈 기록을 전부 지울까요? 되돌릴 수 없어요.')) return;
     fetch('/api/admin/submissions/empty', {method:'DELETE', headers: authHeaders()})
       .then(async r=>{
-        if(r.ok){ const d = await r.json(); alert(d.deleted+'건 지웠어요.'); renderTaskList(); }
+        if(r.ok){
+          const d = await r.json(); alert(d.deleted+'건 지웠어요.');
+          if(document.getElementById('taskListBody')) renderTaskList();
+          if(document.getElementById('dashboardBody')) renderDashboard();
+        }
         else alert(await adminErrorText(r));
       })
       .catch(()=>alert('서버에 연결할 수 없어요.'));
@@ -6493,11 +6653,13 @@ loadTaxonomy();
 tryAutoLogin();
 
 // 첫 방문자는 select.html로 안내 (역할 미선택 상태, 관리자 제외)
+// 지금은 잠시 꺼둠 — 다시 켜려면 아래 플래그를 true로
+const ROLE_BANNER_ENABLED = false;
 (function(){
   const role = localStorage.getItem('ddugi_role');
   const urlParams = new URLSearchParams(window.location.search);
   // role 있거나, URL에 role 파라미터 있거나, 관리자 로그인 상태면 스킵
-  if(!role && !urlParams.get('role') && !isAdmin){
+  if(ROLE_BANNER_ENABLED && !role && !urlParams.get('role') && !isAdmin){
     // 2초 후 유도 배너 표시 (바로 리디렉션하면 너무 강압적)
     setTimeout(()=>{
       const banner = document.createElement('div');
