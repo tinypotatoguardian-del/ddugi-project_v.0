@@ -2281,10 +2281,28 @@ document.addEventListener('click', function(e){
     hideModal();
     state.locked = true;
     persist(); renderSheet();
-    // 마지막 섹션(diag=3-3) 저장 시 → 비로그인이면 CTA 팝업
+    // 마지막 섹션(diag=3-3) 저장 시 → Discord 씨앗 공유 CTA
     const lastSeedSection = 'diag';
-    if(state.cur === lastSeedSection && !currentUser){
-      // CTA 팝업 제거됨
+    if(state.cur === lastSeedSection){
+      setTimeout(()=>{
+        showModal(
+          '<div style="text-align:center;padding:8px 0;">'+
+          '<div style="font-size:36px;margin-bottom:8px;">🥔</div>'+
+          '<h3 style="margin:0 0 8px;">씨앗 완성!</h3>'+
+          '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 20px;line-height:1.7;">'+
+            '씨앗을 Discord <b>#씨앗-공유</b>에 올려봐요.<br>'+
+            '같은 고민 가진 감자들이 읽어줄 거예요 🌱'+
+          '</p>'+
+          '<div style="display:flex;flex-direction:column;gap:10px;">'+
+            (!currentUser
+              ? '<a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener" style="padding:10px 20px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;display:block;">💬 카톡으로 Discord 초대 받기 →</a>'
+              : '<button type="button" onclick="hideModal()" style="padding:10px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;">Discord #씨앗-공유에 올리러 가기 →</button>'
+            )+
+            '<button type="button" onclick="hideModal()" style="padding:8px;background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;">나중에</button>'+
+          '</div>'+
+          '</div>'
+        );
+      }, 300);
     }
   }
   if(e.target.id==='saveConfirmNo'){ hideModal(); }
