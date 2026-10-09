@@ -64,22 +64,53 @@ async def on_ready():
 # ① 자기소개 새 스레드 → 품질 체크 후 역할 부여 or 재작성 안내
 SEEDLING_ROLE_ID = int(os.environ.get("DISCORD_SEEDLING_ROLE_ID", "1555811319477964871"))
 
-MIN_LENGTH = 50  # 최소 글자 수 (느슨하게)
+MIN_LENGTH = 50
 QUESTIONS = ["1.", "2.", "3.", "4.", "5."]
-MIN_QUESTIONS = 4  # 5개 중 4개 이상 답해야 통과
+MIN_QUESTIONS = 4
+MIN_ANSWER_LEN = 8  # 각 답변 최소 길이
+
+def _extract_answers(text: str) -> dict:
+    """번호별 답변 내용 추출"""
+    answers = {}
+    for i, q in enumerate(QUESTIONS):
+        next_q = QUESTIONS[i+1] if i+1 < len(QUESTIONS) else None
+        start = text.find(q)
+        if start == -1:
+            continue
+        end = text.find(next_q, start+2) if next_q else len(text)
+        answer = text[start+2:end].strip()
+        answers[q] = answer
+    return answers
+
+VAGUE = ["모름", "모르겠", "없음", "없어", "아직", "모르겠다", "몰라", "기타", "없다", "?", "ㅎ", "ㄱ", "ㅋ"]
 
 def check_quality(text: str) -> tuple[bool, str]:
-    """자기소개 품질 체크. (통과 여부, 이유) 반환"""
+    """자기소개 품질 체크. (통과 여부, 피드백) 반환"""
     text = text.strip()
 
-    # 글자 수 체크
     if len(text) < MIN_LENGTH:
-        return False, f"내용이 너무 짧아요 ({len(text)}자). 질문에 맞게 답해줘요!"
+        return False, f"내용이 너무 짧아요 ({len(text)}자). 아래 질문들에 맞게 답해줘요!"
 
-    # 질문 항목 몇 개 답했는지
     answered = sum(1 for q in QUESTIONS if q in text)
     if answered < MIN_QUESTIONS:
-        return False, f"질문 {MIN_QUESTIONS}개 이상 답해줘야 해요. (지금 {answered}개)"
+        missing = [q for q in QUESTIONS if q not in text]
+        return False, f"**{', '.join(missing)} 번 질문**에 답이 없어요. ({answered}/5개)"
+
+    # 각 답변 품질 체크
+    answers = _extract_answers(text)
+    too_short = []
+    too_vague = []
+    for q, ans in answers.items():
+        num = q.rstrip('.')
+        if len(ans) < MIN_ANSWER_LEN:
+            too_short.append(num)
+        elif any(v in ans for v in VAGUE) and len(ans) < 15:
+            too_vague.append(num)
+
+    if too_short:
+        return False, f"**{', '.join(too_short)}번** 답변이 너무 짧아요. 조금 더 구체적으로 써줘요!"
+    if too_vague:
+        return False, f"**{', '.join(too_vague)}번** 답변이 너무 막연해요. 실제 상황이나 예시를 넣어줘요!"
 
     return True, "통과"
 
@@ -118,12 +149,18 @@ async def on_thread_create(thread: discord.Thread):
             print(f"[감자밭봇] 환영 댓글 오류: {e}")
 
     else:
-        # 재작성 안내
+        # 재작성 안내 — 어느 부분이 부족한지 구체적으로
         try:
             await thread.send(
-                f"🥔 자기소개 잘 봤어! 근데 조금 더 채워줘야 역할을 드릴 수 있어요.\n\n"
-                f"**이유:** {reason}\n\n"
-                f"5개 질문에 맞게 답변을 더 작성해주면 바로 확인할게요!"
+                f"🥔 자기소개 잘 봤어! 조금만 더 채워주면 새싹감자 역할 드릴게요.\n\n"
+                f"**{reason}**\n\n"
+                f"아래 양식 참고해서 수정해줘요:\n"
+                f"> **1.** 지금 주로 사용하는 AI\n"
+                f"> **2.** AI 주로 사용하는 영역\n"
+                f"> **3.** AI로 직접 만들거나 해결해본 것\n"
+                f"> **4.** 가장 막히는 지점\n"
+                f"> **5.** 지금 AI로 해결해보고 싶은 문제\n\n"
+                f"수정하면 바로 확인할게요!"
             )
             print(f"[감자밭봇] 재작성 안내: {author.display_name if author else '?'} — {reason}")
         except Exception as e:
