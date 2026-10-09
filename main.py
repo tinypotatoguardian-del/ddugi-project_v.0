@@ -1505,6 +1505,45 @@ def reset_user_password(username: str, x_admin_token: str = Header(default="")):
     return {"ok": True, "username": username, "message": "비밀번호가 아이디와 동일하게 초기화됐어요."}
 
 
+@app.delete("/api/master/users/{username}")
+def delete_user(username: str, x_admin_token: str = Header(default="")):
+    """유저 계정 완전 삭제 (마스터 전용)"""
+    require_admin_token(x_admin_token, {"master"})
+    conn = get_db()
+    q = "DELETE FROM users WHERE username=%s" if USE_PG else "DELETE FROM users WHERE username=?"
+    cur = db_execute(conn, q, (username,))
+    if USE_PG: conn.commit()
+    deleted = cur.rowcount if cur else 0
+    conn.close()
+    if not deleted:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없어요.")
+    return {"ok": True, "deleted": username}
+
+
+@app.put("/api/master/users/{username}/status")
+def set_user_status(username: str, body: dict, x_admin_token: str = Header(default="")):
+    """유저 활성/비활성 전환 (마스터/어드민)"""
+    require_admin_token(x_admin_token, {"master", "admin"})
+    is_active = 1 if body.get("is_active") else 0
+    conn = get_db()
+    q = "UPDATE users SET is_active=%s WHERE username=%s" if USE_PG else "UPDATE users SET is_active=? WHERE username=?"
+    db_execute(conn, q, (is_active, username))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+@app.delete("/api/admin/signup-requests/{req_id}")
+def delete_signup_request(req_id: int, x_admin_token: str = Header(default="")):
+    """가입 신청 거절/삭제"""
+    require_admin_token(x_admin_token, {"master", "admin"})
+    conn = get_db()
+    q = "DELETE FROM signup_requests WHERE id=%s" if USE_PG else "DELETE FROM signup_requests WHERE id=?"
+    db_execute(conn, q, (req_id,))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"ok": True}
+
 @app.get("/api/master/users")
 def list_users(x_admin_token: str = Header(default="")):
     """전체 일반 유저 목록 (마스터/어드민 전용)"""

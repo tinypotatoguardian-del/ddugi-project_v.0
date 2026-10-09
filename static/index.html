@@ -2532,14 +2532,28 @@ async function renderUserList(){
     const list = await res.json();
     if(!list.length){ out.innerHTML = '<div class="hint">아직 만든 계정이 없어요.</div>'; return; }
     const rows = list.map(u=>{
-      const when = u.created_at ? new Date(u.created_at).toLocaleDateString('ko-KR') : '-';
-      const lastLogin = u.last_login_at ? new Date(u.last_login_at).toLocaleDateString('ko-KR') : '로그인 안 함';
-      const activeLabel = u.is_active===0 ? '<span style="color:var(--danger,#e74c3c);font-size:11px;">🔒 비활성</span>' : '<span style="color:var(--ok,#2ecc71);font-size:11px;">✅ 활성</span>';
-      const resetBtn = `<button type="button" data-action="user-reset-pw" data-target="${esc(u.username||'')}" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:none;color:var(--ink-soft);cursor:pointer;">비번초기화</button>`;
+      const lastLogin = u.last_login_at ? new Date(u.last_login_at).toLocaleDateString('ko-KR') : '없음';
+      const isActive = u.is_active !== 0;
+      const activeBadge = isActive
+        ? '<span style="color:var(--ok,#2ecc71);font-size:11px;">✅ 활성</span>'
+        : '<span style="color:var(--danger,#e74c3c);font-size:11px;">🔒 비활성</span>';
       const discordVal = esc(u.discord_username||'');
-      const threadBadge = u.discord_thread_id ? '<span style="font-size:10px;color:var(--ok);margin-left:4px;">🔗스레드있음</span>' : '';
-      const discordInput = `<input type="text" placeholder="Discord닉네임" value="${discordVal}" data-action="user-discord" data-target="${esc(u.username||'')}" style="font-size:11px;padding:3px 6px;border-radius:4px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100px;">${threadBadge}`;
-      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+activeLabel+'</td><td>'+discordInput+'</td><td>'+esc(lastLogin)+'</td><td>'+resetBtn+'</td></tr>';
+      const threadBadge = u.discord_thread_id ? ' <span style="font-size:10px;color:var(--ok);">🔗</span>' : '';
+      const discordInput = `<input type="text" placeholder="Discord닉네임" value="${discordVal}" data-action="user-discord" data-target="${esc(u.username||'')}" style="font-size:11px;padding:3px 6px;border-radius:4px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:90px;">${threadBadge}`;
+      const btnStyle = 'font-size:11px;padding:3px 7px;border-radius:4px;cursor:pointer;margin-left:2px;';
+      const resetBtn = `<button type="button" data-action="user-reset-pw" data-target="${esc(u.username||'')}" style="${btnStyle}border:1px solid var(--line);background:none;color:var(--ink-soft);">비번초기화</button>`;
+      const toggleBtn = isActive
+        ? `<button type="button" data-action="user-deactivate" data-target="${esc(u.username||'')}" style="${btnStyle}border:1px solid var(--line);background:none;color:var(--ink-soft);">비활성화</button>`
+        : `<button type="button" data-action="user-activate" data-target="${esc(u.username||'')}" style="${btnStyle}border:none;background:var(--ok);color:#fff;">활성화</button>`;
+      const delBtn = `<button type="button" data-action="user-delete" data-target="${esc(u.username||'')}" style="${btnStyle}border:1px solid var(--danger,red);background:none;color:var(--danger,red);">삭제</button>`;
+      return `<tr>
+        <td>${esc(u.username||'-')}</td>
+        <td>${esc(u.nickname||'-')}</td>
+        <td>${activeBadge}</td>
+        <td>${discordInput}</td>
+        <td style="font-size:11px;color:var(--ink-soft);">${esc(lastLogin)}</td>
+        <td>${resetBtn}${toggleBtn}${delBtn}</td>
+      </tr>`;
     }).join('');
     out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>닉네임</th><th>상태</th><th>Discord닉네임</th><th>마지막 로그인</th><th>관리</th></tr></thead><tbody>'+rows+'</tbody></table>';
     // Discord 닉네임 저장 (blur 이벤트)
@@ -2578,19 +2592,35 @@ async function renderSignupRequests(){
     const res = await fetch('/api/admin/signup-requests', {headers: authHeaders()});
     if(!res.ok) throw new Error('HTTP '+res.status);
     const list = await res.json();
-    if(!list.length){ out.innerHTML = '<div class="hint">아직 남긴 사람이 없어요.</div>'; return; }
+    if(!list.length){ out.innerHTML = '<div class="hint">📭 대기 중인 가입 신청이 없어요.</div>'; return; }
     const rows = list.map(r=>{
       const when = r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '-';
-      const typeLabel = r.contact_type==='phone' ? '📞 전화' : '💬 카톡';
-      const idCell = r.created_username
-        ? '👤 '+esc(r.created_username)+' <button type="button" class="chip-btn" style="background:var(--danger,#c0392b);color:#fff;" data-action="signupreq-unlink" data-target="'+r.id+'">해제</button>'
-        : '<input type="text" id="signupreqId-'+r.id+'" value="'+esc(r.desired_username||'')+'" placeholder="만든 아이디" style="width:110px;display:inline-block;padding:4px 6px;font-size:12px;"> '+
-          '<button type="button" class="chip-btn" style="background:var(--accent,#2ecc71);color:#fff;" data-action="signupreq-link" data-target="'+r.id+'">✅ 연결</button>';
-      return '<tr><td>'+typeLabel+'</td><td>'+esc(r.contact)+'</td><td>'+esc(r.desired_username||'-')+'</td><td>'+esc(r.nickname||'-')+'</td><td>'+esc(when)+'</td><td>'+idCell+'</td></tr>';
+      const statusBadge = r.created_username
+        ? `<span style="color:var(--ok);font-size:11px;">✅ 승인됨 (${esc(r.created_username)})</span>`
+        : '<span style="color:var(--blueprint);font-size:11px;">⏳ 대기 중</span>';
+      const actions = r.created_username
+        ? `<button type="button" data-action="signupreq-unlink" data-target="${r.id}"
+            style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:none;color:var(--ink-soft);cursor:pointer;">해제</button>`
+        : `<input type="text" id="sreqId-${r.id}" value="${esc(r.desired_username||'')}" placeholder="부여할 아이디"
+            style="width:100px;padding:3px 6px;font-size:11px;border:1px solid var(--line);border-radius:4px;margin-right:4px;">
+           <button type="button" data-action="signupreq-link" data-target="${r.id}"
+            style="font-size:11px;padding:3px 8px;border-radius:4px;border:none;background:var(--ok);color:#fff;cursor:pointer;">✅ 승인</button>
+           <button type="button" data-action="signupreq-reject" data-target="${r.id}"
+            style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:none;color:var(--danger,red);cursor:pointer;margin-left:4px;">❌ 거절</button>`;
+      return `<tr>
+        <td>${esc(r.contact)}</td>
+        <td>${esc(r.desired_username||'-')}</td>
+        <td>${esc(r.nickname||'-')}</td>
+        <td style="font-size:11px;color:var(--ink-soft);">${esc(when)}</td>
+        <td>${statusBadge}</td>
+        <td>${actions}</td>
+      </tr>`;
     }).join('');
-    out.innerHTML = '<table class="dtable"><thead><tr><th>구분</th><th>연락처</th><th>희망 아이디</th><th>감자명</th><th>남긴 날짜</th><th>계정</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    out.innerHTML = `<table class="dtable"><thead><tr>
+      <th>연락처</th><th>희망 아이디</th><th>감자명</th><th>신청일</th><th>상태</th><th>처리</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
   }catch(e){
-    out.innerHTML = '<div class="hint">불러오기에 실패했어요: '+esc((e&&e.message)||'')+'</div>';
+    out.innerHTML = '<div class="hint">불러오기 실패: '+esc((e&&e.message)||'')+'</div>';
   }
 }
 async function renderAccounts(){
@@ -6628,20 +6658,36 @@ document.addEventListener('click', async function(e){
     return;
   }
   if(action==='user-delete'){
-    const [uid, uname] = target.split('|');
-    if(!confirm('아이디 '+uname+' 계정을 지울까요? 되돌릴 수 없어요. (씨앗 데이터는 안 지워지고 남아요)')) return;
-    const pw = prompt('본인 확인을 위해 관리자 비밀번호를 입력해주세요.');
-    if(pw===null || pw===''){ return; }
-    fetch('/api/admin/users/'+encodeURIComponent(uid), {method:'DELETE', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({password:pw})})
-      .then(async r=>{ if(r.ok) renderUserList(); else alert(await adminErrorText(r)); })
-      .catch(()=>alert('서버에 연결할 수 없어요.'));
+    if(!confirm(`⚠️ [${target}] 계정을 완전히 삭제할까요?\n씨앗 기록은 남지만 로그인 불가 → 되돌릴 수 없어요.`)) return;
+    const r = await fetch('/api/master/users/'+encodeURIComponent(target), {method:'DELETE', headers: authHeaders()});
+    if(r.ok){ renderUserList(); }
+    else alert(await adminErrorText(r));
+    return;
+  }
+  if(action==='user-deactivate'){
+    if(!confirm(`[${target}] 계정을 비활성화할까요? (언제든 다시 활성화 가능)`)) return;
+    const r = await fetch('/api/master/users/'+encodeURIComponent(target)+'/status', {
+      method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()),
+      body: JSON.stringify({is_active: false})
+    });
+    if(r.ok) renderUserList();
+    else alert(await adminErrorText(r));
+    return;
+  }
+  if(action==='user-activate'){
+    const r = await fetch('/api/master/users/'+encodeURIComponent(target)+'/status', {
+      method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()),
+      body: JSON.stringify({is_active: true})
+    });
+    if(r.ok) renderUserList();
+    else alert(await adminErrorText(r));
     return;
   }
   if(action==='signupreq-link'){
-    const inputEl = document.getElementById('signupreqId-'+target);
+    const inputEl = document.getElementById('sreqId-'+target);
     const username = (inputEl?.value||'').trim().toLowerCase();
-    if(!username){ alert('아이디를 입력해주세요.'); return; }
-    if(!/^[a-z0-9_]{2,20}$/.test(username)){ alert('아이디는 영문 소문자/숫자/_ 2~20자여야 해요.'); return; }
+    if(!username){ alert('부여할 아이디를 입력해주세요.'); return; }
+    if(!/^[a-z0-9_.]{2,20}$/.test(username)){ alert('아이디는 영문 소문자/숫자/_.  2~20자'); return; }
     const r = await fetch('/api/admin/signup-requests/'+target, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({username})});
     const data = await r.json();
     if(!r.ok){ alert(data.detail||'오류가 발생했어요.'); return; }
@@ -6653,14 +6699,22 @@ document.addEventListener('click', async function(e){
         <b>아이디:</b> ${esc(data.username)}<br>
         <b>초기 비밀번호:</b> <code style="background:var(--card,#222);padding:4px 8px;border-radius:4px;font-size:15px;letter-spacing:1px;">${esc(data.username)}</code>
       </div>
-      <div class="fhint" style="margin-bottom:14px;">초기 비밀번호는 아이디와 동일해요. 첫 로그인 후 변경하게 됩니다.</div>
-      <button type="button" id="adminCancel" class="addbtn" onclick="navigator.clipboard.writeText('아이디: ${esc(data.username)}\n비밀번호: ${esc(data.username)}').then(()=>this.textContent='✅ 복사됨!')" style="width:100%;text-align:center;margin-bottom:8px;">📋 클립보드에 복사</button>
+      <div class="fhint" style="margin-bottom:14px;">초기 비밀번호 = 아이디. 첫 로그인 후 변경 안내 떠요.</div>
+      <button type="button" id="adminCancel" class="addbtn" onclick="navigator.clipboard.writeText('아이디: ${esc(data.username)}\\n비밀번호: ${esc(data.username)}').then(()=>this.textContent='✅ 복사됨!')" style="width:100%;text-align:center;margin-bottom:8px;">📋 클립보드에 복사</button>
       <button type="button" id="adminCancel" class="addbtn" style="width:100%;text-align:center;">닫기</button>
     `);
     return;
   }
   if(action==='signupreq-unlink'){
+    if(!confirm('계정 연결을 해제할까요? (계정은 유지되고 신청서만 미처리 상태로 바뀌어요)')) return;
     fetch('/api/admin/signup-requests/'+target, {method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()), body: JSON.stringify({username:''})})
+      .then(async r=>{ if(r.ok) renderSignupRequests(); else alert(await adminErrorText(r)); })
+      .catch(()=>alert('서버에 연결할 수 없어요.'));
+    return;
+  }
+  if(action==='signupreq-reject'){
+    if(!confirm('이 가입 신청을 거절하고 목록에서 삭제할까요?')) return;
+    fetch('/api/admin/signup-requests/'+target, {method:'DELETE', headers: authHeaders()})
       .then(async r=>{ if(r.ok) renderSignupRequests(); else alert(await adminErrorText(r)); })
       .catch(()=>alert('서버에 연결할 수 없어요.'));
     return;
