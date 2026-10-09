@@ -1279,6 +1279,9 @@ def user_register(body: UserRegisterIn):
     # 닉네임 끝이 "감자"로 끝나지 않으면 자동 추가
     if nick and not nick.endswith("감자"):
         nick = nick + "감자"
+    # "감자"만 단독으로 쓰면 랜덤 배정
+    if nick == "감자":
+        nick = _assign_gamja_name(conn)
     plan = "free"
     placeholder_email = username + "@noemail.local"
     if USE_PG:
