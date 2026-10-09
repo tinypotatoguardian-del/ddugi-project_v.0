@@ -258,6 +258,22 @@ def init_db() -> None:
         if USE_PG:
             conn.rollback()
 
+    # 마이그레이션: discord_username (Discord 서버 닉네임)
+    try:
+        db_execute(conn, "ALTER TABLE users ADD COLUMN discord_username TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
+    # 마이그레이션: discord_thread_id (씨앗 공유 스레드 ID)
+    try:
+        db_execute(conn, "ALTER TABLE users ADD COLUMN discord_thread_id TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
     # 마이그레이션: 관리자가 직접 만들어준 계정(아이디=초기 비번)이 최초 로그인 시
     # 비번을 바꾸도록 강제하는 플래그
     try:
@@ -1458,9 +1474,24 @@ def list_users(x_admin_token: str = Header(default="")):
     """전체 일반 유저 목록 (마스터/어드민 전용)"""
     require_admin_token(x_admin_token, {"master", "admin"})
     conn = get_db()
-    rows = db_fetchall(conn, "SELECT id,username,nickname,plan,role,is_active,created_at,last_login_at FROM users ORDER BY created_at DESC")
+    rows = db_fetchall(conn, "SELECT id,username,nickname,plan,role,is_active,created_at,last_login_at,discord_username,discord_thread_id FROM users ORDER BY created_at DESC")
     conn.close()
     return [dict(r) for r in rows]
+
+
+class DiscordUsernameIn(BaseModel):
+    discord_username: str
+
+@app.put("/api/master/users/{username}/discord")
+def set_discord_username(username: str, body: DiscordUsernameIn, x_admin_token: str = Header(default="")):
+    """Discord 닉네임 연결 (마스터/어드민 전용)"""
+    require_admin_token(x_admin_token, {"master", "admin"})
+    conn = get_db()
+    q = "UPDATE users SET discord_username=%s WHERE username=%s" if USE_PG else "UPDATE users SET discord_username=? WHERE username=?"
+    db_execute(conn, q, (body.discord_username.strip(), username))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"ok": True}
 
 
 # ── 초대코드 관리 (마스터 전용)
@@ -1851,6 +1882,110 @@ def _run_discord_bot():
         discord_bot.bot.run(token)
     except Exception as e:
         print(f"[bot] 실행 오류: {e}")
+
+
+
+
+# ── 씨앗 Discord 공유 ──────────────────────────────────────────────────────
+SEED_SHARE_CH = "1556104705304690768"  # 씨앗정의서-공유 포럼
+
+def _discord_post(path: str, body: dict):
+    """봇 토큰으로 Discord API 호출"""
+    import urllib.request, urllib.error
+    token = os.environ.get("DISCORD_BOT_TOKEN", "")
+    if not token:
+        return None, "DISCORD_BOT_TOKEN 없음"
+    url = f"https://discord.com/api/v10{path}"
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), headers={
+        "Authorization": f"Bot {token}",
+        "Content-Type": "application/json",
+        "User-Agent": "DiscordBot (https://gamja99.up.railway.app, 1.0)"
+    }, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.loads(r.read().decode()), None
+    except urllib.error.HTTPError as e:
+        return None, e.read().decode()
+
+class SeedShareIn(BaseModel):
+    seed_name: str
+    problem: str
+    ai_goal: str
+    blocker: str = ""
+
+class SeedUpdateIn(BaseModel):
+    content: str
+    update_type: str = "update"  # update | complete | new_seed
+
+@app.post("/api/seed/share")
+def seed_share(body: SeedShareIn, x_token: str = Header(default="")):
+    """씨앗 첫 공유 — Discord 스레드 생성"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    row = db_fetchone(conn, "SELECT discord_username, discord_thread_id FROM users WHERE username=?" if not USE_PG
+                     else "SELECT discord_username, discord_thread_id FROM users WHERE username=%s", (user["username"],))
+
+    display_name = (row["discord_username"] or user["username"]) if row else user["username"]
+    existing_thread = row["discord_thread_id"] if row else None
+
+    if existing_thread:
+        conn.close()
+        return {"ok": True, "thread_id": existing_thread, "reused": True}
+
+    from datetime import datetime
+    today = datetime.now().strftime("%Y.%m.%d")
+    content = (
+        f"🌱 **{display_name}님의 감자밭 이력**\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"**[{today}] 씨앗 1호 시작**\n\n"
+        f"**씨앗 이름:** {body.seed_name}\n"
+        f"**해결하고 싶은 것:** {body.problem}\n"
+        f"**AI로 하려는 것:** {body.ai_goal}\n"
+        + (f"**막히는 지점:** {body.blocker}\n" if body.blocker else "") +
+        f"\n👀 피드백 환영해요!"
+    )
+    data, err = _discord_post(f"/channels/{SEED_SHARE_CH}/threads", {
+        "name": f"🌱 {display_name}님의 감자밭",
+        "message": {"content": content}
+    })
+    if err or not data:
+        conn.close()
+        raise HTTPException(status_code=500, detail=f"Discord 오류: {err}")
+
+    thread_id = data["id"]
+    q = "UPDATE users SET discord_thread_id=%s WHERE username=%s" if USE_PG else "UPDATE users SET discord_thread_id=? WHERE username=?"
+    db_execute(conn, q, (thread_id, user["username"]))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"ok": True, "thread_id": thread_id, "reused": False}
+
+
+@app.post("/api/seed/update")
+def seed_update(body: SeedUpdateIn, x_token: str = Header(default="")):
+    """씨앗 업데이트/완료/새 씨앗 댓글"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    row = db_fetchone(conn, "SELECT discord_thread_id FROM users WHERE username=?" if not USE_PG
+                     else "SELECT discord_thread_id FROM users WHERE username=%s", (user["username"],))
+    conn.close()
+
+    if not row or not row["discord_thread_id"]:
+        raise HTTPException(status_code=400, detail="먼저 씨앗 공유를 해주세요")
+
+    thread_id = row["discord_thread_id"]
+    from datetime import datetime
+    today = datetime.now().strftime("%Y.%m.%d")
+
+    icons = {"update": "🔄", "complete": "✅", "new_seed": "🌱"}
+    labels = {"update": "업데이트", "complete": "완료!", "new_seed": "새 씨앗 시작"}
+    icon = icons.get(body.update_type, "🔄")
+    label = labels.get(body.update_type, "업데이트")
+
+    content = f"**[{today}] {icon} {label}**\n\n{body.content}"
+    _, err = _discord_post(f"/channels/{thread_id}/messages", {"content": content})
+    if err:
+        raise HTTPException(status_code=500, detail=f"Discord 오류: {err}")
+    return {"ok": True}
 
 
 if __name__ == "__main__":
