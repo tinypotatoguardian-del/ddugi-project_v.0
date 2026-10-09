@@ -282,6 +282,14 @@ def init_db() -> None:
         if USE_PG:
             conn.rollback()
 
+    # 마이그레이션: discover_data (심기 전 준비 판정 결과 저장)
+    try:
+        db_execute(conn, "ALTER TABLE users ADD COLUMN discover_data TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
     # 마이그레이션: 관리자가 직접 만들어준 계정(아이디=초기 비번)이 최초 로그인 시
     # 비번을 바꾸도록 강제하는 플래그
     try:
@@ -1948,6 +1956,31 @@ def load_intro(x_token: str = Header(default="")):
     if not row or not row["intro_data"]:
         return {"data": {}}
     return {"data": json.loads(row["intro_data"])}
+
+
+# ── 심기 전 준비 저장/불러오기 ──────────────────────────────
+@app.put("/api/user/discover")
+def save_discover(body: IntroDataIn, x_token: str = Header(default="")):
+    """심기 전 준비 판정 결과 서버 저장"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    q = "UPDATE users SET discover_data=%s WHERE username=%s" if USE_PG else "UPDATE users SET discover_data=? WHERE username=?"
+    db_execute(conn, q, (json.dumps(body.data, ensure_ascii=False), user["username"]))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"ok": True}
+
+@app.get("/api/user/discover")
+def load_discover(x_token: str = Header(default="")):
+    """심기 전 준비 판정 결과 불러오기"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    row = db_fetchone(conn, "SELECT discover_data FROM users WHERE username=?" if not USE_PG
+                     else "SELECT discover_data FROM users WHERE username=%s", (user["username"],))
+    conn.close()
+    if not row or not row["discover_data"]:
+        return {"data": {}}
+    return {"data": json.loads(row["discover_data"])}
 
 class SeedUpdateIn(BaseModel):
     content: str

@@ -1744,6 +1744,7 @@ window.applyJudgeResult = function(judgment, reason){
   window._setV('discover_result_state', judgment);
   window._setV('discover_judge_reason', reason || '');
   window._persist();
+  if(window.saveDiscoverToServer) saveDiscoverToServer();
   window._renderSheet();
 };
 
@@ -1783,6 +1784,7 @@ window.runDiscoverJudge = async function(){
     window._state.fields['discover_judge_reason'] = d.reason || '';
     window._state.fields['discover_judge_method'] = d.method || 'keyword';
     try{ window._persist(); }catch(pe){ console.warn('persist:', pe); }
+    if(window.saveDiscoverToServer) saveDiscoverToServer();
 
     const labelMap = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의', unnecessary:'🥔 AI 불필요'};
     const colorMap = {possible:'#2ecc71', redefine:'#6c8ee8', unnecessary:'#888'};
@@ -2159,7 +2161,8 @@ function renderSheet(){
     sheet.innerHTML = renderPromptKitSection() + navFootHtml(sec);
   } else if(sec.special==='discover'){
     sheet.innerHTML = renderDiscoverSection() + navFootHtml(sec);
-    initExportBox();
+    if(currentUser) loadDiscoverFromServer().then(()=>{ sheet.innerHTML = renderDiscoverSection() + navFootHtml(sec); initExportBox(); });
+    else initExportBox();
   } else if(sec.special==='verify'){
     sheet.innerHTML = renderVerifySection() + navFootHtml(sec);
     initExportBox();
@@ -5755,6 +5758,32 @@ window.loadIntroFromServer = async function() {
     const {data} = await r.json();
     if (!data || !Object.keys(data).length) return;
     // 서버 데이터가 있으면 localStorage에 병합 (서버 우선)
+    Object.entries(data).forEach(([k,v]) => { if(v !== undefined && v !== '') setV(k, v); });
+  } catch(e) {}
+};
+
+// ── 심기 전 준비 서버 저장/불러오기 ──────────────────────────────
+window.saveDiscoverToServer = async function() {
+  if (!currentUser) return;
+  const data = {
+    discover_result_state: getV('discover_result_state',''),
+    discover_judge_reason: getV('discover_judge_reason',''),
+    discover_judge_method: getV('discover_judge_method',''),
+  };
+  await fetch('/api/user/discover', {
+    method: 'PUT',
+    headers: {...authHeaders(), 'Content-Type': 'application/json'},
+    body: JSON.stringify({data})
+  });
+};
+
+window.loadDiscoverFromServer = async function() {
+  if (!currentUser) return;
+  try {
+    const r = await fetch('/api/user/discover', {headers: authHeaders()});
+    if (!r.ok) return;
+    const {data} = await r.json();
+    if (!data || !Object.keys(data).length) return;
     Object.entries(data).forEach(([k,v]) => { if(v !== undefined && v !== '') setV(k, v); });
   } catch(e) {}
 };
