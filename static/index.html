@@ -2535,15 +2535,13 @@ async function renderUserList(){
       const when = u.created_at ? new Date(u.created_at).toLocaleDateString('ko-KR') : '-';
       const lastLogin = u.last_login_at ? new Date(u.last_login_at).toLocaleDateString('ko-KR') : '로그인 안 함';
       const activeLabel = u.is_active===0 ? '<span style="color:var(--danger,#e74c3c);font-size:11px;">🔒 비활성</span>' : '<span style="color:var(--ok,#2ecc71);font-size:11px;">✅ 활성</span>';
-      const roleOpts = Object.entries(ROLE_LABELS).map(([v,l])=>`<option value="${v}"${u.role===v?' selected':''}>${l}</option>`).join('');
-      const roleSelect = `<select data-action="user-role" data-target="${esc(u.username||'')}" style="font-size:12px;padding:3px 6px;border-radius:4px;background:var(--card);color:var(--foreground);border:1px solid var(--border);">${roleOpts}</select>`;
       const resetBtn = `<button type="button" data-action="user-reset-pw" data-target="${esc(u.username||'')}" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:none;color:var(--ink-soft);cursor:pointer;">비번초기화</button>`;
       const discordVal = esc(u.discord_username||'');
       const threadBadge = u.discord_thread_id ? '<span style="font-size:10px;color:var(--ok);margin-left:4px;">🔗스레드있음</span>' : '';
       const discordInput = `<input type="text" placeholder="Discord닉네임" value="${discordVal}" data-action="user-discord" data-target="${esc(u.username||'')}" style="font-size:11px;padding:3px 6px;border-radius:4px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100px;">${threadBadge}`;
-      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+activeLabel+'</td><td>'+roleSelect+'</td><td>'+discordInput+'</td><td>'+esc(lastLogin)+'</td><td>'+resetBtn+'</td></tr>';
+      return '<tr><td>'+esc(u.username||'-')+'</td><td>'+esc(u.nickname||'-')+'</td><td>'+activeLabel+'</td><td>'+discordInput+'</td><td>'+esc(lastLogin)+'</td><td>'+resetBtn+'</td></tr>';
     }).join('');
-    out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>닉네임</th><th>상태</th><th>역할/레벨</th><th>Discord닉네임</th><th>마지막 로그인</th><th>관리</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    out.innerHTML = '<table class="dtable"><thead><tr><th>아이디</th><th>닉네임</th><th>상태</th><th>Discord닉네임</th><th>마지막 로그인</th><th>관리</th></tr></thead><tbody>'+rows+'</tbody></table>';
     // Discord 닉네임 저장 (blur 이벤트)
     out.querySelectorAll('input[data-action="user-discord"]').forEach(inp=>{
       inp.addEventListener('change', async function(){
@@ -2555,19 +2553,6 @@ async function renderUserList(){
         });
         if(r.ok){ this.style.borderColor='var(--ok)'; setTimeout(()=>this.style.borderColor='',1500); }
         else{ alert('저장 실패'); }
-      });
-    });
-    // role 드롭다운 이벤트
-    out.querySelectorAll('select[data-action="user-role"]').forEach(sel=>{
-      sel.addEventListener('change', async function(){
-        const username = this.dataset.target;
-        const role = this.value;
-        const r = await fetch('/api/master/users/'+encodeURIComponent(username)+'/role', {
-          method:'PUT', headers:Object.assign({'Content-Type':'application/json'}, authHeaders()),
-          body: JSON.stringify({role})
-        });
-        if(r.ok){ this.style.borderColor='var(--ok,#2ecc71)'; setTimeout(()=>this.style.borderColor='',1500); }
-        else{ this.style.borderColor='var(--danger,#e74c3c)'; alert('권한 변경 실패'); }
       });
     });
     // 비번 초기화 버튼 이벤트
