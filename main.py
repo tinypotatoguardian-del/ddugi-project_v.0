@@ -1903,8 +1903,8 @@ def discover_judge(body: JudgeIn):
 
     return {"judgment": judgment, "reason": reason, "method": "keyword"}
 
-# 정적 프론트엔드 서빙 (반드시 API 라우트들 다음에 mount)
-app.mount("/", StaticFiles(directory=os.path.join(APP_DIR, "static"), html=True), name="static")
+# 정적 프론트엔드 서빙은 파일 맨 끝에 (API 라우트 모두 등록 후)
+# 여기 있으면 아래에 정의된 API들을 StaticFiles가 가로챔 — 삭제 후 맨 끝으로 이동
 
 
 def _run_discord_bot():
@@ -2087,3 +2087,6 @@ if __name__ == "__main__":
     print("[main] Discord 봇 스레드 시작됨")
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# ── 정적 프론트엔드 서빙 — 반드시 모든 API 라우트 정의 후 마지막에 ──
+app.mount("/", StaticFiles(directory=os.path.join(APP_DIR, "static"), html=True), name="static")
