@@ -84,6 +84,20 @@ def decode_token(token: str) -> dict:
     except JWTError:
         raise HTTPException(status_code=401, detail="토큰이 유효하지 않거나 만료됐어요.")
 
+def require_user_token(x_token: str) -> dict:
+    """X-Token 헤더에서 유저 정보 추출"""
+    if not x_token:
+        raise HTTPException(status_code=401, detail="로그인이 필요해요.")
+    payload = decode_token(x_token)
+    username = payload.get("email", "")
+    if not username:
+        raise HTTPException(status_code=401, detail="토큰이 유효하지 않아요.")
+    return {
+        "username": username,
+        "user_id": payload.get("sub", ""),
+        "plan": payload.get("plan", "free"),
+    }
+
 def get_current_user(authorization: str = "") -> dict:
     """Authorization: Bearer <token> 헤더에서 유저 정보 추출"""
     if not authorization.startswith("Bearer "):
