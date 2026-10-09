@@ -2150,6 +2150,7 @@ function renderSheet(){
     sheet.innerHTML = renderLandingSection();
   } else if(sec.special==='intro'){
     sheet.innerHTML = renderIntroSection() + navFootHtml(sec);
+    if(currentUser) loadIntroFromServer().then(()=>{ sheet.innerHTML = renderIntroSection() + navFootHtml(sec); });
   } else if(sec.special==='curriculum'){
     sheet.innerHTML = renderCurriculumSection() + navFootHtml(sec);
   } else if(sec.special==='aitools'){
@@ -5661,7 +5662,7 @@ function renderIntroSection(){
     (introEditing ? '' :
       '<div class="exportbar">'+
         (!introSaved
-          ? '<button type="button" onclick="setV(\'intro_saved\',true);persist();window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💾 저장 완료</button>'
+          ? '<button type="button" onclick="setV(\'intro_saved\',true);persist();saveIntroToServer();window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💾 저장 완료</button>'
           : '<button type="button" onclick="setV(\'intro_saved\',false);window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정하기</button>'+
             '<span style="font-size:12px;color:var(--ok);margin-left:8px;">✅ 저장됨</span>'
         )+
@@ -5730,6 +5731,33 @@ function _renderSeedResultCard() {
   <div id="seedShareMsg" style="display:none;margin-top:10px;font-size:12px;color:var(--ok);"></div>
 </div>`;
 }
+
+// ── 마음의 방 서버 저장/불러오기 ──────────────────────────────
+window.saveIntroToServer = async function() {
+  if (!currentUser) return;
+  const data = {
+    intro_freetext: getV('intro_freetext',''),
+    intro_ai_result: getV('intro_ai_result',''),
+    intro_saved: getV('intro_saved', false),
+  };
+  await fetch('/api/user/intro', {
+    method: 'PUT',
+    headers: {...authHeaders(), 'Content-Type': 'application/json'},
+    body: JSON.stringify({data})
+  });
+};
+
+window.loadIntroFromServer = async function() {
+  if (!currentUser) return;
+  try {
+    const r = await fetch('/api/user/intro', {headers: authHeaders()});
+    if (!r.ok) return;
+    const {data} = await r.json();
+    if (!data || !Object.keys(data).length) return;
+    // 서버 데이터가 있으면 localStorage에 병합 (서버 우선)
+    Object.entries(data).forEach(([k,v]) => { if(v !== undefined && v !== '') setV(k, v); });
+  } catch(e) {}
+};
 
 window.shareToDiscord = async function(update_type='share') {
   const aiResult = getV('intro_ai_result','');

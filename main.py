@@ -274,6 +274,14 @@ def init_db() -> None:
         if USE_PG:
             conn.rollback()
 
+    # 마이그레이션: intro_data (마음의 방 서버 저장)
+    try:
+        db_execute(conn, "ALTER TABLE users ADD COLUMN intro_data TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
     # 마이그레이션: 관리자가 직접 만들어준 계정(아이디=초기 비번)이 최초 로그인 시
     # 비번을 바꾸도록 강제하는 플래그
     try:
@@ -1912,6 +1920,34 @@ class SeedShareIn(BaseModel):
     problem: str
     ai_goal: str
     blocker: str = ""
+
+
+# ── 마음의 방 서버 저장/불러오기 ──────────────────────────────
+class IntroDataIn(BaseModel):
+    data: dict  # {intro_freetext, intro_ai_result, intro_saved, ...}
+
+@app.put("/api/user/intro")
+def save_intro(body: IntroDataIn, x_token: str = Header(default="")):
+    """마음의 방 데이터 서버 저장"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    q = "UPDATE users SET intro_data=%s WHERE username=%s" if USE_PG else "UPDATE users SET intro_data=? WHERE username=?"
+    db_execute(conn, q, (json.dumps(body.data, ensure_ascii=False), user["username"]))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"ok": True}
+
+@app.get("/api/user/intro")
+def load_intro(x_token: str = Header(default="")):
+    """마음의 방 데이터 불러오기"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    row = db_fetchone(conn, "SELECT intro_data FROM users WHERE username=?" if not USE_PG
+                     else "SELECT intro_data FROM users WHERE username=%s", (user["username"],))
+    conn.close()
+    if not row or not row["intro_data"]:
+        return {"data": {}}
+    return {"data": json.loads(row["intro_data"])}
 
 class SeedUpdateIn(BaseModel):
     content: str
