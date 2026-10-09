@@ -5292,80 +5292,105 @@ function renderCurriculumSection(){
 
 
 function renderLandingSection(){
-  const _tab = window._landingTab || 'teen';
-  const tabs = [
-    {id:'teen',   label:'📚 학생'},
-    {id:'career', label:'💼 취준생'},
-    {id:'work',   label:'🏢 직장인'},
-  ];
-  const data = {
-    teen: [
-      {n:'01', main:'AI한테 시키기 전에, <b>내 문제를 먼저 정리한다.</b>', sub:'"수행평가 써줘" 전에 — 주제가 뭔지, 뭐가 막히는지 먼저 생각해봐.'},
-      {n:'02', main:'AI가 틀릴 수 있다. <b>결과는 내가 직접 확인한다.</b>', sub:'AI가 낸 답, 선생님한테 내기 전에 내가 읽어봤어?'},
-      {n:'03', main:'AI가 목표가 아니라, <b>내가 이해하는 게 목표다.</b>', sub:'AI 없이도 되면 안 써도 돼. 이해 없이 제출하면 내 것이 아니야.'},
-    ],
-    career: [
-      {n:'01', main:'AI한테 시키기 전에, <b>내 경험을 먼저 정리한다.</b>', sub:'"자소서 써줘" 전에 — 어떤 경험인지, 뭘 강조하고 싶은지 먼저.'},
-      {n:'02', main:'AI가 쓴 자소서, <b>진짜 내 얘기인지 확인한다.</b>', sub:'AI 티 나는 자소서보다 내 말로 쓴 자소서가 낫다.'},
-      {n:'03', main:'AI를 붙이는 게 목표가 아니라, <b>합격이 목표다.</b>', sub:'AI가 도구일 때 잘 쓰이고, 목적이 되면 Slop이 된다.'},
-    ],
-    work: [
-      {n:'01', main:'AI한테 시키기 전에, <b>문제를 먼저 정의한다.</b>', sub:'"보고서 써줘" 전에 — 목적이 뭔지, 누가 보는지 먼저.'},
-      {n:'02', main:'AI 결과물, <b>팀장한테 보내기 전에 검토한다.</b>', sub:'AI가 정리한 회의록, 사실과 다른 부분 없는지 확인했어?'},
-      {n:'03', main:'자동화보다 <b>문제 정의가 먼저다.</b>', sub:'AI를 붙이는 것이 AX가 아니라, 일을 바꾸는 것이 AX다.'},
-    ],
-  };
-  const items = data[_tab];
-  const tabHtml = tabs.map(t => {
-    const a = _tab === t.id;
-    return `<button type="button" onclick="window._landingTab='${t.id}';window._renderSheet();"
-      style="padding:8px 16px;border-radius:20px;border:2px solid ${a?'var(--blueprint)':'var(--line)'};
-      background:${a?'var(--blueprint-soft)':'transparent'};color:${a?'var(--blueprint)':'var(--ink-soft)'};
-      font-weight:${a?700:400};font-size:13px;cursor:pointer;">${t.label}</button>`;
-  }).join('');
-  const itemHtml = items.map(it => `
-    <div style="display:flex;gap:12px;align-items:flex-start;">
-      <span style="color:var(--blueprint);font-weight:800;font-size:16px;flex-shrink:0;">${it.n}</span>
-      <div>
-        <p style="font-size:14px;color:var(--ink);margin:0 0 4px;line-height:1.6;">${it.main}</p>
-        <p style="font-size:12px;color:var(--ink-soft);margin:0;line-height:1.6;">${it.sub}</p>
-      </div>
-    </div>`).join('');
-
   return `<div style="max-width:720px;margin:0 auto;padding:40px 24px 80px;box-sizing:border-box;">
-    <div style="text-align:center;margin-bottom:24px;">
+
+    <!-- 헤더 -->
+    <div style="text-align:center;margin-bottom:32px;">
       <div style="font-size:72px;margin-bottom:12px;">🥔</div>
-      <h1 style="font-size:24px;font-weight:800;color:var(--blueprint);margin:0 0 8px;">지구 종말 방지 프로젝트</h1>
-      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 10px;line-height:1.7;">AI 데이터센터 증식으로 인한 자원 낭비, 그리고 쓸모없는 AI가 넘쳐나는 세상.</p>
-      <p style="font-size:15px;font-weight:700;color:var(--blueprint);margin:0;line-height:1.7;">"AI가 지구를 멸망시키기 전에,<br>ddugi가 먼저 물어봅니다. 그거 진짜 AI가 필요해?"</p>
+      <h1 style="font-size:26px;font-weight:800;color:var(--blueprint);margin:0 0 14px;line-height:1.3;">지구 종말 방지 프로젝트</h1>
+      <p style="font-size:14px;color:var(--ink-soft);margin:0;line-height:1.9;max-width:480px;margin-inline:auto;">
+        AI가 지구를 멸망시키는 방법은 두 가지예요.<br>
+        <b style="color:var(--ink);">물리적으로</b> — 데이터센터가 전기와 물을 태우면서.<br>
+        <b style="color:var(--ink);">문화적으로</b> — 아무도 읽지 않는 글이 세상을 덮으면서.
+      </p>
     </div>
-    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:24px;margin-bottom:18px;">
-      <h2 style="font-size:16px;font-weight:800;margin:0 0 6px;color:var(--ink);">🌍 AI Slop이 뭔가요?</h2>
-      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 14px;">쓸모없는 AI 결과물들이에요.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>뻔하고 누구한테나 해당되는 자소서</span></div>
-        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>이상한 손가락이 달린 AI 그림</span></div>
-        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>아무도 안 읽는 AI 블로그 글들</span></div>
-        <div style="display:flex;gap:8px;font-size:13px;color:var(--ink-soft);line-height:1.6;"><span>❌</span><span>"AI로 만들었다"는 게 티 나서 신뢰를 잃는 것들</span></div>
+
+    <!-- 왜 지구 종말인가 -->
+    <div style="border:2px solid var(--blueprint-2);border-radius:16px;padding:24px;margin-bottom:18px;background:var(--blueprint-soft);">
+      <h2 style="font-size:15px;font-weight:800;margin:0 0 14px;color:var(--blueprint);">🌍 왜 하필 "지구 종말"인가요?</h2>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="background:var(--panel);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;">📡 물리적 이유</div>
+          <p style="font-size:13px;color:var(--ink-soft);margin:0;line-height:1.8;">ChatGPT 질문 한 번이 구글 검색보다 10배 이상의 전력을 씁니다. 이미지 한 장 생성하는 데 스마트폰 한 번 충전 분량의 에너지가 들어요. 전 세계가 동시에 AI를 쓰면, 그 합산은 국가 단위의 전력 소비예요. AI 데이터센터 냉각을 위해 강물이 쓰이고, 기후가 달라집니다.</p>
+        </div>
+        <div style="background:var(--panel);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;">🌀 문화적 이유</div>
+          <p style="font-size:13px;color:var(--ink-soft);margin:0;line-height:1.8;">AI가 만든 콘텐츠가 인터넷을 채우면, AI는 그 콘텐츠로 다음 세대를 학습합니다. 복사본의 복사본의 복사본. 아무도 쓰지 않은 자소서, 아무도 읽지 않는 블로그, 아무도 공감하지 않는 글들이 디지털 생태계를 덮으면 — 인터넷은 메아리 방이 됩니다. 그게 문화적 종말이에요.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Slop 2026 -->
+    <div style="border:2px solid var(--blueprint-2);border-radius:16px;padding:24px;margin-bottom:18px;background:var(--panel);">
+      <h2 style="font-size:15px;font-weight:800;margin:0 0 6px;color:var(--ink);">🤖 AI Slop — 2026년판</h2>
+      <p style="font-size:12px;color:var(--ink-soft);margin:0 0 16px;line-height:1.7;">손가락이 6개 나오던 시대는 끝났어요. 지금의 Slop은 훨씬 조용하고, 그래서 더 위험합니다.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <div style="display:flex;gap:10px;font-size:13px;color:var(--ink-soft);line-height:1.7;align-items:flex-start;"><span style="flex-shrink:0;">❌</span><span><b style="color:var(--ink);">완벽하지만 아무도 기억 못 하는 글.</b> 문법도 맞고 구조도 좋은데, 읽고 나면 아무 느낌이 없는 것</span></div>
+        <div style="display:flex;gap:10px;font-size:13px;color:var(--ink-soft);line-height:1.7;align-items:flex-start;"><span style="flex-shrink:0;">❌</span><span><b style="color:var(--ink);">다 똑같은 자소서.</b> "저는 도전을 즐기며 팀워크를 중시합니다" — 누가 쓴 건지 모르는 것</span></div>
+        <div style="display:flex;gap:10px;font-size:13px;color:var(--ink-soft);line-height:1.7;align-items:flex-start;"><span style="flex-shrink:0;">❌</span><span><b style="color:var(--ink);">회의록엔 모든 말이 있지만 핵심 결정이 없는 것.</b> AI가 다 적었지만 아무도 안 읽는 것</span></div>
+        <div style="display:flex;gap:10px;font-size:13px;color:var(--ink-soft);line-height:1.7;align-items:flex-start;"><span style="flex-shrink:0;">❌</span><span><b style="color:var(--ink);">돌아는 가는데 왜 되는지 아무도 모르는 코드.</b> AI가 짰고, 아무도 읽지 않은 것</span></div>
+        <div style="display:flex;gap:10px;font-size:13px;color:var(--ink-soft);line-height:1.7;align-items:flex-start;"><span style="flex-shrink:0;">❌</span><span><b style="color:var(--ink);">링크드인 감성 포스팅.</b> "오늘 배운 것: 실패는 성공의 어머니입니다 🙏" 류 전부</span></div>
       </div>
       <div style="background:rgba(239,68,68,.07);border-left:4px solid #ef4444;border-radius:0 8px 8px 0;padding:12px 16px;">
-        <p style="font-size:13px;color:var(--ink);line-height:1.8;margin:0;">이 쓸모없는 결과물 하나를 만들기 위해 <b>엄청난 전기, 물, 자원</b>이 소비돼요.<br>데이터센터가 돌아가고, 지구가 뜨거워지고 있어요.</p>
+        <p style="font-size:13px;color:var(--ink);line-height:1.8;margin:0;">이걸 만드는 데 여전히 <b>실제 전기, 실제 물, 실제 탄소</b>가 소비됩니다.<br>Slop이 티가 안 나게 됐다고, 비용이 사라진 건 아니에요.</p>
       </div>
     </div>
-    <div style="background:var(--panel);border:1px solid var(--line-soft);border-radius:16px;padding:20px;margin-bottom:14px;">
-      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">${tabHtml}</div>
-      <div style="display:flex;flex-direction:column;gap:16px;">${itemHtml}</div>
-      <div style="border-top:1px solid var(--line-soft);margin-top:16px;padding-top:14px;">
-        <p style="font-size:13px;color:var(--ink-soft);margin:0;line-height:1.8;">AI를 쓰지 않기로 판단한 것도 능력입니다.<br>필요 없는 곳에 AI를 안 쓰는 것이 지구를 지키는 첫걸음.</p>
+
+    <!-- 철학 -->
+    <div style="border:2px solid var(--blueprint-2);border-radius:16px;padding:24px;margin-bottom:24px;background:var(--panel);">
+      <h2 style="font-size:15px;font-weight:800;margin:0 0 16px;color:var(--ink);">🌱 그래서 ddugi는 이렇게 생각해요</h2>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--blueprint);font-weight:800;font-size:16px;flex-shrink:0;">01</span>
+          <div>
+            <p style="font-size:14px;color:var(--ink);margin:0 0 4px;line-height:1.6;font-weight:600;">AI한테 시키기 전에, 먼저 내 문제를 정리한다.</p>
+            <p style="font-size:12px;color:var(--ink-soft);margin:0;line-height:1.7;">문제를 모른 채 AI를 쓰면, AI는 그럴듯한 답을 만들어냅니다. 그게 Slop이 시작되는 순간이에요.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--blueprint);font-weight:800;font-size:16px;flex-shrink:0;">02</span>
+          <div>
+            <p style="font-size:14px;color:var(--ink);margin:0 0 4px;line-height:1.6;font-weight:600;">AI가 필요 없다는 판단도 능력이다.</p>
+            <p style="font-size:12px;color:var(--ink-soft);margin:0;line-height:1.7;">AI를 쓰지 않기로 결정하는 것. 그것도 AI를 잘 다루는 힘이에요. 모든 것에 AI를 붙이는 게 목표가 아니에요.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--blueprint);font-weight:800;font-size:16px;flex-shrink:0;">03</span>
+          <div>
+            <p style="font-size:14px;color:var(--ink);margin:0 0 4px;line-height:1.6;font-weight:600;">AI의 결과물은 내가 책임진다.</p>
+            <p style="font-size:12px;color:var(--ink-soft);margin:0;line-height:1.7;">"AI가 그렇게 말했어요"는 이유가 안 됩니다. 내 이름으로 나간 것은 내 것이에요.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:var(--blueprint);font-weight:800;font-size:16px;flex-shrink:0;">04</span>
+          <div>
+            <p style="font-size:14px;color:var(--ink);margin:0 0 4px;line-height:1.6;font-weight:600;">작은 씨앗 하나가 지구를 지킨다.</p>
+            <p style="font-size(12px;color:var(--ink-soft);margin:0;line-height:1.7;">내 문제를 제대로 정의하고, 진짜 필요한 곳에만 AI를 쓰고, 그 결과물을 내 것으로 만드는 것 — 그게 지구 종말을 늦추는 가장 작은 행동이에요.</p>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- CTA -->
     <div style="text-align:center;margin-bottom:20px;">
-      <button type="button" onclick="window._state.cur='curriculum';window._renderSheet();" style="font-size:16px;font-weight:700;padding:14px 48px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(139,92,246,.3);">🥔 시작하기</button>
+      <button type="button" onclick="window._state&&(window._state.cur='intro');window._renderSheet&&window._renderSheet();"
+        style="font-size:16px;font-weight:700;padding:14px 48px;border-radius:999px;border:none;background:var(--blueprint);color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(139,92,246,.3);">
+        🥔 내 씨앗 찾으러 가기
+      </button>
+      <div style="margin-top:12px;">
+        <button type="button" onclick="window._state&&(window._state.cur='curriculum');window._renderSheet&&window._renderSheet();"
+          style="font-size:13px;font-weight:600;padding:10px 28px;border-radius:999px;border:2px solid var(--blueprint-2);background:transparent;color:var(--blueprint);cursor:pointer;">
+          📚 AI 공부 먼저 하기
+        </button>
+      </div>
     </div>
-    <p style="font-size:12px;color:var(--placeholder);text-align:center;line-height:1.8;margin:0;">현재 버전은 교육 목적으로 만들어졌으며, 씨앗·감자밭 등 새싹 세계관 언어로 구성되어 있습니다.<br>향후 대상(학생 / 취준생 / 기업)에 따라 언어와 스킨을 선택할 수 있도록 확장할 예정입니다.</p>
+
+    <p style="font-size:12px;color:var(--placeholder);text-align:center;line-height:1.8;margin:0;">
+      ddugi Project v.0 — 지구 종말 방지 프로젝트<br>
+      AI를 제대로 쓰는 사람들의 커뮤니티
+    </p>
   </div>`;
 }
-
 // ── 인트로 자동채우기 기능 ──────────────────────────────
 window.introUpdateState = function(){
   // 프롬프트가 이미 생성된 상태면 자동채우기 버튼 활성 유지
