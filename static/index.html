@@ -1392,9 +1392,17 @@ function openAuthModal(mode){
           await syncSeedToServer();
           showModal('<div style="text-align:center;padding:8px 0;">'+
             '<div style="font-size:32px;margin-bottom:8px;">🥔</div>'+
-            '<h3 style="margin:0 0 8px;">환영해요!</h3>'+
-            '<p style="font-size:14px;color:var(--ink-soft);margin:0 0 16px;">배정된 감자명: <b style="color:var(--blueprint);">'+esc(d.nickname)+'</b><br><span style="font-size:12px;">마이페이지에서 바꿀 수 있어요</span></p>'+
-            '<button type="button" onclick="hideModal()" style="padding:8px 24px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;cursor:pointer;font-size:14px;">시작하기 🌱</button>'+
+            '<h3 style="margin:0 0 6px;">환영해요, '+esc(d.nickname)+'!</h3>'+
+            '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 18px;line-height:1.7;">이제 감자밭 Discord에 들어와서<br>자기소개를 남겨줘야 해요!</p>'+
+            '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">'+
+              '<a href="https://discord.gg/BvE8kwNt5" target="_blank" rel="noopener"'+
+              ' style="display:block;padding:13px 20px;border-radius:10px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;">'+
+              '💬 Discord 감자밭 입장하기'+
+              '<div style="font-size:11px;font-weight:400;margin-top:3px;opacity:0.85;">gate1-자기소개 채널에 자기소개 남기면 새싹감자 역할 부여!</div>'+
+              '</a>'+
+              '<button type="button" onclick="hideModal()" style="padding:10px 20px;border-radius:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;cursor:pointer;">나중에 할게요 — 먼저 마음의 방 가기</button>'+
+            '</div>'+
+            '<p style="font-size:11px;color:var(--ink-soft);margin:0;">Discord 가입 후 관리자 확인이 완료되면<br>모든 기능을 사용할 수 있어요</p>'+
           '</div>');
          }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
         finally{ if(btn) btn.disabled=false; }
@@ -5581,20 +5589,6 @@ function renderIntroSection(){
       <span style="font-size:14px;font-weight:700;color:var(--ink);">뭘 해결하고 싶어?</span>
       <span style="font-size:12px;color:var(--ink-soft);">막막한 상황, 귀찮은 것, 어려운 것 — 뭐든</span>
     </div>
-    <!-- Discord 자기소개 불러오기 (로그인한 회원만) -->
-    ${currentUser ? `
-    <details id="discordImportBox" style="margin-bottom:12px;border:1px solid var(--blueprint-2);border-radius:8px;overflow:hidden;">
-      <summary style="cursor:pointer;list-style:none;padding:10px 14px;background:var(--blueprint-soft);font-size:12px;font-weight:700;color:var(--blueprint);display:flex;align-items:center;gap:6px;">
-        💬 Discord 자기소개 불러오기
-        <span style="font-weight:400;color:var(--ink-soft);margin-left:4px;">— 자기소개 복붙하면 자동으로 채워줘요</span>
-      </summary>
-      <div style="padding:12px 14px;">
-        <div style="font-size:11px;color:var(--ink-soft);margin-bottom:8px;">gate1 자기소개에 쓴 내용 그대로 붙여넣으면 돼요.</div>
-        <textarea id="discordImportText" placeholder="0. 직장인 / IT기획&#10;1. ChatGPT, Claude&#10;2. 업무 문서 초안 작성&#10;3. 보고서 자동화 시도해봄&#10;4. 원하는 결과가 잘 안 나옴&#10;5. 엑셀 정리 자동화하고 싶음" style="width:100%;min-height:100px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;"></textarea>
-        <button type="button" onclick="parseDiscordIntro()" style="margin-top:8px;padding:6px 16px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">✨ 자동 채우기</button>
-        <div id="discordImportMsg" style="font-size:11px;margin-top:6px;color:var(--ok);display:none;"></div>
-      </div>
-    </details>` : ''}
     <textarea id="introFreeText" placeholder="예: 매주 보고서 취합하는 게 너무 귀찮아. 5개 팀에서 엑셀 받아서 합치는데 매번 2시간씩 걸려.&#10;예: 수행평가 발표 준비가 막막해. 주제도 못 정했고 뭐부터 해야 할지 모르겠어." style="width:100%;min-height:80px;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;line-height:1.6;" oninput="setV('intro_freetext',this.value);introUpdateState();">${esc(getV('intro_freetext',''))}</textarea>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
       <button type="button" onclick="introGenPrompt()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">📋 프롬프트 만들기 →</button>
