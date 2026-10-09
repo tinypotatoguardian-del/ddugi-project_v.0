@@ -2293,22 +2293,28 @@ document.addEventListener('click', function(e){
     hideModal();
     state.locked = true;
     persist(); renderSheet();
-    // 마지막 섹션(diag=3-3) 저장 시 → Discord 씨앗 공유 CTA
+    // 마지막 섹션(diag=3-3) 저장 시 → 완료 프롬프트 + Discord 공유
     const lastSeedSection = 'diag';
     if(state.cur === lastSeedSection){
       setTimeout(()=>{
+        const prompt = _buildSeedCompletionPrompt();
         showModal(
-          '<div style="text-align:center;padding:8px 0;">'+
-          '<div style="font-size:36px;margin-bottom:8px;">🥔</div>'+
-          '<h3 style="margin:0 0 8px;">씨앗 완성!</h3>'+
-          '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 20px;line-height:1.7;">'+
-            '씨앗을 Discord <b>#씨앗-공유</b>에 올려봐요.<br>'+
-            '같은 고민 가진 감자들이 읽어줄 거예요 🌱'+
-          '</p>'+
+          '<div style="padding:4px 0;">'+
+          '<div style="text-align:center;margin-bottom:16px;">'+
+            '<div style="font-size:32px;margin-bottom:6px;">🥔</div>'+
+            '<h3 style="margin:0 0 4px;">씨앗 정의서 완성!</h3>'+
+            '<p style="font-size:13px;color:var(--ink-soft);margin:0;">이 프롬프트를 Claude나 ChatGPT에 붙여넣어봐요</p>'+
+          '</div>'+
+          '<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px;max-height:200px;overflow-y:auto;">'+
+            '<pre style="margin:0;font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:var(--ink);">'+esc(prompt)+'</pre>'+
+          '</div>'+
           '<div style="display:flex;flex-direction:column;gap:10px;">'+
-            (!currentUser
-              ? '<a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener" style="padding:10px 20px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;display:block;">💬 카톡으로 Discord 초대 받기 →</a>'
-              : '<button type="button" onclick="hideModal()" style="padding:10px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;">Discord #씨앗-공유에 올리러 가기 →</button>'
+            '<button type="button" onclick="navigator.clipboard.writeText('+JSON.stringify(prompt).replace(/"/g,\'&quot;\')+');this.textContent=\'✅ 복사됨\';setTimeout(()=>this.textContent=\'📋 프롬프트 복사\',2000);" '+
+            'style="padding:11px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;">📋 프롬프트 복사</button>'+
+            (currentUser
+              ? '<button type="button" id="seedCompleteShareBtn" onclick="shareSeedCompletion(this)" '+
+                'style="padding:11px 20px;border-radius:8px;border:1.5px solid var(--blueprint);background:transparent;color:var(--blueprint);font-size:14px;font-weight:600;cursor:pointer;">💬 Discord 씨앗-공유에 올리기</button>'
+              : '<a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener" style="display:block;padding:11px 20px;border-radius:8px;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;text-decoration:none;text-align:center;">💬 카톡으로 Discord 초대 받기 →</a>'
             )+
             '<button type="button" onclick="hideModal()" style="padding:8px;background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;">나중에</button>'+
           '</div>'+
@@ -5685,6 +5691,71 @@ function renderIntroSection(){
     )+
   '</div>';
 }
+
+// ── 씨앗 완성 프롬프트 생성 ──────────────────────────────────
+function _buildSeedCompletionPrompt() {
+  const g = k => (getV(k,'') || '').trim();
+  const seedName   = g('s1_name')   || g('intro_freetext').slice(0,40) || '내 씨앗';
+  const workarea   = g('s1_workarea');
+  const purpose    = g('s1_purpose');
+  const flow       = g('s2_flow');
+  const problem    = g('s2_core')    || g('re_core');
+  const goal       = g('s1_goal')    || g('re_goal');
+  const direction  = g('re_direction') || g('s1_hypo');
+
+  let prompt = `나는 지금 "${seedName}"라는 문제를 AI로 해결하려고 해.\n\n`;
+
+  if (workarea)  prompt += `【활동 영역】\n${workarea}\n\n`;
+  if (purpose)   prompt += `【업무 목적】\n${purpose}\n\n`;
+  if (flow)      prompt += `【현재 프로세스】\n${flow}\n\n`;
+  if (problem)   prompt += `【핵심 문제】\n${problem}\n\n`;
+  if (goal)      prompt += `【개선 기준 (이게 되면 성공)】\n${goal}\n\n`;
+  if (direction) prompt += `【해결 방향】\n${direction}\n\n`;
+
+  prompt += `이 상황을 바탕으로, AI를 활용해서 어디서부터 시작하면 좋을지 알려줘.\n가장 작고 빠르게 시도해볼 수 있는 첫 번째 단계를 구체적으로 알려줘.`;
+  return prompt;
+}
+
+window.shareSeedCompletion = async function(btn) {
+  if(btn){ btn.disabled=true; btn.textContent='올리는 중...'; }
+  try {
+    // 씨앗 정보 수집
+    const g = k => (getV(k,'') || '').trim();
+    const seedName  = g('s1_name') || g('intro_freetext').slice(0,40) || '내 씨앗';
+    const problem   = g('s2_core') || g('re_core') || g('intro_freetext').slice(0,80);
+    const ai_goal   = g('re_direction') || g('s1_hypo') || '';
+    const blocker   = g('s2_slow') || '';
+
+    // 스레드 없으면 생성, 있으면 완료 댓글
+    const shareR = await fetch('/api/seed/share', {
+      method:'POST',
+      headers:{...authHeaders(),'Content-Type':'application/json'},
+      body: JSON.stringify({seed_name:seedName, problem, ai_goal, blocker})
+    });
+    const shareD = await shareR.json();
+
+    if (!shareR.ok) throw new Error(shareD.detail||'공유 실패');
+
+    // 완료 댓글 (새 스레드면 skip, 기존이면 완료 알림)
+    if (shareD.reused) {
+      const summary =
+        `씨앗 정의서를 완성했어요! 🎉\n\n` +
+        (g('re_core')      ? `**핵심 문제:** ${g('re_core').slice(0,100)}\n` : '') +
+        (g('re_goal')      ? `**목표:** ${g('re_goal').slice(0,80)}\n` : '') +
+        (g('re_direction') ? `**해결 방향:** ${g('re_direction').slice(0,80)}\n` : '');
+      await fetch('/api/seed/update', {
+        method:'POST',
+        headers:{...authHeaders(),'Content-Type':'application/json'},
+        body: JSON.stringify({update_type:'complete', content:summary})
+      });
+    }
+
+    if(btn){ btn.textContent='✅ Discord에 올렸어!'; }
+  } catch(e) {
+    if(btn){ btn.disabled=false; btn.textContent='💬 Discord 씨앗-공유에 올리기'; }
+    alert('Discord 공유 실패: ' + e.message);
+  }
+};
 
 // ── 씨앗 결과 카드 ──────────────────────────────────────────
 function _parseSeedInfo(aiResult) {
