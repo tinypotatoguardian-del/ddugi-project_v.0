@@ -2299,6 +2299,12 @@ document.addEventListener('click', function(e){
     if(state.cur === lastSeedSection){
       setTimeout(()=>{
         const prompt = _buildSeedCompletionPrompt();
+        window._lastCompletionPrompt = prompt;
+        window._copyCompletionPrompt = function(){
+          navigator.clipboard.writeText(window._lastCompletionPrompt||'');
+          const btn = document.querySelector('[onclick="window._copyCompletionPrompt()"]');
+          if(btn){ btn.textContent='✅ 복사됨'; setTimeout(()=>btn.textContent='📋 프롬프트 복사',2000); }
+        };
         showModal(
           '<div style="padding:4px 0;">'+
           '<div style="text-align:center;margin-bottom:16px;">'+
@@ -2310,8 +2316,8 @@ document.addEventListener('click', function(e){
             '<pre style="margin:0;font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:var(--ink);">'+esc(prompt)+'</pre>'+
           '</div>'+
           '<div style="display:flex;flex-direction:column;gap:10px;">'+
-            '<button type="button" onclick="navigator.clipboard.writeText('+JSON.stringify(prompt).replace(/"/g,\'&quot;\')+');this.textContent=\'✅ 복사됨\';setTimeout(()=>this.textContent=\'📋 프롬프트 복사\',2000);" '+
-            'style="padding:11px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;">📋 프롬프트 복사</button>'+
+            '<button type="button" onclick="window._copyCompletionPrompt()" '+
+            'style="padding:11px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;">📋 프롬프트 복사</button>'+(
             (currentUser
               ? '<button type="button" id="seedCompleteShareBtn" onclick="shareSeedCompletion(this)" '+
                 'style="padding:11px 20px;border-radius:8px;border:1.5px solid var(--blueprint);background:transparent;color:var(--blueprint);font-size:14px;font-weight:600;cursor:pointer;">💬 Discord 씨앗-공유에 올리기</button>'
