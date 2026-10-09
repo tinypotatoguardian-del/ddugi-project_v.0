@@ -1300,7 +1300,7 @@ function openAuthModal(mode){
       '</p>'+
       '<div class="field"><label>아이디</label><input type="text" id="authUsername" placeholder="영문 소문자·숫자·_ (예: gamja1)" autocomplete="username" maxlength="20" style="text-transform:lowercase;"></div>'+
       (isRegister?
-        '<div class="field"><label>감자명 <span style="font-size:11px;color:var(--ink-soft);">비우면 자동 배정 🥔</span></label><input type="text" id="authNick" placeholder="비우면 랜덤 감자명 배정" maxlength="20"></div>'
+        '<div class="field"><label>감자명 <span style="font-size:11px;color:var(--ink-soft);">끝에 "감자" 자동 붙어요 🥔</span></label><input type="text" id="authNick" placeholder="예: 노란 → 노란감자 / 비우면 랜덤 배정" maxlength="20" oninput="const v=this.value.trim();const hint=document.getElementById(\'nickHint\');if(hint)hint.textContent=v&&!v.endsWith(\'감자\')?\'→ \'+v+\'감자 로 저장돼요\':\'\'"></div>'+\n        '<div id="nickHint" style="font-size:11px;color:var(--blueprint);margin:-8px 0 10px 2px;"></div>'
         :'')+
       '<div class="field"><label>비밀번호'+(isLogin?'':' <span style="font-size:11px;color:var(--ink-soft);">8자 이상, 영문+숫자</span>')+'</label>'+
         '<input type="password" id="authPw" placeholder="••••••••" autocomplete="'+(isLogin?'current-password':'new-password')+'">'+

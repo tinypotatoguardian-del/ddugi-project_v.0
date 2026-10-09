@@ -1276,6 +1276,9 @@ def user_register(body: UserRegisterIn):
         raise HTTPException(status_code=409, detail="이미 사용 중인 아이디예요.")
     ph = hash_code(body.password)
     nick = body.nickname.strip() or _assign_gamja_name(conn)
+    # 닉네임 끝이 "감자"로 끝나지 않으면 자동 추가
+    if nick and not nick.endswith("감자"):
+        nick = nick + "감자"
     plan = "free"
     placeholder_email = username + "@noemail.local"
     if USE_PG:
