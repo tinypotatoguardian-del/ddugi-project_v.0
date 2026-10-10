@@ -280,9 +280,25 @@ def init_db() -> None:
         if USE_PG:
             conn.rollback()
 
-    # 마이그레이션: discord_thread_id (씨앗 공유 스레드 ID)
+    # 마이그레이션: discord_thread_id (마음의 방 Discord 스레드 ID)
     try:
         db_execute(conn, "ALTER TABLE users ADD COLUMN discord_thread_id TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
+    # 마이그레이션: mindroom_completed_at (마음의 방 완성 시각)
+    try:
+        db_execute(conn, "ALTER TABLE users ADD COLUMN mindroom_completed_at TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
+    # 마이그레이션: submissions.discord_thread_id (씨앗별 Discord 스레드)
+    try:
+        db_execute(conn, "ALTER TABLE submissions ADD COLUMN discord_thread_id TEXT")
         conn.commit()
     except Exception:
         if USE_PG:
@@ -1306,11 +1322,29 @@ def user_register(body: UserRegisterIn):
 @app.post("/api/user/login")
 def user_login(body: UserLoginIn):
     username = body.username.strip().lower()
+
+    # 로그인 실패 잠금 체크 (admin과 동일 로직, 메모리 캐시)
+    lock_key = f"user:{username}"
+    now_ts = time.time()
+    rec = _fail_cache.get(lock_key)
+    if rec:
+        fails, until = rec
+        if until and now_ts < until:
+            raise HTTPException(status_code=429, detail={"locked_seconds": int(until - now_ts) + 1})
+
     conn = get_db()
     row = _user_by_username(conn, username)
     if not row or not _check_pw(row, body.password):
         conn.close()
-        raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 틀렸어요.")
+        # 실패 횟수 누적
+        fails = (rec[0] if rec else 0) + 1
+        if fails >= MAX_FAILS:
+            _fail_cache[lock_key] = (fails, now_ts + LOCK_SECONDS)
+            raise HTTPException(status_code=429, detail={"locked_seconds": LOCK_SECONDS})
+        _fail_cache[lock_key] = (fails, None)
+        raise HTTPException(status_code=401, detail=f"아이디 또는 비밀번호가 틀렸어요. (남은 시도 {MAX_FAILS - fails}회)")
+    # 로그인 성공 → 잠금 초기화
+    _fail_cache.pop(lock_key, None)
     # 비활성 계정 차단
     is_active = row["is_active"] if isinstance(row, dict) and "is_active" in row.keys() else 1
     if is_active == 0:
@@ -1963,9 +1997,12 @@ def _run_discord_bot():
 
 # ── 씨앗 Discord 공유 ──────────────────────────────────────────────────────
 SEED_SHARE_CH = "1556104705304690768"  # 씨앗정의서-공유 포럼
+GUILD_ID      = "1555788463247466566"  # 감자밭 서버
+SEEDLING_ROLE = "1555811319477964871"  # 새싹감자 역할
+
 
 def _discord_post(path: str, body: dict):
-    """봇 토큰으로 Discord API 호출"""
+    """봇 토큰으로 Discord API POST"""
     import urllib.request, urllib.error
     token = os.environ.get("DISCORD_BOT_TOKEN", "")
     if not token:
@@ -1982,11 +2019,228 @@ def _discord_post(path: str, body: dict):
     except urllib.error.HTTPError as e:
         return None, e.read().decode()
 
+
+def _discord_patch(path: str, body: dict):
+    """봇 토큰으로 Discord API PATCH"""
+    import urllib.request, urllib.error
+    token = os.environ.get("DISCORD_BOT_TOKEN", "")
+    if not token:
+        return None, "DISCORD_BOT_TOKEN 없음"
+    url = f"https://discord.com/api/v10{path}"
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), headers={
+        "Authorization": f"Bot {token}",
+        "Content-Type": "application/json",
+        "User-Agent": "DiscordBot (https://gamja99.up.railway.app, 1.0)"
+    }, method="PATCH")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.loads(r.read().decode()), None
+    except urllib.error.HTTPError as e:
+        return None, e.read().decode()
+
+
+def _discord_give_role(discord_username: str, role_id: str) -> bool:
+    """Discord 유저에게 역할 부여 (닉네임으로 멤버 검색 후 PUT)"""
+    import urllib.request, urllib.error
+    token = os.environ.get("DISCORD_BOT_TOKEN", "")
+    if not token or not discord_username:
+        return False
+    # 서버 멤버 검색
+    url = f"https://discord.com/api/v10/guilds/{GUILD_ID}/members/search?query={urllib.parse.quote(discord_username)}&limit=5"
+    req = urllib.request.Request(url, headers={
+        "Authorization": f"Bot {token}",
+        "User-Agent": "DiscordBot (https://gamja99.up.railway.app, 1.0)"
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            members = json.loads(r.read().decode())
+    except Exception:
+        return False
+    # 닉네임 정확히 일치하는 멤버 찾기
+    member = next((m for m in members
+                   if (m.get("nick") or m.get("user",{}).get("global_name","") or m.get("user",{}).get("username","")).lower()
+                      == discord_username.lower()), None)
+    if not member:
+        return False
+    user_id = member["user"]["id"]
+    # 역할 부여 PUT
+    put_url = f"https://discord.com/api/v10/guilds/{GUILD_ID}/members/{user_id}/roles/{role_id}"
+    put_req = urllib.request.Request(put_url, data=b"", headers={
+        "Authorization": f"Bot {token}",
+        "Content-Type": "application/json",
+        "User-Agent": "DiscordBot (https://gamja99.up.railway.app, 1.0)"
+    }, method="PUT")
+    try:
+        urllib.request.urlopen(put_req, timeout=10)
+        return True
+    except Exception:
+        return False
+
+
+def _discord_create_thread(forum_ch: str, title: str, content: str) -> tuple[str | None, str | None]:
+    """포럼 채널에 새 스레드(포스트) 생성. (thread_id, error) 반환"""
+    data, err = _discord_post(f"/channels/{forum_ch}/threads", {
+        "name": title[:100],
+        "message": {"content": content[:2000]},
+        "auto_archive_duration": 10080  # 7일
+    })
+    if err:
+        return None, err
+    return data.get("id"), None
+
+
+def _discord_add_comment(thread_id: str, content: str) -> bool:
+    """스레드에 댓글(메시지) 추가"""
+    _, err = _discord_post(f"/channels/{thread_id}/messages", {"content": content[:2000]})
+    return err is None
+
 class SeedShareIn(BaseModel):
     seed_name: str
     problem: str
     ai_goal: str
     blocker: str = ""
+
+
+# ── 마음의 방 완성 ───────────────────────────────────────────────────────────
+class MindroomCompleteIn(BaseModel):
+    summary: str = ""   # 마음의 방 내용 요약 (Discord 게시용)
+
+@app.post("/api/user/mindroom/complete")
+def mindroom_complete(body: MindroomCompleteIn, x_token: str = Header(default="")):
+    """마음의 방 완성 처리: LV1 달성 + Discord 새싹감자 부여 + 스레드 생성"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    row = db_fetchone(conn,
+        "SELECT nickname, discord_username, discord_thread_id, mindroom_completed_at FROM users WHERE username=%s" if USE_PG
+        else "SELECT nickname, discord_username, discord_thread_id, mindroom_completed_at FROM users WHERE username=?",
+        (user["username"],))
+
+    nick = (row["nickname"] if row else None) or user["username"]
+    discord_uname = row["discord_username"] if row else None
+    existing_thread = row["discord_thread_id"] if row else None
+    already_done = bool(row["mindroom_completed_at"] if row else None)
+
+    result = {"ok": True, "already_done": already_done, "role_given": False, "thread_id": existing_thread}
+
+    # 완성 시각 기록
+    now_str = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    q = "UPDATE users SET mindroom_completed_at=%s WHERE username=%s" if USE_PG \
+        else "UPDATE users SET mindroom_completed_at=? WHERE username=?"
+    db_execute(conn, q, (now_str, user["username"]))
+    if USE_PG: conn.commit()
+
+    # Discord 새싹감자 역할 부여 (연결돼 있으면)
+    if discord_uname and not already_done:
+        import threading
+        def _give():
+            ok = _discord_give_role(discord_uname, SEEDLING_ROLE)
+            result["role_given"] = ok
+        t = threading.Thread(target=_give, daemon=True)
+        t.start()
+        t.join(timeout=8)
+
+    # Discord 스레드 생성 (아직 없으면)
+    if not existing_thread and discord_uname:
+        summary_text = body.summary[:500] if body.summary else "(내용 없음)"
+        title = f"🏠 {nick}의 마음의 방"
+        content = (
+            f"**🏠 {nick}의 마음의 방 완성!**\n\n"
+            f"{summary_text}\n\n"
+            f"_이 스레드는 {nick}님의 성장 이력입니다. 씨앗 정의 → 진행 → 완료가 여기 쌓여요._"
+        )
+        thread_id, err = _discord_create_thread(SEED_SHARE_CH, title, content)
+        if thread_id:
+            q2 = "UPDATE users SET discord_thread_id=%s WHERE username=%s" if USE_PG \
+                 else "UPDATE users SET discord_thread_id=? WHERE username=?"
+            db_execute(conn, q2, (thread_id, user["username"]))
+            if USE_PG: conn.commit()
+            result["thread_id"] = thread_id
+    elif existing_thread and not already_done:
+        # 이미 스레드 있으면 완성 댓글만
+        summary_text = body.summary[:500] if body.summary else ""
+        msg = f"**🏠 마음의 방 완성** ({now_str[:10]})"
+        if summary_text:
+            msg += f"\n{summary_text}"
+        _discord_add_comment(existing_thread, msg)
+
+    conn.close()
+    return result
+
+
+# ── 씨앗 Discord 스레드 생성 (씨앗별 새 스레드) ─────────────────────────────
+class SeedThreadIn(BaseModel):
+    doc_id: str
+    title: str           # 씨앗 제목 (짧게)
+    problem: str         # 해결하고 싶은 문제
+    ai_goal: str         # AI로 하고 싶은 것
+    prompt: str = ""     # 자동생성 or 직접 입력 프롬프트
+    blocker: str = ""
+
+@app.post("/api/seed/thread")
+def seed_create_thread(body: SeedThreadIn, x_token: str = Header(default="")):
+    """씨앗 정의 완성 → Discord 새 스레드 생성"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    row = db_fetchone(conn,
+        "SELECT nickname, discord_username FROM users WHERE username=%s" if USE_PG
+        else "SELECT nickname, discord_username FROM users WHERE username=?",
+        (user["username"],))
+    nick = (row["nickname"] if row else None) or user["username"]
+    discord_uname = row["discord_username"] if row else None
+
+    if not discord_uname:
+        conn.close()
+        return {"ok": False, "reason": "Discord 계정이 연결되지 않았어요."}
+
+    title = f"🌱 {nick} — {body.title[:40]}"
+    content = (
+        f"**🌱 {nick}의 씨앗 정의**\n\n"
+        f"**문제:** {body.problem}\n"
+        f"**AI 목표:** {body.ai_goal}\n"
+    )
+    if body.blocker:
+        content += f"**막히는 것:** {body.blocker}\n"
+    if body.prompt:
+        content += f"\n**📋 프롬프트:**\n```\n{body.prompt[:800]}\n```"
+
+    thread_id, err = _discord_create_thread(SEED_SHARE_CH, title, content)
+    if err or not thread_id:
+        conn.close()
+        return {"ok": False, "reason": err or "스레드 생성 실패"}
+
+    # submissions에 discord_thread_id 저장
+    q = "UPDATE submissions SET discord_thread_id=%s WHERE doc_id=%s" if USE_PG \
+        else "UPDATE submissions SET discord_thread_id=? WHERE doc_id=?"
+    db_execute(conn, q, (thread_id, body.doc_id))
+    if USE_PG: conn.commit()
+    conn.close()
+    return {"ok": True, "thread_id": thread_id}
+
+
+# ── 씨앗 업데이트 / 완료 댓글 ────────────────────────────────────────────────
+class SeedCommentIn(BaseModel):
+    doc_id: str
+    content: str
+    update_type: str = "update"  # "update" | "complete"
+
+@app.post("/api/seed/comment")
+def seed_add_comment(body: SeedCommentIn, x_token: str = Header(default="")):
+    """씨앗 스레드에 업데이트/완료 댓글 추가"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    row = db_fetchone(conn,
+        "SELECT discord_thread_id FROM submissions WHERE doc_id=%s" if USE_PG
+        else "SELECT discord_thread_id FROM submissions WHERE doc_id=?",
+        (body.doc_id,))
+    conn.close()
+
+    if not row or not row["discord_thread_id"]:
+        return {"ok": False, "reason": "Discord 스레드가 없어요. 씨앗을 먼저 공유해주세요."}
+
+    prefix = "✅ **완료!**" if body.update_type == "complete" else "📝 **업데이트**"
+    msg = f"{prefix}\n{body.content[:1500]}"
+    ok = _discord_add_comment(row["discord_thread_id"], msg)
+    return {"ok": ok}
 
 
 # ── 마음의 방 서버 저장/불러오기 ──────────────────────────────

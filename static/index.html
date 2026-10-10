@@ -1417,6 +1417,14 @@ function openAuthModal(mode){
       if(btn) btn.disabled=true;
       try{
         const res = await fetch('/api/user/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password:pw})});
+        if(res.status===429){
+          const d = await res.json();
+          const secs = d?.locked_seconds || 300;
+          const mins = Math.ceil(secs/60);
+          showErr(`로그인 시도가 너무 많아요. ${mins}분 후에 다시 시도해주세요.\n비밀번호를 잊으셨다면 카톡으로 문의해주세요.`);
+          if(btn) btn.disabled=false;
+          return;
+        }
         if(res.ok){
           const d = await res.json();
           localStorage.setItem('ddugi_token', d.token);
