@@ -117,6 +117,7 @@ MASTER_CODE = os.environ.get("MASTER_CODE", "1234")
 MIN_CODE_LEN = 6
 MAX_FAILS = 5          # 연속 실패 허용 횟수
 LOCK_SECONDS = 300     # 초과 시 잠금 시간 (5분)
+_fail_cache: dict = {} # { "user:username" | "empid": [fails, until_ts|None] }
 
 # 01·02에서 고르는 분류의 기본값 (관리자가 화면에서 바꾸기 전까지 쓰는 값). 프론트엔드(index.html)의
 # 기존 CATEGORIES/TARGETS/WORK_TYPES/도구 목록과 같은 내용 — 하드코딩을 없애는 게 목적이라 그대로 옮겼다.
