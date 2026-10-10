@@ -1320,6 +1320,9 @@ function openAuthModal(mode){
   }
 
   showModal(html);
+  // 로그인/가입/비번변경 모달은 바깥 클릭으로 닫히지 않게
+  const _ov = document.getElementById('modalOverlay');
+  if(_ov) _ov.dataset.noBackdropClose = '1';
 
   setTimeout(()=>{
     const btn = document.getElementById('authSubmitBtn');
@@ -1442,8 +1445,15 @@ function openAuthModal(mode){
             renderSheet();
             showModal('<div style="text-align:center;padding:20px 0;"><div style="font-size:32px;margin-bottom:8px;">🥔</div><h3 style="margin:0 0 6px;">'+(isMaster?'마스터':'관리자')+' 로그인됐어요</h3><button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">시작하기</button></div>');
           } else {
-            const d = await res.json();
-            showErr(d.detail||'아이디 또는 비밀번호가 틀렸어요.');
+            // 관리자 로그인도 실패 — 남은 시도 횟수 표시
+            let errMsg = '아이디 또는 비밀번호가 틀렸어요.';
+            try{
+              const ad = await adminRes.json();
+              if(ad?.detail?.remaining !== undefined){
+                errMsg = `비밀번호가 틀렸어요. (남은 시도 ${ad.detail.remaining}회)`;
+              }
+            }catch(_){}
+            showErr(errMsg);
           }
         }
       }catch(e){ showErr('네트워크 오류. 다시 시도해주세요.'); }
