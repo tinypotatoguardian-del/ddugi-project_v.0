@@ -1711,7 +1711,9 @@ def user_me(authorization: str = Header(default="")):
         "username": row["username"] or "",
         "nickname": row["nickname"] or row["username"] or "",
         "plan": row["plan"] or "free",
-        "planExpiresAt": row["plan_expires_at"] if "plan_expires_at" in row.keys() else None
+        "planExpiresAt": row["plan_expires_at"] if "plan_expires_at" in row.keys() else None,
+        "mindroom_completed_at": row["mindroom_completed_at"] if "mindroom_completed_at" in row.keys() else None,
+        "discord_username": row["discord_username"] if "discord_username" in row.keys() else None,
     }
 
 # 내 씨앗 목록 (로그인 유저용)

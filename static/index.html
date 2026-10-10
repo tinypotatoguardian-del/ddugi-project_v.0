@@ -5732,7 +5732,13 @@ function renderIntroSection(){
         (!introSaved
           ? '<button type="button" onclick="setV(\'intro_saved\',true);persist();saveIntroToServer();window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💾 저장 완료</button>'
           : '<button type="button" onclick="setV(\'intro_saved\',false);window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정하기</button>'+
-            '<span style="font-size:12px;color:var(--ok);margin-left:8px;">✅ 저장됨</span>'
+            '<span style="font-size:12px;color:var(--ok);margin-left:8px;">✅ 저장됨</span>'+
+            // 완성하기 버튼 (저장 후 + 로그인 상태)
+            (currentUser && getV('intro_ai_result','').trim()
+              ? (getV('mindroom_completed', false)
+                  ? '<span style="font-size:12px;font-weight:700;color:var(--ok);margin-left:12px;">🌱 LV1 달성!</span>'
+                  : '<button type="button" onclick="window.completeMindroom()" style="margin-left:12px;padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#4caf50,#2196f3);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">🎉 완성하기 → LV1</button>')
+              : '')
         )+
         (currentUser ? '<button type="button" class="secondary" data-action="goto" data-target="s1">✏️ 바로 씨앗 심기</button>' : '')+
         '<button type="button" class="secondary" data-action="goto" data-target="example">🥔 먼저 온 포테이토 보기</button>'+
@@ -5865,6 +5871,45 @@ function _renderSeedResultCard() {
 </div>`;
 }
 
+// ── 마음의 방 완성하기 ─────────────────────────────────────────
+window.completeMindroom = async function() {
+  if (!currentUser) { alert('로그인이 필요해요.'); return; }
+  if (!confirm('마음의 방을 완성하고 LV1을 달성할까요?\nDiscord에 연결돼 있으면 새싹감자 역할도 자동으로 받아요!')) return;
+
+  // 마음의 방 내용 요약 생성
+  const freetext = getV('intro_freetext','').slice(0,300);
+  const aiResult = getV('intro_ai_result','').slice(0,300);
+  const summary = [freetext && `현재: ${freetext}`, aiResult && `AI 답변: ${aiResult}`].filter(Boolean).join('\n');
+
+  try {
+    const token = localStorage.getItem('ddugi_token');
+    const res = await fetch('/api/user/mindroom/complete', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-Token': token||''},
+      body: JSON.stringify({summary})
+    });
+    const d = await res.json();
+    if (!res.ok) { alert('오류: '+(d.detail||'실패')); return; }
+
+    setV('mindroom_completed', true);
+    persist();
+    window._renderSheet();
+
+    let msg = '🌱 LV1 달성! 마음의 방을 완성했어요.';
+    if (d.role_given) msg += '\n✅ Discord 새싹감자 역할도 자동으로 받았어요!';
+    else if (d.thread_id) msg += '\n📌 Discord 성장 이력 스레드가 생성됐어요!';
+    showModal(`<div style="text-align:center;padding:20px 0;">
+      <div style="font-size:40px;margin-bottom:10px;">🌱</div>
+      <h3 style="margin:0 0 8px;">LV1 달성!</h3>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;line-height:1.7;">${esc(msg.replace(/\n/g,'<br>'))}</p>
+      <button type="button" onclick="hideModal();goto('s1')" style="padding:9px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px;">🌱 씨앗 심으러 가기</button>
+      <button type="button" onclick="hideModal()" style="padding:9px 16px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;cursor:pointer;">닫기</button>
+    </div>`);
+  } catch(e) {
+    alert('네트워크 오류. 다시 시도해주세요.');
+  }
+};
+
 // ── 마음의 방 서버 저장/불러오기 ──────────────────────────────
 window.saveIntroToServer = async function() {
   if (!currentUser) return;
@@ -5889,6 +5934,15 @@ window.loadIntroFromServer = async function() {
     if (!data || !Object.keys(data).length) return;
     // 서버 데이터가 있으면 localStorage에 병합 (서버 우선)
     Object.entries(data).forEach(([k,v]) => { if(v !== undefined && v !== '') setV(k, v); });
+  } catch(e) {}
+
+  // 마음의 방 완성 여부 서버에서 확인
+  try {
+    const r2 = await fetch('/api/user/me', {headers: {'Authorization': 'Bearer '+(localStorage.getItem('ddugi_token')||'')}});
+    if (r2.ok) {
+      const me = await r2.json();
+      if (me.mindroom_completed_at) { setV('mindroom_completed', true); persist(); }
+    }
   } catch(e) {}
 };
 
