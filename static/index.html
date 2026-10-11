@@ -746,7 +746,7 @@ const SECTIONS = [
 /* ── 학습 ─────────────────────────────── */
 {id:'curriculum', num:'🌱', title:'Foundation', special:'curriculum', disabled:true, disabledNote:'AI 이해하기에서 보기'},
 {id:'ai-tools',   num:'🧠', title:'AI 이해하기', special:'aitools'},
-{id:'prompt-kit', num:'📋', title:'프롬프트 기본', special:'promptkit'},
+{id:'prompt-kit', num:'📋', title:'프롬프트 기본', special:'promptkit', disabled:true, disabledNote:'활용 가이드에서 보기'},
 {id:'guide',      num:'🎯', title:'활용 가이드', special:'guide'},
 /* ── 씨앗 정의서 ──────────────────────── */
 {id:'intro',   num:'',   title:'마음의 방 입구', special:'intro'},
@@ -6225,6 +6225,25 @@ function renderGuideSection(){
       <button data-copy="${id}" onclick="window._guideCopy('${id}')" style="position:absolute;top:8px;right:8px;padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:11px;cursor:pointer;">📋 복사</button>
     </div>`;
 
+  const basicPromptSection = `
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:24px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;">📋 프롬프트 기본 구조 — 어떤 AI든 바로 써요</div>
+      ${promptBox('g-basic', `너는 경험 많은 [역할]이야.
+아래 상황을 바탕으로 [원하는 결과]를 해줘.
+
+상황: [여기에 내 상황 설명]
+
+조건:
+- [조건 1]
+- [조건 2]
+- 형식: [원하는 형식]`)}
+      <div style="margin-top:10px;font-size:12px;color:var(--ink-soft);line-height:1.9;">
+        <b>[역할]</b> "HR 담당자", "국어 선생님" &nbsp;·&nbsp;
+        <b>[결과]</b> "피드백해줘", "요약해줘" &nbsp;·&nbsp;
+        <b>[형식]</b> "번호 목록", "500자 이내"
+      </div>
+    </div>`;
+
   const jobseekerContent = `
     <div style="padding:4px 0 20px;">
       <p style="font-size:13px;color:var(--ink-soft);line-height:1.8;margin:0 0 24px;">
@@ -6421,6 +6440,8 @@ function renderGuideSection(){
   return `<div class="frame">
     <h2 style="font-size:18px;font-weight:800;margin:0 0 6px;">🎯 활용 가이드</h2>
     <p style="font-size:13px;color:var(--ink-soft);margin:0 0 20px;">내 상황에 맞게 바로 써먹을 수 있는 AI 활용법</p>
+
+    ${basicPromptSection}
 
     <div style="display:flex;gap:8px;margin-bottom:24px;">
       <button onclick="window._guideTab='jobseeker';window._renderSheet();"
