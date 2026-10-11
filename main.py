@@ -60,7 +60,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 # JWT
-JWT_SECRET = os.environ.get("JWT_SECRET", secrets.token_hex(32))
+_jwt_secret_raw = os.environ.get("JWT_SECRET", "")
+if not _jwt_secret_raw:
+    # 환경변수 없으면 재시작마다 모든 유저 로그아웃되므로 경고
+    print("[경고] JWT_SECRET 환경변수가 없습니다. Railway Variables에 설정해주세요!")
+    _jwt_secret_raw = "ddugi-insecure-fallback-please-set-JWT_SECRET-in-railway"
+JWT_SECRET = _jwt_secret_raw
 JWT_ALGO = "HS256"
 JWT_EXPIRE_DAYS = 30
 
@@ -679,6 +684,32 @@ async def lifespan(app):
     await stop_bot()      # 서버 종료 시 봇도 종료
 
 app = FastAPI(title="ddugi Project", lifespan=lifespan)
+
+# ── 보안 헤더 미들웨어 ────────────────────────────────────────────
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        # CSP: inline script/style 허용 (현재 앱 구조상 필요)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "font-src 'self' data:; "
+            "connect-src 'self' https://discord.com https://discord.gg; "
+            "frame-ancestors 'none';"
+        )
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 def get_client_ip(request: Request) -> str:
