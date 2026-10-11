@@ -2204,6 +2204,25 @@ def mindroom_complete(body: MindroomCompleteIn, x_token: str = Header(default=""
 
 
 # ── 씨앗 Discord 스레드 생성 (씨앗별 새 스레드) ─────────────────────────────
+class UserDiscordShareIn(BaseModel):
+    content: str
+
+@app.post("/api/user/discord/share")
+def user_discord_share(body: UserDiscordShareIn, x_token: str = Header(default="")):
+    """사용자 마음의 방 스레드에 메시지 게시"""
+    user = require_user_token(x_token)
+    conn = get_db()
+    row = db_fetchone(conn,
+        "SELECT discord_thread_id FROM users WHERE username=%s" if USE_PG
+        else "SELECT discord_thread_id FROM users WHERE username=?",
+        (user["username"],))
+    conn.close()
+    if not row or not row["discord_thread_id"]:
+        return {"ok": False, "reason": "no_thread"}
+    ok = _discord_add_comment(row["discord_thread_id"], body.content[:2000])
+    return {"ok": ok}
+
+
 class SeedThreadIn(BaseModel):
     doc_id: str
     title: str           # 씨앗 제목 (짧게)

@@ -5977,41 +5977,38 @@ window.saveDiscoverToServer = async function() {
 };
 
 window.shareDiscoverResult = async function(btn) {
+  if(!currentUser){ alert('로그인이 필요해요.'); return; }
   if(btn){ btn.disabled=true; btn.textContent='올리는 중...'; }
+
   const resultState = getV('discover_result_state','');
   const reason = getV('discover_judge_reason','');
-  const seedName = getV('s1_name','') || getV('intro_freetext','').slice(0,40) || '내 씨앗';
+  const intro = getV('intro_freetext','').slice(0,100);
   const labelMap = {possible:'✅ AI 써도 됨', redefine:'🔄 문제 다시 정의 필요', unnecessary:'🥔 AI 불필요'};
   const content =
-    `**심기 전 준비 판정 결과**\n\n` +
-    `씨앗: ${seedName}\n` +
-    `판정: ${labelMap[resultState] || resultState}\n` +
-    (reason ? `이유: ${reason}\n` : '') +
-    `\n다음 단계로 넘어갑니다 🌱`;
+    `**🌱 심기 전 준비 판정 결과**\n\n` +
+    (intro ? `**고민:** ${intro}\n` : '') +
+    `**판정:** ${labelMap[resultState] || resultState}\n` +
+    (reason ? `**이유:** ${reason}\n` : '');
+
   try {
-    // 스레드 있으면 업데이트, 없으면 첫 공유
-    const shareR = await fetch('/api/seed/share', {
-      method:'POST',
-      headers:{...authHeaders(),'Content-Type':'application/json'},
-      body: JSON.stringify({
-        seed_name: seedName,
-        problem: getV('intro_freetext','').slice(0,100),
-        ai_goal: resultState === 'possible' ? '씨앗 심기 진행 예정' : '',
-        blocker: ''
-      })
+    const token = localStorage.getItem('ddugi_token');
+    const r = await fetch('/api/user/discord/share', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'X-Token': token||''},
+      body: JSON.stringify({content})
     });
-    const shareD = await shareR.json();
-    if(!shareR.ok) throw new Error(shareD.detail||'공유 실패');
-    if(shareD.reused){
-      await fetch('/api/seed/update', {
-        method:'POST',
-        headers:{...authHeaders(),'Content-Type':'application/json'},
-        body: JSON.stringify({update_type:'update', content})
-      });
+    const d = await r.json();
+    if(d.ok){
+      if(btn){ btn.textContent='✅ 공유됐어!'; }
+    } else if(d.reason === 'no_thread'){
+      if(btn){ btn.disabled=false; btn.textContent='💬 Discord에 공유'; }
+      alert('마음의 방을 먼저 완성해야 Discord에 공유할 수 있어요!\n마음의 방 → 완성하기 → LV1 버튼을 눌러줘.');
+    } else {
+      throw new Error(d.reason || '공유 실패');
     }
-    if(btn){ btn.textContent='✅ 공유됐어!'; }
   } catch(e) {
     if(btn){ btn.disabled=false; btn.textContent='💬 Discord에 공유'; }
+    alert('공유 중 오류가 발생했어요. 다시 시도해줘.');
   }
 };
 
@@ -6544,10 +6541,9 @@ function renderDiscoverSection(){
               // 판정 완료 후 CTA
               (currentUser && resultState === 'possible'
                 ? '<div style="margin-top:12px;background:var(--blueprint-soft);border:1.5px solid var(--blueprint-2);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;">'+
-                    '<div style="font-size:13px;font-weight:700;color:var(--blueprint);">🌱 AI 써도 돼요! 이제 씨앗 심어볼까요?</div>'+
+                    '<div style="font-size:13px;font-weight:700;color:var(--blueprint);">🌱 AI 써도 돼요!</div>'+
                     '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
-                      '<button type="button" onclick="window._state&&(window._state.cur=\'s1\');window._renderSheet&&window._renderSheet();" style="padding:8px 16px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✏️ 씨앗 심기 시작</button>'+
-                      '<button type="button" id="discoverShareBtn" onclick="shareDiscoverResult(this)" style="padding:8px 16px;border-radius:8px;border:1.5px solid var(--blueprint);background:transparent;color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">💬 Discord에 공유</button>'+
+                      '<button type="button" id="discoverShareBtn" onclick="shareDiscoverResult(this)" style="padding:8px 16px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💬 Discord에 공유</button>'+
                     '</div>'+
                   '</div>'
                 : currentUser && (resultState === 'redefine' || resultState === 'unnecessary')
