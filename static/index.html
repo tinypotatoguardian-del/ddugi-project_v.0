@@ -2265,7 +2265,10 @@ function renderSheet(){
 
 function applyLockState(){
   const disable = !!state.locked;
-  const readonly = disable || (SECTIONS.find(s=>s.id===state.cur)||{}).special==='example';
+  const curSec = SECTIONS.find(s=>s.id===state.cur)||{};
+  // 씨앗 필드가 없는 자유 섹션(레벨체크·학습·가이드 등)은 seed lock 영향 안 받음
+  const hasSeedFields = !!curSec.fields;
+  const readonly = (disable && hasSeedFields) || curSec.special==='example';
   document.querySelectorAll('#sheet input, #sheet textarea').forEach(function(el){ el.disabled = readonly || el.hasAttribute('data-keep-disabled'); });
   document.querySelectorAll('#sheet .addbtn, #sheet .rmbtn').forEach(function(el){ el.disabled = readonly; });
   document.body.classList.toggle('locked-mode', disable);
