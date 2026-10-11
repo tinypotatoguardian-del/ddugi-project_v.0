@@ -5582,6 +5582,8 @@ window.introGenPrompt = function(){
   if(skel) skel.style.display='none';
   if(pd){ pd.style.display='block'; pd.textContent = prompt; }
   if(pt) pt.value = prompt;
+  // 프롬프트 자동 저장 (니즈 온톨로지 기록용)
+  setV('intro_prompt', prompt); persist();
   // 복사 버튼 활성화
   if(copyBtn){ copyBtn.disabled=false; copyBtn.style.cursor='pointer'; copyBtn.style.opacity='1'; copyBtn.style.border='1px solid var(--blueprint)'; copyBtn.style.background='var(--paper)'; copyBtn.style.color='var(--blueprint)'; }
   // 자동채우기 버튼 활성화
@@ -5757,6 +5759,27 @@ function renderIntroSection(){
       <span style="font-size:12px;color:var(--ink-soft);">AI가 채운 거니까 맞는지 꼭 확인해줘</span>
     </div>
     <div id="introFillMsg" style="display:none;margin-top:10px;font-size:12px;padding:10px 14px;border-radius:8px;line-height:1.7;"></div>
+  </div>
+
+  <!-- STEP 4 — 1차 결과 기록 -->
+  <div style="padding:18px 20px;border-top:1px solid var(--line-soft);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="width:22px;height:22px;border-radius:50%;background:${getV('intro_result_text','').trim()?'var(--ok)':'var(--line)'};color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</span>
+      <span style="font-size:14px;font-weight:700;color:var(--ink-soft);">AI 써봤어? 어떻게 됐어?</span>
+    </div>
+    <p style="font-size:12px;color:var(--ink-soft);margin:0 0 10px;line-height:1.7;">첫 번째 결과가 뭐였든 기록해줘. 잘 됐어도, 안 됐어도.</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px;" id="introRatingBtns">
+      ${['✅ 잘 됐다','🔄 애매했다','❌ 안 됐다'].map((label,i)=>{
+        const val = ['good','meh','bad'][i];
+        const cur = getV('intro_result_rating','');
+        const active = cur===val;
+        return `<button type="button" data-rating="${val}"
+          onclick="setV('intro_result_rating','${val}');persist();document.querySelectorAll('#introRatingBtns button').forEach(b=>{b.style.opacity=b.dataset.rating===getV('intro_result_rating','')?'1':'0.45';b.style.fontWeight=b.dataset.rating===getV('intro_result_rating','')?'800':'400';})"
+          style="flex:1;padding:8px 4px;border-radius:8px;border:2px solid ${active?'var(--blueprint)':'var(--line)'};background:none;font-size:12px;cursor:pointer;opacity:${active?'1':'0.45'};font-weight:${active?'800':'400'};">${label}</button>`;
+      }).join('')}
+    </div>
+    <textarea id="introResultText" placeholder="예) 보고서 초안이 나왔는데 수치가 틀렸다. 구조만 참고했다." oninput="setV('intro_result_text',this.value);persist();" style="width:100%;min-height:70px;font-size:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;font-family:inherit;line-height:1.6;box-sizing:border-box;">${esc(getV('intro_result_text',''))}</textarea>
+    ${getV('intro_result_text','').trim() ? '<div style="margin-top:6px;font-size:11px;color:var(--ok);">✅ 기록됨</div>' : ''}
   </div>
 
 </div>`;
@@ -6050,6 +6073,9 @@ window.saveIntroToServer = async function() {
     intro_freetext: getV('intro_freetext',''),
     intro_ai_result: getV('intro_ai_result',''),
     intro_saved: getV('intro_saved', false),
+    intro_prompt: getV('intro_prompt',''),
+    intro_result_rating: getV('intro_result_rating',''),
+    intro_result_text: getV('intro_result_text',''),
   };
   await fetch('/api/user/intro', {
     method: 'PUT',
