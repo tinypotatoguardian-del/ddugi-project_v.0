@@ -5419,6 +5419,40 @@ function renderLandingSection(){
       </div>
     </div>
 
+    <!-- 뚜기가 하는 것 -->
+    <div style="border:2px solid var(--line);border-radius:16px;padding:24px;margin-bottom:24px;background:var(--panel);">
+      <h2 style="font-size:15px;font-weight:800;margin:0 0 6px;color:var(--ink);">🥔 뚜기가 하는 것</h2>
+      <p style="font-size:12px;color:var(--ink-soft);margin:0 0 20px;line-height:1.7;">AI를 만들어주는 게 아니에요. 문제를 제대로 볼 수 있게 해줍니다.</p>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <div style="background:rgba(239,68,68,.06);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:6px;">❌ 보통 AI 도구가 하는 것</div>
+          <p style="font-size:13px;color:var(--ink-soft);margin:0;line-height:1.7;">PPT 자동화 버튼을 만들어서 웹에 박고 "AI 도입했습니다"라고 합니다.<br>6개월 뒤, 아무도 안 쓰고 있어요. 사람이 하는 행동이 달라지지 않았으니까요.</p>
+        </div>
+        <div style="background:rgba(139,92,246,.06);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:12px;font-weight:700;color:var(--blueprint);margin-bottom:6px;">✅ 뚜기가 하는 것</div>
+          <p style="font-size:13px;color:var(--ink-soft);margin:0;line-height:1.7;">AI를 붙이기 전에 먼저 묻습니다. 문제가 무엇인지, 정말 AI가 필요한지, 사람의 행동이 실제로 줄어드는지. 그 과정에서 문제가 선명해집니다.</p>
+        </div>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:10px;letter-spacing:.3px;">AI 붙이기 전, 뚜기가 확인하는 것</div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:20px;">
+        ${['① 문제를 제대로 정의했나','② 정말 필요한 기능만 넣었나','③ AI가 필요한 이유가 있나','④ 사용자의 실제 행동이 줄었나','⑤ 예외 상황까지 생각했나','⑥ 운영 가능한 구조인가'].map(q=>`
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink);line-height:1.6;">
+          <span style="color:var(--blueprint);font-weight:700;flex-shrink:0;">${q.slice(0,1)}</span>
+          <span>${q.slice(1)}</span>
+        </div>`).join('')}
+      </div>
+
+      <div style="background:var(--paper);border-radius:10px;padding:14px 16px;border:1px solid var(--line);">
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px;font-weight:600;">그리고 뚜기는 계속 배웁니다</p>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0;line-height:1.8;">처음엔 <span style="color:var(--ink);">"AI가 필요한가요?"</span> 정도만 물어봐요.<br>
+        사례가 쌓이면 — <span style="color:var(--ink);">"이 패턴은 AI가 아니라 단순 자동화 문제일 가능성이 높아요."</span><br>
+        <span style="color:var(--ink);">"이 유형은 문제 정의가 너무 넓어요."</span> 같은 말을 할 수 있게 돼요.<br>
+        뚜기는 AI를 만드는 캐릭터가 아니라, <b style="color:var(--blueprint);">사람이 자기 문제를 제대로 볼 수 있게 해주는 인터페이스</b>예요.</p>
+      </div>
+    </div>
+
     <!-- CTA -->
     <div style="text-align:center;margin-bottom:20px;">
       <button type="button" onclick="window._state&&(window._state.cur='intro');window._renderSheet&&window._renderSheet();"
