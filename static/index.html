@@ -6210,11 +6210,14 @@ function renderLevelCheckSection(){
   const CHECKS = [
     {lv:1, text:'AI한테 질문해서 원하는 답을 받아본 적 있어'},
     {lv:1, text:'AI 결과가 틀릴 수 있다는 걸 직접 확인해봤어'},
-    {lv:2, text:'업무나 공부에 AI를 정기적으로 쓰고 있어'},
-    {lv:2, text:'프롬프트를 여러 방식으로 바꾸면서 결과를 조정해봤어'},
+    {lv:2, text:'업무/공부에 AI를 정기적으로 쓰고 있어'},
+    {lv:2, text:'같은 질문을 다르게 물어봐서 결과가 달라지는 걸 느꼈어'},
+    {lv:2, text:'보고서·이메일·발표자료 초안을 AI로 만들어봤어'},
+    {lv:2, text:'AI 결과물을 내가 검토하고 수정해서 쓴 적 있어'},
     {lv:3, text:'AI가 짜준 코드를 실제로 실행해봤어'},
-    {lv:3, text:'노코드 자동화 도구(n8n, Make, Zapier 등)를 써봤어'},
+    {lv:3, text:'노코드 자동화(n8n, Make, Zapier 등)를 써봤어'},
     {lv:4, text:'내 문서 기반으로 AI가 답하게 해봤어 (NotebookLM 등)'},
+    {lv:4, text:'API로 AI를 내 도구나 시스템에 연결해봤어'},
   ];
 
   const LEVELS = [
@@ -6225,34 +6228,27 @@ function renderLevelCheckSection(){
     {lv:5, emoji:'🗺️', name:'AX Architect', desc:'AI를 붙이는 게 아니라, 일하는 방식 자체를 재설계해', next:null},
   ];
 
-  // 저장된 체크 불러오기
-  const saved = JSON.parse(localStorage.getItem('ddugi_lv_checks') || '[]');
-
   function calcLevel(checked) {
-    const l1 = [0,1].filter(i=>checked.includes(i)).length;
-    const l2 = [2,3].filter(i=>checked.includes(i)).length;
-    const l3 = [4,5].filter(i=>checked.includes(i)).length;
-    const l4 = [6].filter(i=>checked.includes(i)).length;
-    if(l4 >= 1) return 4;
-    if(l3 >= 1) return 3;
-    if(l2 >= 1) return 2;
-    if(l1 >= 1) return 1;
+    if([8,9].some(i=>checked.includes(i))) return 4;
+    if([6,7].some(i=>checked.includes(i))) return 3;
+    if([2,3,4,5].some(i=>checked.includes(i))) return 2;
+    if([0,1].some(i=>checked.includes(i))) return 1;
     return 0;
   }
 
+  const saved = JSON.parse(localStorage.getItem('ddugi_lv_checks') || '[]');
   const curLv = calcLevel(saved);
   const curInfo = LEVELS.find(l=>l.lv===curLv);
   const nextInfo = LEVELS.find(l=>l.lv===(curLv+1));
 
-  const onchange = `(function(el){var s=JSON.parse(localStorage.getItem('ddugi_lv_checks')||'[]');var idx=parseInt(el.dataset.idx);var n=el.checked?[...new Set([...s,idx])]:s.filter(function(i){return i!==idx});localStorage.setItem('ddugi_lv_checks',JSON.stringify(n));var l=el.closest('label');if(l){l.style.background=el.checked?'var(--blueprint-soft)':'var(--paper)';l.style.borderColor=el.checked?'var(--blueprint-2)':'var(--line)';}window._lvUpdateResult&&window._lvUpdateResult(n);})(this)`;
-
-  const checksHtml = CHECKS.map((c,i) => {
-    const checked = saved.includes(i);
-    return `<label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;background:${checked?'var(--blueprint-soft)':'var(--paper)'};border:1px solid ${checked?'var(--blueprint-2)':'var(--line)'};cursor:pointer;transition:all .15s;">
-      <input type="checkbox" data-idx="${i}" ${checked?'checked':''} onchange="${onchange}" style="margin-top:2px;accent-color:var(--blueprint);">
-      <span style="font-size:13px;color:var(--ink);line-height:1.6;">${esc(c.text)}</span>
-    </label>`;
-  }).join('');
+  const checksHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">` +
+    CHECKS.map((c,i) => {
+      const checked = saved.includes(i);
+      return `<label style="display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:8px;background:${checked?'var(--blueprint-soft)':'var(--paper)'};border:1.5px solid ${checked?'var(--blueprint-2)':'var(--line)'};cursor:pointer;">
+        <input type="checkbox" data-idx="${i}" ${checked?'checked':''} onchange="window.lvCheck(${i},this)" style="margin-top:2px;accent-color:var(--blueprint);flex-shrink:0;">
+        <span style="font-size:12px;color:var(--ink);line-height:1.6;">${esc(c.text)}</span>
+      </label>`;
+    }).join('') + `</div>`;
 
   const LEVEL_DETAILS = {
     1: {items:['프롬프트 작성 (질문·지시)','생성·요약·분석 활용','결과 검증 (틀릴 수 있다는 것)','AI 적용 여부 판단'], example:'회의록 초안을 AI한테 시켰는데 방향은 맞는데 수치가 틀렸어 → "수치는 내가 넣을게, 구조만 다듬어줘"로 역할 나눔'},
@@ -6314,7 +6310,7 @@ function renderLevelCheckSection(){
       <b>지금 어느 단계인지 파악하고, 다음을 시도해보는 것</b>이 목적이에요.
     </p>
 
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;" id="lvChecks">
+    <div id="lvChecks" style="margin-bottom:20px;">
       ${checksHtml}
     </div>
 
@@ -6333,6 +6329,19 @@ function renderLevelCheckSection(){
     </p>
   </div>`;
 }
+
+// ── 레벨 체크 전역 함수 ──────────────────────────────────────
+window.lvCheck = function(idx, el) {
+  var s = JSON.parse(localStorage.getItem('ddugi_lv_checks') || '[]');
+  var n = el.checked ? Array.from(new Set(s.concat([idx]))) : s.filter(function(i){ return i !== idx; });
+  localStorage.setItem('ddugi_lv_checks', JSON.stringify(n));
+  var label = el.closest('label');
+  if (label) {
+    label.style.background = el.checked ? 'var(--blueprint-soft)' : 'var(--paper)';
+    label.style.borderColor = el.checked ? 'var(--blueprint-2)' : 'var(--line)';
+  }
+  window._lvUpdateResult && window._lvUpdateResult(n);
+};
 
 window._lvUpdateResult = function(checked){
   const LEVELS = [
