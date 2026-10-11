@@ -2231,6 +2231,21 @@ def user_discord_share(body: UserDiscordShareIn, x_token: str = Header(default="
     return {"ok": ok}
 
 
+class MasterForumPostIn(BaseModel):
+    channel_id: str
+    title: str
+    content: str
+
+@app.post("/api/master/discord/forum-post")
+def master_discord_forum_post(body: MasterForumPostIn, x_admin_token: str = Header(default="")):
+    """마스터 전용: Discord 포럼 채널에 새 스레드 게시"""
+    require_admin_token(x_admin_token, {"master"})
+    thread_id, err = _discord_create_thread(body.channel_id, body.title[:100], body.content[:2000])
+    if err:
+        raise HTTPException(status_code=500, detail=f"Discord 오류: {err}")
+    return {"ok": True, "thread_id": thread_id}
+
+
 # ── 씨앗 결과 기록 ─────────────────────────────────────────────────────────
 class SeedResultIn(BaseModel):
     doc_id: str = ""          # 씨앗 정의서 ID (없으면 빈 문자열)
