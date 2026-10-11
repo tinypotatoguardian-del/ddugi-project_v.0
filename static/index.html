@@ -6247,11 +6247,40 @@ function renderLevelCheckSection(){
     if([0,1].some(i=>checked.includes(i))) return 1;
     return 0;
   }
+  function calcSolid(checked) {
+    var solid = 0;
+    for(var lv=1; lv<=5; lv++){
+      if(_LV_RANGES[lv].some(i=>checked.includes(i))) solid=lv; else break;
+    }
+    return solid;
+  }
+  function buildGapHtml(checked){
+    // topLv보다 낮고 체크가 없는 레벨의 미체크 항목 추천
+    var topLv = calcLevel(checked);
+    var gapsHtml = '';
+    for(var lv=1; lv<topLv; lv++){
+      var lvChecks = CHECKS.map((c,i)=>({...c,idx:i})).filter(c=>c.lv===lv);
+      var missing = lvChecks.filter(c=>!checked.includes(c.idx));
+      if(missing.length===0) continue;
+      const lvInfo = LEVELS.find(l=>l.lv===lv);
+      gapsHtml += `<div style="margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">L${lv} ${lvInfo?.name||''} — 이 부분을 채워봐:</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          ${missing.map(c=>`<div style="font-size:12px;color:var(--ink-soft);padding:6px 10px;background:var(--paper);border-left:2px solid var(--blueprint-2);border-radius:0 4px 4px 0;">→ ${esc(c.text)}</div>`).join('')}
+        </div>
+      </div>`;
+    }
+    return gapsHtml;
+  }
 
   const saved = JSON.parse(localStorage.getItem('ddugi_lv_checks') || '[]');
-  const curLv = calcLevel(saved);
-  const curInfo = LEVELS.find(l=>l.lv===curLv);
-  const nextInfo = LEVELS.find(l=>l.lv===(curLv+1));
+  const topLv  = calcLevel(saved);
+  const solidLv = calcSolid(saved);
+  const hasGap = topLv > 0 && solidLv < topLv;
+  const topInfo   = LEVELS.find(l=>l.lv===topLv);
+  const solidInfo = LEVELS.find(l=>l.lv===solidLv);
+  const nextLv  = hasGap ? solidLv+1 : topLv+1;
+  const nextInfo  = LEVELS.find(l=>l.lv===nextLv);
 
   const checksHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">` +
     CHECKS.map((c,i) => {
@@ -6286,17 +6315,27 @@ function renderLevelCheckSection(){
   };
 
   const levelMapHtml = LEVELS.map(l => {
-    const isCur = l.lv === curLv;
-    const isDone = l.lv < curLv;
-    const detail = LEVEL_DETAILS[l.lv];
-    return `<div class="lv-map-item" data-lv="${l.lv}" style="border-radius:10px;background:${isCur?'var(--blueprint-soft)':isDone?'rgba(0,0,0,.03)':'var(--paper)'};border:1.5px solid ${isCur?'var(--blueprint)':'var(--line)'};opacity:${isCur||isDone?1:.5};cursor:pointer;overflow:hidden;">
+    const hasAny  = _LV_RANGES[l.lv].some(i=>saved.includes(i));
+    const isSolid = l.lv <= solidLv;
+    const isTop   = l.lv === topLv;
+    const isGap   = hasAny && !isSolid && !isTop;
+    const isFuture= !hasAny && l.lv > topLv;
+    const detail  = LEVEL_DETAILS[l.lv];
+    let badge = '';
+    if(isSolid && l.lv < topLv) badge = '✅';
+    else if(isTop && !hasGap)   badge = '← 나';
+    else if(isTop && hasGap)    badge = '최고 경험';
+    else if(isGap)              badge = '⚠️ 갭';
+    const borderColor = isTop ? 'var(--blueprint)' : isGap ? '#f59e0b' : 'var(--line)';
+    const bg = isTop ? 'var(--blueprint-soft)' : isGap ? 'rgba(245,158,11,.08)' : isSolid ? 'rgba(0,0,0,.03)' : 'var(--paper)';
+    return `<div class="lv-map-item" data-lv="${l.lv}" style="border-radius:10px;background:${bg};border:1.5px solid ${borderColor};opacity:${hasAny||isFuture===false?1:0.45};cursor:pointer;overflow:hidden;">
       <div style="display:flex;gap:10px;align-items:center;padding:10px 14px;">
         <span style="font-size:20px;">${l.emoji}</span>
         <div style="flex:1;">
-          <div class="lv-name" data-name="${l.name}" style="font-size:13px;font-weight:${isCur?800:600};color:${isCur?'var(--blueprint)':'var(--ink)'};">L${l.lv} ${l.name}${isCur?' ← 나':''}</div>
+          <div class="lv-name" data-name="${l.name}" style="font-size:13px;font-weight:${isTop||isGap?800:600};color:${isTop?'var(--blueprint)':isGap?'#b45309':'var(--ink)'};">L${l.lv} ${l.name}</div>
           <div style="font-size:12px;color:var(--ink-soft);line-height:1.5;">${esc(l.desc)}</div>
         </div>
-        <span class="lv-check" style="font-size:16px;">${isDone?'✅':''}</span>
+        <span class="lv-check" style="font-size:12px;font-weight:700;color:${isGap?'#b45309':'var(--blueprint)'};white-space:nowrap;">${badge}</span>
         <span class="lv-arrow" style="font-size:12px;color:var(--ink-soft);margin-left:4px;">▸</span>
       </div>
       <div class="lv-detail" style="display:none;padding:12px 16px 14px;border-top:1px solid var(--line-soft);background:var(--paper);">
@@ -6309,26 +6348,42 @@ function renderLevelCheckSection(){
     </div>`;
   }).join('');
 
-  const nextCardHtml = nextInfo ? `
-    <div style="background:linear-gradient(135deg,var(--blueprint-soft),rgba(139,92,246,.04));border:1.5px solid var(--blueprint-2);border-radius:12px;padding:18px 20px;margin-bottom:20px;">
-      <div style="font-size:12px;color:var(--blueprint);font-weight:700;margin-bottom:8px;">🚀 L${nextInfo.lv} ${nextInfo.name} 가 되면</div>
-      <p style="font-size:13px;color:var(--ink);margin:0 0 10px;line-height:1.7;">${esc(nextInfo.desc)}</p>
-      <div style="font-size:12px;color:var(--ink-soft);">다음 목표: <b>${esc(nextInfo.next||'')}</b></div>
+  // 결과 카드
+  const resultHtml = topLv === 0 ? `
+    <div style="text-align:center;padding:16px;background:var(--paper);border-radius:12px;margin-bottom:20px;border:1px solid var(--line);">
+      <div style="font-size:13px;color:var(--ink-soft);">해당하는 것에 체크해봐!</div>
+    </div>` : hasGap ? `
+    <div style="padding:16px 18px;background:var(--panel);border-radius:12px;margin-bottom:16px;border:1px solid var(--line);">
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+        <div style="flex:1;min-width:140px;">
+          <div style="font-size:11px;color:var(--ink-soft);margin-bottom:2px;">최고 경험</div>
+          <div style="font-size:15px;font-weight:800;color:var(--blueprint);">${topInfo?.emoji} L${topLv} ${topInfo?.name}</div>
+        </div>
+        <div style="flex:1;min-width:140px;">
+          <div style="font-size:11px;color:var(--ink-soft);margin-bottom:2px;">탄탄한 기반</div>
+          <div style="font-size:15px;font-weight:800;color:var(--ink);">${solidLv>0?(solidInfo?.emoji+' L'+solidLv+' '+solidInfo?.name):'아직 없어'}</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:rgba(245,158,11,.08);border:1.5px solid #f59e0b;border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:#b45309;margin-bottom:10px;">⚠️ 이 부분을 채워보면 더 단단해져</div>
+      ${buildGapHtml(saved)}
     </div>` : `
-    <div style="background:var(--blueprint-soft);border:1.5px solid var(--blueprint-2);border-radius:12px;padding:18px 20px;margin-bottom:20px;">
-      <div style="font-size:13px;font-weight:800;color:var(--blueprint);">🗺️ AX Architect 단계예요!</div>
-      <p style="font-size:12px;color:var(--ink-soft);margin:6px 0 0;">업무 방식 자체를 재설계하는 레벨이에요.</p>
+    <div style="text-align:center;padding:16px;background:var(--panel);border-radius:12px;margin-bottom:20px;border:1px solid var(--line);">
+      <div style="font-size:28px;margin-bottom:4px;">${topInfo?.emoji||'🌱'}</div>
+      <div style="font-size:16px;font-weight:800;color:var(--blueprint);">탄탄하게 L${topLv} ${topInfo?.name||''}</div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${esc(topInfo?.desc||'')}</div>
     </div>`;
 
-  const resultHtml = curLv > 0 ? `
-    <div style="text-align:center;padding:16px;background:var(--panel);border-radius:12px;margin-bottom:20px;border:1px solid var(--line);">
-      <div style="font-size:28px;margin-bottom:4px;">${curInfo?.emoji||'🌱'}</div>
-      <div style="font-size:16px;font-weight:800;color:var(--blueprint);">현재 L${curLv} ${curInfo?.name||''}</div>
-      <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${esc(curInfo?.desc||'')}</div>
-    </div>` : `
-    <div style="text-align:center;padding:16px;background:var(--paper);border-radius:12px;margin-bottom:20px;border:1px solid var(--line);">
-      <div style="font-size:13px;color:var(--ink-soft);">아래 체크리스트에서 해당하는 것에 체크해봐!</div>
-    </div>`;
+  const nextCardHtml = nextInfo ? `
+    <div style="background:linear-gradient(135deg,var(--blueprint-soft),rgba(139,92,246,.04));border:1.5px solid var(--blueprint-2);border-radius:12px;padding:18px 20px;margin-bottom:20px;">
+      <div style="font-size:12px;color:var(--blueprint);font-weight:700;margin-bottom:8px;">${hasGap?'🔧 먼저 채워보면 좋을 단계':'🚀 다음 목표'}: L${nextLv} ${nextInfo.name}</div>
+      <p style="font-size:13px;color:var(--ink);margin:0 0 10px;line-height:1.7;">${esc(nextInfo.desc)}</p>
+      <div style="font-size:12px;color:var(--ink-soft);">핵심: <b>${esc(nextInfo.next||'')}</b></div>
+    </div>` : topLv>=5 ? `
+    <div style="background:var(--blueprint-soft);border:1.5px solid var(--blueprint-2);border-radius:12px;padding:18px 20px;margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:800;color:var(--blueprint);">🗺️ AX Architect 단계예요!</div>
+    </div>` : '';
 
   return `<div class="frame">
     <h2 style="font-size:18px;font-weight:800;margin:0 0 4px;">✅ 내 레벨 체크</h2>
@@ -6358,6 +6413,23 @@ function renderLevelCheckSection(){
 }
 
 // ── 레벨 체크 전역 함수 ──────────────────────────────────────
+const _LV_RANGES = {1:[0,1], 2:[2,3,4], 3:[5,6,7], 4:[8,9,10], 5:[11,12]};
+
+window._lvCalc = function(checked){
+  // topLv: 체크된 가장 높은 레벨
+  var topLv = 0;
+  [5,4,3,2,1].forEach(function(lv){
+    if(!topLv && _LV_RANGES[lv].some(function(i){ return checked.includes(i); })) topLv = lv;
+  });
+  // solidLv: L1부터 빠짐없이 연속된 레벨
+  var solidLv = 0;
+  for(var lv=1; lv<=5; lv++){
+    if(_LV_RANGES[lv].some(function(i){ return checked.includes(i); })){ solidLv = lv; }
+    else break;
+  }
+  // gaps: topLv까지 중 체크 없는 레벨 + 미체크 항목 (renderLevelCheckSection의 CHECKS에 접근해야 해서 별도 계산)
+  return {topLv:topLv, solidLv:solidLv};
+};
 window.lvCheck = function(idx, el) {
   var s = JSON.parse(localStorage.getItem('ddugi_lv_checks') || '[]');
   var n = el.checked ? Array.from(new Set(s.concat([idx]))) : s.filter(function(i){ return i !== idx; });
@@ -6371,69 +6443,68 @@ window.lvCheck = function(idx, el) {
 };
 
 window._lvUpdateResult = function(checked){
-  const LEVELS = [
-    {lv:1, emoji:'🌱', name:'AI User', desc:'AI를 써봤고, 결과를 판단해서 쓸 수 있어', next:'업무/공부에 반복 적용하기'},
-    {lv:2, emoji:'⚙️', name:'AI Operator', desc:'AI를 내 흐름에 연결해서 반복 업무를 줄일 수 있어', next:'간단한 도구 직접 만들기'},
-    {lv:3, emoji:'🔧', name:'AI Builder', desc:'AI로 실제로 작동하는 도구를 만들 수 있어', next:'AI를 시스템에 연결하기'},
-    {lv:4, emoji:'🔗', name:'AI System Builder', desc:'AI가 데이터·시스템과 연결돼서 돌아가게 할 수 있어', next:'업무 방식 자체를 재설계하기'},
-    {lv:5, emoji:'🗺️', name:'AX Architect', desc:'AI를 붙이는 게 아니라, 일하는 방식 자체를 재설계해', next:null},
+  var LEVELS = [
+    {lv:1,emoji:'🌱',name:'AI User',desc:'AI를 써봤고, 결과를 판단해서 쓸 수 있어',next:'업무/공부에 반복 적용하기'},
+    {lv:2,emoji:'⚙️',name:'AI Operator',desc:'AI를 내 흐름에 연결해서 반복 업무를 줄일 수 있어',next:'간단한 도구 직접 만들기'},
+    {lv:3,emoji:'🔧',name:'AI Builder',desc:'AI로 실제로 작동하는 도구를 만들 수 있어',next:'AI를 시스템에 연결하기'},
+    {lv:4,emoji:'🔗',name:'AI System Builder',desc:'AI가 데이터·시스템과 연결돼서 돌아가게 할 수 있어',next:'업무 방식 자체를 재설계하기'},
+    {lv:5,emoji:'🗺️',name:'AX Architect',desc:'AI를 붙이는 게 아니라, 일하는 방식 자체를 재설계해',next:null},
   ];
-  function calcLevel(c){
-    if([11,12].some(i=>c.includes(i))) return 5;
-    if([8,9,10].some(i=>c.includes(i))) return 4;
-    if([5,6,7].some(i=>c.includes(i))) return 3;
-    if([2,3,4].some(i=>c.includes(i))) return 2;
-    if([0,1].some(i=>c.includes(i))) return 1;
-    return 0;
-  }
-  const curLv = calcLevel(checked);
-  const curInfo = LEVELS.find(l=>l.lv===curLv);
-  const nextInfo = LEVELS.find(l=>l.lv===(curLv+1));
+  var calc = window._lvCalc(checked);
+  var topLv = calc.topLv, solidLv = calc.solidLv;
+  var hasGap = topLv > 0 && solidLv < topLv;
+  var topInfo   = LEVELS.find(function(l){return l.lv===topLv;});
+  var solidInfo = LEVELS.find(function(l){return l.lv===solidLv;});
+  var nextLv  = hasGap ? solidLv+1 : topLv+1;
+  var nextInfo  = LEVELS.find(function(l){return l.lv===nextLv;});
 
-  // 결과 카드 업데이트
-  const res = document.getElementById('lvResult');
-  if(res) res.innerHTML = curLv > 0
-    ? `<div style="text-align:center;padding:16px;background:var(--panel);border-radius:12px;margin-bottom:20px;border:1px solid var(--line);">
-        <div style="font-size:28px;margin-bottom:4px;">${curInfo?.emoji||'🌱'}</div>
-        <div style="font-size:16px;font-weight:800;color:var(--blueprint);">현재 L${curLv} ${curInfo?.name||''}</div>
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">${curInfo?.desc||''}</div>
-       </div>`
-    : `<div style="text-align:center;padding:16px;background:var(--paper);border-radius:12px;margin-bottom:20px;border:1px solid var(--line);">
-        <div style="font-size:13px;color:var(--ink-soft);">해당하는 것에 체크해봐!</div>
-       </div>`;
-
-  // 레벨 지도 각 아이템 업데이트
-  document.querySelectorAll('.lv-map-item').forEach(item=>{
-    const lv = parseInt(item.dataset.lv);
-    const isCur = lv === curLv;
-    const isDone = lv < curLv;
-    item.style.background = isCur ? 'var(--blueprint-soft)' : isDone ? 'rgba(0,0,0,.03)' : 'var(--paper)';
-    item.style.borderColor = isCur ? 'var(--blueprint)' : 'var(--line)';
-    item.style.opacity = (isCur||isDone) ? '1' : '0.5';
-    const nameEl = item.querySelector('.lv-name');
-    if(nameEl){
-      const baseName = nameEl.dataset.name;
-      nameEl.textContent = `L${lv} ${baseName}${isCur?' ← 나':''}`;
-      nameEl.style.color = isCur ? 'var(--blueprint)' : 'var(--ink)';
-      nameEl.style.fontWeight = isCur ? '800' : '600';
+  // 결과 카드
+  var res = document.getElementById('lvResult');
+  if(res){
+    if(topLv===0){
+      res.innerHTML = '<div style="text-align:center;padding:16px;background:var(--paper);border-radius:12px;margin-bottom:20px;border:1px solid var(--line);"><div style="font-size:13px;color:var(--ink-soft);">해당하는 것에 체크해봐!</div></div>';
+    } else if(hasGap){
+      // gap: 미체크 항목 텍스트를 localStorage에서 역으로 찾기 어려우니 섹션 리렌더 (간단하게)
+      window._renderSheet && window._renderSheet();
+      return;
+    } else {
+      res.innerHTML = '<div style="text-align:center;padding:16px;background:var(--panel);border-radius:12px;margin-bottom:20px;border:1px solid var(--line);">'+
+        '<div style="font-size:28px;margin-bottom:4px;">'+(topInfo?.emoji||'🌱')+'</div>'+
+        '<div style="font-size:16px;font-weight:800;color:var(--blueprint);">탄탄하게 L'+topLv+' '+(topInfo?.name||'')+'</div>'+
+        '<div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">'+(topInfo?.desc||'')+'</div>'+
+        '</div>';
     }
-    const ckEl = item.querySelector('.lv-check');
-    if(ckEl) ckEl.textContent = isDone ? '✅' : '';
+  }
+
+  // 레벨 지도
+  document.querySelectorAll('.lv-map-item').forEach(function(item){
+    var lv = parseInt(item.dataset.lv);
+    var hasAny  = _LV_RANGES[lv].some(function(i){return checked.includes(i);});
+    var isSolid = lv <= solidLv;
+    var isTop   = lv === topLv;
+    var isGap   = hasAny && !isSolid && !isTop;
+    item.style.background   = isTop?'var(--blueprint-soft)':isGap?'rgba(245,158,11,.08)':isSolid?'rgba(0,0,0,.03)':'var(--paper)';
+    item.style.borderColor  = isTop?'var(--blueprint)':isGap?'#f59e0b':'var(--line)';
+    item.style.opacity      = hasAny||lv>topLv?'1':'0.45';
+    var nameEl = item.querySelector('.lv-name');
+    if(nameEl){ nameEl.style.color = isTop?'var(--blueprint)':isGap?'#b45309':'var(--ink)'; nameEl.style.fontWeight = (isTop||isGap)?'800':'600'; }
+    var ckEl = item.querySelector('.lv-check');
+    if(ckEl){
+      ckEl.style.color = isGap?'#b45309':'var(--blueprint)';
+      ckEl.textContent = isSolid&&lv<topLv?'✅':isTop&&!hasGap?'← 나':isTop&&hasGap?'최고 경험':isGap?'⚠️ 갭':'';
+    }
   });
 
-  // 다음 레벨 카드 업데이트
-  const nc = document.getElementById('lvNextCard');
-  if(nc) nc.innerHTML = nextInfo
-    ? `<div style="background:linear-gradient(135deg,var(--blueprint-soft),rgba(139,92,246,.04));border:1.5px solid var(--blueprint-2);border-radius:12px;padding:18px 20px;margin-bottom:20px;">
-        <div style="font-size:12px;color:var(--blueprint);font-weight:700;margin-bottom:8px;">🚀 L${nextInfo.lv} ${nextInfo.name} 가 되면</div>
-        <p style="font-size:13px;color:var(--ink);margin:0 0 10px;line-height:1.7;">${nextInfo.desc}</p>
-        <div style="font-size:12px;color:var(--ink-soft);">다음 목표: <b>${nextInfo.next||''}</b></div>
-       </div>`
-    : curLv >= 4
-    ? `<div style="background:var(--blueprint-soft);border:1.5px solid var(--blueprint-2);border-radius:12px;padding:18px 20px;margin-bottom:20px;">
-        <div style="font-size:13px;font-weight:800;color:var(--blueprint);">🗺️ AX Architect 단계예요!</div>
-       </div>`
-    : '';
+  // 다음 목표 카드
+  var nc = document.getElementById('lvNextCard');
+  if(nc){
+    if(nextInfo){
+      nc.innerHTML = '<div style="background:linear-gradient(135deg,var(--blueprint-soft),rgba(139,92,246,.04));border:1.5px solid var(--blueprint-2);border-radius:12px;padding:18px 20px;margin-bottom:20px;">'+
+        '<div style="font-size:12px;color:var(--blueprint);font-weight:700;margin-bottom:8px;">'+(hasGap?'🔧 먼저 채워보면 좋을 단계':'🚀 다음 목표')+': L'+nextLv+' '+nextInfo.name+'</div>'+
+        '<p style="font-size:13px;color:var(--ink);margin:0 0 10px;line-height:1.7;">'+nextInfo.desc+'</p>'+
+        '<div style="font-size:12px;color:var(--ink-soft);">핵심: <b>'+(nextInfo.next||'')+'</b></div></div>';
+    } else { nc.innerHTML = ''; }
+  }
 };
 
 window._lvCheckInit = function(){
