@@ -3153,7 +3153,7 @@ function updateRulerAndNav(){
   const DEFAULT_OPEN = new Set(); // 비어있으면 A그룹(씨앗정의서)만 open
 
   // 로그인 없이 접근 가능한 special 섹션
-  const LOGIN_FREE_SPECIALS = new Set(['landing','curriculum','aitools','promptkit','intro','discover','feedback','guestbook','roadmap','export']);
+  const LOGIN_FREE_SPECIALS = new Set(['landing','curriculum','aitools','promptkit','guide','intro','discover','feedback','guestbook','roadmap','export']);
 
   function renderNavItem(s){
     const active = s.id===state.cur;
@@ -7134,7 +7134,7 @@ document.addEventListener('click', async function(e){
     if(target==='visits' && !isMaster) return;
     { const tsec = SECTIONS.find(s=>s.id===target); if(tsec && tsec.disabled && !isMaster) return; }
     // 로그인 필요 섹션 — 비로그인 시 흐림 처리 후 CTA (admin/master 전용 섹션은 위에서 이미 처리)
-    const LOGIN_FREE = new Set(['landing','curriculum','aitools','promptkit','intro','discover','feedback','guestbook','roadmap','export']);
+    const LOGIN_FREE = new Set(['landing','curriculum','aitools','promptkit','guide','intro','discover','feedback','guestbook','roadmap','export']);
     const tsec2 = SECTIONS.find(s=>s.id===target);
     const isAdminOnly = ['dashboard','tasklist','accounts','taxonomy','visits'].includes(target);
     if(!currentUser && !isAdmin && !isAdminOnly && tsec2 && !LOGIN_FREE.has(tsec2.special)){
