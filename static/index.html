@@ -744,9 +744,9 @@ const SECTIONS = [
 /* ── 랜딩 ──────────────────────────────── */
 {id:'landing', num:'🥔', title:'처음 오셨나요?', special:'landing'},
 /* ── 학습 ─────────────────────────────── */
-{id:'curriculum', num:'🌱', title:'Foundation', special:'curriculum'},
-{id:'ai-tools',   num:'🗺️', title:'AI 도구 가이드', special:'aitools'},
-{id:'prompt-kit', num:'📋', title:'프롬프트 모음', special:'promptkit'},
+{id:'curriculum', num:'🌱', title:'Foundation', special:'curriculum', disabled:true, disabledNote:'AI 이해하기에서 보기'},
+{id:'ai-tools',   num:'🧠', title:'AI 이해하기', special:'aitools'},
+{id:'prompt-kit', num:'📋', title:'프롬프트 기본', special:'promptkit'},
 {id:'guide',      num:'🎯', title:'활용 가이드', special:'guide'},
 /* ── 씨앗 정의서 ──────────────────────── */
 {id:'intro',   num:'',   title:'마음의 방 입구', special:'intro'},
@@ -4869,6 +4869,7 @@ function renderAIToolsSection(){
     { id:'companies',  label:'🏢 도구 지도',        desc:'회사·제품·모델' },
     { id:'compare',    label:'📊 뭘 써야 해?',      desc:'상황별 선택 가이드' },
     { id:'questions',  label:'❓ 이런 건 물어봐도 돼?', desc:'연령별 질문 카테고리' },
+    { id:'curriculum', label:'📚 레벨별 학습',      desc:'L1~L5 성장 경로' },
   ];
 
   function tabHtml(){
@@ -4887,6 +4888,7 @@ function renderAIToolsSection(){
     if(tab === 'companies') return renderAICompanies();
     if(tab === 'compare') return renderAICompare();
     if(tab === 'questions') return renderAIQuestions();
+    if(tab === 'curriculum') return renderCurriculumSection();
     return '';
   }
 
@@ -6432,76 +6434,46 @@ function renderGuideSection(){
 }
 
 function renderPromptKitSection(){
-  window._promptTab = window._promptTab || 'student';
+  const basicPrompt = `너는 경험 많은 [역할]이야.
+아래 상황을 바탕으로 [원하는 결과]를 해줘.
 
-  const tabs = [
-    {id:'student', label:'🎓 학생용',    desc:'개념설명 / 과제피드백 / 퀴즈 / 수행평가'},
-    {id:'jobhunt', label:'💼 취준용',    desc:'자소서 / 채용공고분석 / 면접 / 경험정리'},
-    {id:'work',    label:'🏢 현직자용',  desc:'보고서 / 기획 / 메일 / 회의록'}
-  ];
+상황: [여기에 내 상황 설명]
 
-  // 프롬프트 데이터 — 내용은 추후 채우기
-  const prompts = {
-    student: [
-      {tag:'공부', title:'개념 쉽게 설명해줘', desc:'어려운 개념을 내 수준에 맞게 풀어달라고 하는 프롬프트', template:''},
-      {tag:'과제', title:'과제 피드백 받기', desc:'내가 쓴 내용의 부족한 점을 짚어달라는 프롬프트', template:''},
-      {tag:'공부', title:'시험 전날 퀴즈 만들기', desc:'내 노트 내용으로 퀴즈를 만들어달라는 프롬프트', template:''},
-      {tag:'수행평가', title:'주제 선정 도움받기', desc:'수행평가 주제를 고를 때 쓰는 프롬프트', template:''},
-    ],
-    jobhunt: [
-      {tag:'자소서', title:'자소서 피드백 받기', desc:'내 자소서의 약한 부분을 구체적으로 짚어달라는 프롬프트', template:''},
-      {tag:'직무분석', title:'채용공고 핵심 뽑기', desc:'공고에서 합격 키워드를 추출하는 프롬프트', template:''},
-      {tag:'면접', title:'예상 질문 뽑기', desc:'직무와 자소서 기반으로 예상 면접 질문을 뽑는 프롬프트', template:''},
-      {tag:'자소서', title:'경험을 자소서로 바꾸기', desc:'내 경험을 자소서 문장으로 정리하는 프롬프트', template:''},
-    ],
-    work: [
-      {tag:'보고서', title:'보고서 초안 잡기', desc:'핵심 내용만 넣으면 보고서 구조를 잡아주는 프롬프트', template:''},
-      {tag:'기획', title:'문제 정의하기', desc:'업무 문제를 명확하게 정의하는 프롬프트 (ddugi 연동)', template:''},
-      {tag:'이메일', title:'업무 메일 다듬기', desc:'내가 쓴 메일을 더 자연스럽게 다듬어달라는 프롬프트', template:''},
-      {tag:'회의', title:'회의록 정리하기', desc:'회의 내용을 요점 정리해달라는 프롬프트', template:''},
-    ]
-  };
+조건:
+- [조건 1]
+- [조건 2]
+- 형식: [원하는 형식]`;
 
-  function tabHtml(){
-    return '<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">' +
-      tabs.map(t => {
-        const a = window._promptTab === t.id;
-        return '<button type="button" onclick="promptKitTab(\''+t.id+'\')" style="flex:1;min-width:104px;padding:10px 16px;border-radius:10px;border:2px solid '+(a?'var(--blueprint)':'var(--line)')+';background:'+(a?'var(--blueprint-soft)':'var(--panel)')+';color:'+(a?'var(--blueprint)':'var(--ink-soft)')+';font-weight:'+(a?700:400)+';font-size:13px;cursor:pointer;text-align:left;line-height:1.3;">'+
-          t.label+'<br><span style="font-size:11px;opacity:.65;">'+t.desc+'</span>'+
-        '</button>';
-      }).join('') + '</div>';
-  }
+  return `<div class="frame">
+    <h2>📋 프롬프트 기본</h2>
+    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 20px;line-height:1.8;">어떤 AI 도구든 바로 쓸 수 있는 기본 구조예요.<br><b style="color:var(--ink);">[ ]</b> 안에 내 상황을 넣으면 돼요.</p>
 
-  function listHtml(){
-    const list = prompts[window._promptTab] || [];
-    return '<div style="display:flex;flex-direction:column;gap:10px;">' +
-      list.map((p,i) =>
-        '<div style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">'+
-          '<div style="padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">'+
-            '<span style="font-size:11px;padding:3px 10px;border-radius:999px;background:var(--blueprint-soft);color:var(--blueprint);font-weight:700;white-space:nowrap;margin-top:2px;">'+p.tag+'</span>'+
-            '<div style="flex:1;">'+
-              '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;">'+p.title+'</div>'+
-              '<div style="font-size:12px;color:var(--ink-soft);">'+p.desc+'</div>'+
-            '</div>'+
-            '<span style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);color:var(--ink-soft);font-weight:600;white-space:nowrap;">✏️ 준비 중</span>'+
-          '</div>'+
-        '</div>'
-      ).join('') +
-    '</div>';
-  }
+    <div style="position:relative;margin-bottom:16px;">
+      <pre style="background:var(--paper);border:1px solid var(--blueprint-2);border-radius:10px;padding:16px 18px;font-size:13px;line-height:1.8;white-space:pre-wrap;word-break:break-all;margin:0;font-family:inherit;color:var(--ink);">${basicPrompt}</pre>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('basicPromptText').textContent).then(()=>{this.textContent='✅ 복사됨!';setTimeout(()=>this.textContent='📋 복사',1500)})"
+        style="position:absolute;top:10px;right:10px;padding:5px 12px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:12px;cursor:pointer;">📋 복사</button>
+      <span id="basicPromptText" style="display:none;">${basicPrompt}</span>
+    </div>
 
-  window.promptKitTab = function(id){
-    window._promptTab = id;
-    const el = document.getElementById('promptKitWrap');
-    if(el) el.innerHTML = tabHtml() + listHtml();
-  };
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:20px;">
+      <p style="font-size:13px;font-weight:700;margin:0 0 6px;">📌 채우는 법</p>
+      <ul style="font-size:12px;color:var(--ink-soft);margin:0;padding-left:18px;line-height:2;">
+        <li><b>[역할]</b> — "HR 담당자", "국어 선생님", "시니어 개발자"</li>
+        <li><b>[원하는 결과]</b> — "자소서 피드백해줘", "퀴즈 5개 만들어줘"</li>
+        <li><b>[내 상황]</b> — 최대한 구체적으로</li>
+        <li><b>[형식]</b> — "번호 목록", "500자 이내", "표 형식"</li>
+      </ul>
+    </div>
 
-  return '<div class="frame">'+
-    '<h2>📋 프롬프트 모음</h2>'+
-    '<div class="sub">상황별로 바로 쓸 수 있는 프롬프트 — 복사해서 ChatGPT에 붙여넣으세요</div>'+
-    '<p style="font-size:13px;color:var(--ink-soft);margin:10px 0 20px;">✏️ 표시된 항목은 내용 준비 중이에요. 써보고 싶은 상황이 있으면 알려주세요!</p>'+
-    '<div id="promptKitWrap">'+tabHtml()+listHtml()+'</div>'+
-  '</div>';
+    <div style="background:rgba(88,101,242,.08);border:1.5px solid #5865F2;border-radius:10px;padding:16px 18px;text-align:center;">
+      <p style="font-size:13px;font-weight:700;color:var(--ink);margin:0 0 6px;">💬 상황별 프롬프트 더 보기</p>
+      <p style="font-size:12px;color:var(--ink-soft);margin:0 0 12px;">자소서, 보고서, 면접, 학습용 프롬프트는 Discord에서 계속 추가돼요.</p>
+      <a href="https://discord.gg/BvE8kwNt5" target="_blank" rel="noopener"
+        style="display:inline-block;padding:9px 24px;border-radius:8px;background:#5865F2;color:#fff;font-size:13px;font-weight:700;text-decoration:none;">
+        💬 감자밭 Discord 입장하기
+      </a>
+    </div>
+  </div>`;
 }
 
 function renderDiscoverSection(){
