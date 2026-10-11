@@ -6213,11 +6213,13 @@ function renderLevelCheckSection(){
     {lv:2, text:'업무/공부에 AI를 정기적으로 쓰고 있어'},
     {lv:2, text:'같은 질문을 다르게 물어봐서 결과가 달라지는 걸 느꼈어'},
     {lv:2, text:'보고서·이메일·발표자료 초안을 AI로 만들어봤어'},
-    {lv:2, text:'AI 결과물을 내가 검토하고 수정해서 쓴 적 있어'},
+    {lv:2, text:'AI 결과물을 검토하고 수정해서 실제로 쓴 적 있어'},
     {lv:3, text:'AI가 짜준 코드를 실제로 실행해봤어'},
     {lv:3, text:'노코드 자동화(n8n, Make, Zapier 등)를 써봤어'},
-    {lv:4, text:'내 문서 기반으로 AI가 답하게 해봤어 (NotebookLM 등)'},
-    {lv:4, text:'API로 AI를 내 도구나 시스템에 연결해봤어'},
+    {lv:4, text:'임베딩·벡터DB가 뭔지 알고, NotebookLM처럼 문서 기반 AI를 써봤어'},
+    {lv:4, text:'API로 AI를 내 서비스나 시스템에 직접 연결해봤어'},
+    {lv:5, text:'AI 기능을 실제로 배포하거나 팀/외부에 운영해봤어'},
+    {lv:5, text:'AI 도입 효과를 측정하고 업무 방식 자체를 바꿔봤어'},
   ];
 
   const LEVELS = [
@@ -6229,6 +6231,7 @@ function renderLevelCheckSection(){
   ];
 
   function calcLevel(checked) {
+    if([10,11].some(i=>checked.includes(i))) return 5;
     if([8,9].some(i=>checked.includes(i))) return 4;
     if([6,7].some(i=>checked.includes(i))) return 3;
     if([2,3,4,5].some(i=>checked.includes(i))) return 2;
@@ -6352,9 +6355,10 @@ window._lvUpdateResult = function(checked){
     {lv:5, emoji:'🗺️', name:'AX Architect', desc:'AI를 붙이는 게 아니라, 일하는 방식 자체를 재설계해', next:null},
   ];
   function calcLevel(c){
-    if([6].some(i=>c.includes(i))) return 4;
-    if([4,5].some(i=>c.includes(i))) return 3;
-    if([2,3].some(i=>c.includes(i))) return 2;
+    if([10,11].some(i=>c.includes(i))) return 5;
+    if([8,9].some(i=>c.includes(i))) return 4;
+    if([6,7].some(i=>c.includes(i))) return 3;
+    if([2,3,4,5].some(i=>c.includes(i))) return 2;
     if([0,1].some(i=>c.includes(i))) return 1;
     return 0;
   }
@@ -7663,6 +7667,30 @@ const ROLE_BANNER_ENABLED = false;
   main.addEventListener('scroll', function(){ btn.classList.toggle('show', main.scrollTop > 400); }, {passive:true});
   btn.addEventListener('click', function(){ main.scrollTo({top:0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}); });
 })();
+
+// ── 레벨 체크 이벤트 위임 (inline handler 대신 document 레벨에서 처리)
+document.addEventListener('change', function(e) {
+  var cb = e.target;
+  if (cb.type !== 'checkbox') return;
+  var container = cb.closest && cb.closest('#lvChecks');
+  if (!container) return;
+  var idx = parseInt(cb.dataset.idx);
+  if (isNaN(idx)) return;
+  // localStorage 업데이트
+  var saved = JSON.parse(localStorage.getItem('ddugi_lv_checks') || '[]');
+  var next = cb.checked
+    ? Array.from(new Set(saved.concat([idx])))
+    : saved.filter(function(i){ return i !== idx; });
+  localStorage.setItem('ddugi_lv_checks', JSON.stringify(next));
+  // 레이블 즉시 업데이트
+  var label = cb.closest('label');
+  if (label) {
+    label.style.background = cb.checked ? 'var(--blueprint-soft)' : 'var(--paper)';
+    label.style.borderColor = cb.checked ? 'var(--blueprint-2)' : 'var(--line)';
+  }
+  // 결과 카드 업데이트
+  window._lvUpdateResult && window._lvUpdateResult(next);
+});
 })();
 </script>
 </body>
