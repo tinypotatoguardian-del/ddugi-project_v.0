@@ -747,6 +747,7 @@ const SECTIONS = [
 {id:'curriculum', num:'🌱', title:'Foundation', special:'curriculum'},
 {id:'ai-tools',   num:'🗺️', title:'AI 도구 가이드', special:'aitools'},
 {id:'prompt-kit', num:'📋', title:'프롬프트 모음', special:'promptkit'},
+{id:'guide',      num:'🎯', title:'활용 가이드', special:'guide'},
 /* ── 씨앗 정의서 ──────────────────────── */
 {id:'intro',   num:'',   title:'마음의 방 입구', special:'intro'},
 {id:'discover', num:'🌱', title:'심기 전 준비', special:'discover'},
@@ -2198,6 +2199,8 @@ function renderSheet(){
     sheet.innerHTML = renderAIToolsSection() + navFootHtml(sec);
   } else if(sec.special==='promptkit'){
     sheet.innerHTML = renderPromptKitSection() + navFootHtml(sec);
+  } else if(sec.special==='guide'){
+    sheet.innerHTML = renderGuideSection() + navFootHtml(sec);
   } else if(sec.special==='discover'){
     sheet.innerHTML = renderDiscoverSection() + navFootHtml(sec);
     if(currentUser) loadDiscoverFromServer().then(()=>{ sheet.innerHTML = renderDiscoverSection() + navFootHtml(sec); initExportBox(); });
@@ -3178,7 +3181,7 @@ function updateRulerAndNav(){
     const dim = isSectionLocked(s);
     const st = sectionStatus(s);
     const stMark = st==='done' ? '<span class="sec-status st-done">완료</span>' : st==='partial' ? '<span class="sec-status st-partial">작성중</span>' : '<span class="dot"></span>';
-    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guestbook'||s.special==='landing'||s.special==='discover';
+    const isTop = s.special==='export'||s.special==='intro'||s.special==='example'||s.special==='mydash'||s.special==='feedback'||s.special==='curriculum'||s.special==='aitools'||s.special==='promptkit'||s.special==='guide'||s.special==='guestbook'||s.special==='landing'||s.special==='discover';
     return '<li><button type="button" class="navbtn'+(active?' active':'')+(filled?' filled':'')+(dim?' dim':'')+(isTop?'':' sub')+'" data-action="goto" data-target="'+s.id+'">'+
       '<span class="num">'+s.num+'</span>'+esc(s.title)+stMark+'</button></li>'+
       (s.id==='s17'||s.id==='example'||s.id==='mydash' ? '<hr class="navdivider">' : '');
@@ -6056,6 +6059,219 @@ window.seedUpdate = async function(update_type, content) {
   });
   return r.ok;
 };
+
+function renderGuideSection(){
+  window._guideTab = window._guideTab || 'jobseeker';
+  const t = window._guideTab;
+
+  function copyPrompt(id){
+    const el = document.getElementById(id);
+    if(!el) return;
+    navigator.clipboard.writeText(el.textContent.trim())
+      .then(()=>{ const btn = document.querySelector(`[data-copy="${id}"]`); if(btn){ btn.textContent='✅ 복사됨!'; setTimeout(()=>btn.textContent='📋 복사', 1500); } });
+  }
+  window._guideCopy = copyPrompt;
+
+  const tabStyle = (id) => id===t
+    ? 'padding:9px 22px;border-radius:20px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:700;cursor:pointer;'
+    : 'padding:9px 22px;border-radius:20px;border:1px solid var(--line);background:none;color:var(--ink-soft);font-size:13px;cursor:pointer;';
+
+  const promptBox = (id, text) => `
+    <div style="position:relative;margin:8px 0 4px;">
+      <pre id="${id}" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-all;margin:0;font-family:inherit;color:var(--ink);">${esc(text)}</pre>
+      <button data-copy="${id}" onclick="window._guideCopy('${id}')" style="position:absolute;top:8px;right:8px;padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);font-size:11px;cursor:pointer;">📋 복사</button>
+    </div>`;
+
+  const jobseekerContent = `
+    <div style="padding:4px 0 20px;">
+      <p style="font-size:13px;color:var(--ink-soft);line-height:1.8;margin:0 0 24px;">
+        자소서는 매번 맨땅에서 쓰는 게 아니야.<br>
+        <b>경험을 한 번 잘 정리해두면 → 어느 회사든 조합만 바꾸면 된다.</b>
+      </p>
+
+      <!-- Step 1 -->
+      <div style="margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>
+          <span style="font-size:15px;font-weight:700;">내 경험을 STAR로 정리하기</span>
+        </div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px 36px;">아래 프롬프트에 내 경험을 자유롭게 붙여넣으면 AI가 자소서 형식으로 정리해줘.</p>
+        ${promptBox('g-p1', `내 경험을 자소서용 STAR 형식으로 정리해줘.
+
+[경험 설명: 여기에 자유롭게 작성]
+
+다음 형식으로 정리해줘:
+- 상황: (맥락, 배경)
+- 역할: (내가 맡은 것)
+- 행동: (구체적으로 한 것, 3~5개)
+- 결과: (숫자 포함, 정성적 성과 포함)
+- 한 줄 요약: (30초 안에 말할 수 있게)
+
+막연한 표현 빼고 동사 중심으로 구체적으로 써줘.`)}
+      </div>
+
+      <!-- Step 2 -->
+      <div style="margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>
+          <span style="font-size:15px;font-weight:700;">기업 분석 → 내 경험 연결하기</span>
+        </div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px 36px;">채용공고를 붙여넣으면 어떤 경험을 어디에 쓸지 AI가 매핑해줘.</p>
+        ${promptBox('g-p2', `아래 채용공고를 분석해서 이 회사가 원하는 사람을 정리하고,
+내 경험과 연결해줘.
+
+[채용공고 붙여넣기]
+
+내 경험 목록:
+- [경험1]: [한 줄 요약]
+- [경험2]: [한 줄 요약]
+- [경험3]: [한 줄 요약]
+
+각 자소서 문항에 어떤 경험을 쓰면 좋을지 이유와 함께 알려줘.`)}
+      </div>
+
+      <!-- Step 3 -->
+      <div style="margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
+          <span style="font-size:15px;font-weight:700;">자소서 초안 뽑기</span>
+        </div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px 36px;">문항 + 경험을 넣으면 초안이 나와. 마지막 다듬기는 반드시 본인이.</p>
+        ${promptBox('g-p3', `아래 자소서 문항에 답변을 써줘.
+
+[문항: 예) 팀에서 갈등을 해결한 경험을 쓰시오 (800자 이내)]
+
+활용할 경험:
+[STAR 정리 붙여넣기]
+
+조건:
+- [글자수]자 이내
+- 결론 먼저 (두괄식)
+- 구체적인 행동 중심
+- AI 느낌 나지 않게 자연스럽게
+- 마지막에 지원 직무와 연결`)}
+      </div>
+
+      <!-- 보너스 -->
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;">💡 AI 활용 경험이 없을 때</div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 6px;">요즘 기업들 자소서에 AI 역량 묻는 곳 늘고 있어. 경험 없어도 괜찮아.</p>
+        ${promptBox('g-p4', `나는 AI를 업무/학업에 써본 경험이 많지 않아.
+아래 내 상황에서 AI를 실제로 활용할 수 있는 방법 3가지 알려줘.
+
+내 상황: [직무/학교/활동 설명]
+
+자소서에 쓸 수 있게 구체적으로:
+- 어떤 AI 도구를
+- 어떻게 써서
+- 어떤 결과가 나오는지`)}
+      </div>
+
+      <div style="text-align:center;padding:16px 0 4px;">
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 12px;">현직자한테 직접 피드백 받고 싶다면</p>
+        <a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener"
+          style="display:inline-block;padding:11px 28px;border-radius:10px;background:var(--blueprint);color:#fff;font-size:14px;font-weight:700;text-decoration:none;">
+          💬 1:1 자소서 코칭 신청
+        </a>
+        <p style="font-size:11px;color:var(--ink-soft);margin:10px 0 0;">기업이 실제로 보는 것 + AI 활용 자소서 전략</p>
+      </div>
+    </div>`;
+
+  const workerContent = `
+    <div style="padding:4px 0 20px;">
+      <p style="font-size:13px;color:var(--ink-soft);line-height:1.8;margin:0 0 24px;">
+        AI로 업무가 달라지는 건 거창한 게 아니야.<br>
+        <b>지금 하고 있는 일 중에 반복되는 것 하나 → 거기서 시작하면 돼.</b>
+      </p>
+
+      <!-- Step 1 -->
+      <div style="margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>
+          <span style="font-size:15px;font-weight:700;">내 업무에서 씨앗 찾기</span>
+        </div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px 36px;">AI로 풀 수 있는 문제를 찾는 프롬프트.</p>
+        ${promptBox('g-w1', `내가 하는 업무 중에서 AI로 효율화할 수 있는 것을 찾아줘.
+
+내 업무:
+[자유롭게 설명: 직무, 주요 업무, 반복되는 것들]
+
+다음 기준으로 우선순위 3개 뽑아줘:
+1. 반복성이 높은 것
+2. AI가 실제로 도움될 수 있는 것
+3. 지금 당장 시작할 수 있는 것
+
+각각 어떤 AI 도구로, 어떻게 쓰면 되는지도 알려줘.`)}
+      </div>
+
+      <!-- Step 2 -->
+      <div style="margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>
+          <span style="font-size:15px;font-weight:700;">보고서 / 문서 작성 자동화</span>
+        </div>
+        ${promptBox('g-w2', `아래 내용을 바탕으로 [보고서 종류] 초안을 써줘.
+
+핵심 내용: [자유롭게 작성]
+분량: [A4 1장 / 슬라이드 5장 / 이메일 등]
+톤: [격식체 / 친근하게 / 간결하게]
+받는 사람: [팀장 / 고객 / 전체 공유]
+
+구조는 [결론 → 배경 → 상세 → 다음 액션] 순으로.`)}
+      </div>
+
+      <!-- Step 3 -->
+      <div style="margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--blueprint);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
+          <span style="font-size:15px;font-weight:700;">회의 / 미팅 정리</span>
+        </div>
+        ${promptBox('g-w3', `아래 회의 내용을 정리해줘.
+
+[회의 내용 또는 메모 붙여넣기]
+
+다음 형식으로:
+1. 오늘 결정된 것
+2. 각자 해야 할 것 (담당자 / 기한)
+3. 다음 회의 전까지 확인할 것
+4. 미결 사항 (다음에 논의)
+
+간결하게, 액션 중심으로.`)}
+      </div>
+
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">🌱 씨앗 정의서로 더 체계적으로</div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 10px;">막연하게 AI 써보는 것과, 문제를 정의하고 쓰는 건 결과가 달라.</p>
+        <button type="button" data-action="goto" data-target="intro"
+          style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:none;color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">
+          🏠 마음의 방 → 씨앗 심으러 가기
+        </button>
+      </div>
+
+      <div style="text-align:center;padding:16px 0 4px;">
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 12px;">우리 팀 AI 도입, 어디서부터 시작할지 모르겠다면</p>
+        <a href="https://open.kakao.com/o/sA4pBIQi" target="_blank" rel="noopener"
+          style="display:inline-block;padding:11px 28px;border-radius:10px;background:var(--blueprint);color:#fff;font-size:14px;font-weight:700;text-decoration:none;">
+          💬 기업 AI 역량 코칭 신청
+        </a>
+        <p style="font-size:11px;color:var(--ink-soft);margin:10px 0 0;">현직자가 직접 알려주는 기업에서 실제로 쓰는 AI 활용법</p>
+      </div>
+    </div>`;
+
+  return `<div class="frame">
+    <h2 style="font-size:18px;font-weight:800;margin:0 0 6px;">🎯 활용 가이드</h2>
+    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 20px;">내 상황에 맞게 바로 써먹을 수 있는 AI 활용법</p>
+
+    <div style="display:flex;gap:8px;margin-bottom:24px;">
+      <button onclick="window._guideTab='jobseeker';window._renderSheet();"
+        style="${tabStyle('jobseeker')}">💼 취준생</button>
+      <button onclick="window._guideTab='worker';window._renderSheet();"
+        style="${tabStyle('worker')}">🏢 직장인</button>
+    </div>
+
+    ${t==='jobseeker' ? jobseekerContent : workerContent}
+  </div>`;
+}
 
 function renderPromptKitSection(){
   window._promptTab = window._promptTab || 'student';
