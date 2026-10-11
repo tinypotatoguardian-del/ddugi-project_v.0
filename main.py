@@ -1337,13 +1337,15 @@ def user_login(body: UserLoginIn):
     row = _user_by_username(conn, username)
     if not row or not _check_pw(row, body.password):
         conn.close()
-        # 실패 횟수 누적
-        fails = (rec[0] if rec else 0) + 1
-        if fails >= MAX_FAILS:
-            _fail_cache[lock_key] = (fails, now_ts + LOCK_SECONDS)
-            raise HTTPException(status_code=429, detail={"locked_seconds": LOCK_SECONDS})
-        _fail_cache[lock_key] = (fails, None)
-        raise HTTPException(status_code=401, detail=f"아이디 또는 비밀번호가 틀렸어요. (남은 시도 {MAX_FAILS - fails}회)")
+        # 실패 횟수 누적 — 계정이 존재하는 경우에만 잠금 (존재 안 하면 어드민 계정일 수 있음)
+        if row:
+            fails = (rec[0] if rec else 0) + 1
+            if fails >= MAX_FAILS:
+                _fail_cache[lock_key] = (fails, now_ts + LOCK_SECONDS)
+                raise HTTPException(status_code=429, detail={"locked_seconds": LOCK_SECONDS})
+            _fail_cache[lock_key] = (fails, None)
+            raise HTTPException(status_code=401, detail=f"아이디 또는 비밀번호가 틀렸어요. (남은 시도 {MAX_FAILS - fails}회)")
+        raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 틀렸어요.")
     # 로그인 성공 → 잠금 초기화
     _fail_cache.pop(lock_key, None)
     # 비활성 계정 차단
