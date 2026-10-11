@@ -310,6 +310,14 @@ def init_db() -> None:
         if USE_PG:
             conn.rollback()
 
+    # 마이그레이션: submissions.result_data (씨앗 결과 기록)
+    try:
+        db_execute(conn, "ALTER TABLE submissions ADD COLUMN result_data TEXT")
+        conn.commit()
+    except Exception:
+        if USE_PG:
+            conn.rollback()
+
     # 마이그레이션: intro_data (마음의 방 서버 저장)
     try:
         db_execute(conn, "ALTER TABLE users ADD COLUMN intro_data TEXT")
@@ -2221,6 +2229,58 @@ def user_discord_share(body: UserDiscordShareIn, x_token: str = Header(default="
         return {"ok": False, "reason": "no_thread"}
     ok = _discord_add_comment(row["discord_thread_id"], body.content[:2000])
     return {"ok": ok}
+
+
+# ── 씨앗 결과 기록 ─────────────────────────────────────────────────────────
+class SeedResultIn(BaseModel):
+    doc_id: str = ""          # 씨앗 정의서 ID (없으면 빈 문자열)
+    rating: str               # "good" | "meh" | "bad"
+    result_text: str          # 한 줄 결과
+    next_try: str = ""        # 다음에 해볼 것 (선택)
+    prompt_used: str = ""     # 사용한 프롬프트 요약 (선택)
+
+@app.post("/api/seed/result")
+def save_seed_result(body: SeedResultIn, x_token: str = Header(default="")):
+    """씨앗 결과 기록 저장 + Discord 마음의 방 스레드에 공유"""
+    user = require_user_token(x_token)
+    conn = get_db()
+
+    # 결과 저장 (doc_id 있으면 submissions에, 없으면 Discord만)
+    if body.doc_id:
+        result_json = json.dumps({
+            "rating": body.rating,
+            "result_text": body.result_text,
+            "next_try": body.next_try,
+            "prompt_used": body.prompt_used,
+            "recorded_at": datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M")
+        }, ensure_ascii=False)
+        q = "UPDATE submissions SET result_data=%s WHERE doc_id=%s" if USE_PG \
+            else "UPDATE submissions SET result_data=? WHERE doc_id=?"
+        db_execute(conn, q, (result_json, body.doc_id))
+        if USE_PG: conn.commit()
+
+    # Discord 마음의 방 스레드에 결과 게시
+    row = db_fetchone(conn,
+        "SELECT discord_thread_id FROM users WHERE username=%s" if USE_PG
+        else "SELECT discord_thread_id FROM users WHERE username=?",
+        (user["username"],))
+    conn.close()
+
+    rating_emoji = {"good": "✅", "meh": "🔄", "bad": "❌"}.get(body.rating, "📝")
+    content = (
+        f"**{rating_emoji} 씨앗 결과 기록**\n\n"
+        f"**결과:** {body.result_text}\n"
+    )
+    if body.next_try:
+        content += f"**다음에 해볼 것:** {body.next_try}\n"
+    if body.prompt_used:
+        content += f"**쓴 프롬프트:** {body.prompt_used[:200]}\n"
+
+    discord_ok = False
+    if row and row["discord_thread_id"]:
+        discord_ok = _discord_add_comment(row["discord_thread_id"], content[:2000])
+
+    return {"ok": True, "discord_ok": discord_ok, "no_thread": not (row and row["discord_thread_id"])}
 
 
 class SeedThreadIn(BaseModel):

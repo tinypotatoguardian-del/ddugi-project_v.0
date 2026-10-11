@@ -5886,6 +5886,90 @@ function _renderSeedResultCard() {
 </div>`;
 }
 
+// ── 씨앗 결과 기록 모달 ────────────────────────────────────────
+window.openSeedResultModal = function(docId) {
+  const docIdVal = docId || docId || '';
+  showModal(`
+    <div style="padding:4px 0;">
+      <h3 style="margin:0 0 4px;font-size:16px;">📝 씨앗 결과 기록</h3>
+      <p style="font-size:12px;color:var(--ink-soft);margin:0 0 16px;">AI를 써봤어? 어떻게 됐는지 남겨줘.</p>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;" id="ratingBtns">
+        <button type="button" data-rating="good" onclick="window._seedRating='good';document.querySelectorAll('#ratingBtns button').forEach(b=>{b.style.opacity=b.dataset.rating===window._seedRating?'1':'0.4';b.style.fontWeight=b.dataset.rating===window._seedRating?'800':'400';})"
+          style="flex:1;padding:10px 4px;border-radius:8px;border:2px solid var(--ok);background:none;font-size:13px;cursor:pointer;">
+          ✅ 잘 됐다
+        </button>
+        <button type="button" data-rating="meh" onclick="window._seedRating='meh';document.querySelectorAll('#ratingBtns button').forEach(b=>{b.style.opacity=b.dataset.rating===window._seedRating?'1':'0.4';b.style.fontWeight=b.dataset.rating===window._seedRating?'800':'400';})"
+          style="flex:1;padding:10px 4px;border-radius:8px;border:2px solid var(--line);background:none;font-size:13px;cursor:pointer;opacity:0.5;">
+          🔄 애매했다
+        </button>
+        <button type="button" data-rating="bad" onclick="window._seedRating='bad';document.querySelectorAll('#ratingBtns button').forEach(b=>{b.style.opacity=b.dataset.rating===window._seedRating?'1':'0.4';b.style.fontWeight=b.dataset.rating===window._seedRating?'800':'400';})"
+          style="flex:1;padding:10px 4px;border-radius:8px;border:2px solid var(--line);background:none;font-size:13px;cursor:pointer;opacity:0.5;">
+          ❌ 안 됐다
+        </button>
+      </div>
+
+      <div class="field" style="margin-bottom:10px;">
+        <label style="font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;">결과 한 줄 <span style="color:var(--danger)">*</span></label>
+        <input id="resultText" type="text" placeholder="예) 보고서 초안이 30분→5분으로 줄었다" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:13px;">
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label style="font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;">다음에 해볼 것 (선택)</label>
+        <input id="resultNext" type="text" placeholder="예) 톤을 더 구체적으로 지정해보기" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:13px;">
+      </div>
+      <div class="field" style="margin-bottom:16px;">
+        <label style="font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;">사용한 프롬프트 요약 (선택)</label>
+        <textarea id="resultPrompt" rows="2" placeholder="어떤 프롬프트를 썼는지 간단히" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:12px;resize:vertical;"></textarea>
+      </div>
+
+      <div id="resultErr" style="font-size:12px;color:var(--danger);margin-bottom:8px;display:none;"></div>
+      <button type="button" id="resultSaveBtn" onclick="window._submitSeedResult('${esc(docIdVal)}')"
+        style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
+        💾 저장하기 (Discord에도 공유)
+      </button>
+    </div>
+  `);
+  window._seedRating = 'good';
+};
+
+window._submitSeedResult = async function(docId) {
+  if(!currentUser){ alert('로그인이 필요해요.'); return; }
+  const rating = window._seedRating || 'good';
+  const resultText = document.getElementById('resultText')?.value.trim();
+  const nextTry = document.getElementById('resultNext')?.value.trim() || '';
+  const promptUsed = document.getElementById('resultPrompt')?.value.trim() || '';
+  const errEl = document.getElementById('resultErr');
+  const btn = document.getElementById('resultSaveBtn');
+
+  if(!resultText){ errEl.style.display=''; errEl.textContent='결과를 한 줄 입력해줘!'; return; }
+
+  if(btn){ btn.disabled=true; btn.textContent='저장 중...'; }
+  try {
+    const token = localStorage.getItem('ddugi_token');
+    const r = await fetch('/api/seed/result', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Token':token||''},
+      body: JSON.stringify({doc_id:docId||'', rating, result_text:resultText, next_try:nextTry, prompt_used:promptUsed})
+    });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.detail||'저장 실패');
+
+    let msg = '✅ 결과 기록됐어!';
+    if(d.discord_ok) msg += '\n💬 Discord에도 공유됐어.';
+    else if(d.no_thread) msg += '\n(마음의 방 완성 후 Discord 공유 가능)';
+    hideModal();
+    setTimeout(()=>showModal(`<div style="text-align:center;padding:20px 0;">
+      <div style="font-size:36px;margin-bottom:8px;">📝</div>
+      <h3 style="margin:0 0 8px;">기록 완료!</h3>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;line-height:1.7;">${esc(msg.replace(/\n/g,'<br>'))}</p>
+      <button type="button" onclick="hideModal()" style="padding:8px 20px;border-radius:8px;background:var(--blueprint);color:#fff;border:none;font-size:13px;cursor:pointer;">확인</button>
+    </div>`), 100);
+  } catch(e) {
+    if(btn){ btn.disabled=false; btn.textContent='💾 저장하기 (Discord에도 공유)'; }
+    if(errEl){ errEl.style.display=''; errEl.textContent='오류: '+e.message; }
+  }
+};
+
 // ── 마음의 방 완성하기 ─────────────────────────────────────────
 window.completeMindroom = async function() {
   if (!currentUser) { alert('로그인이 필요해요.'); return; }
@@ -6149,8 +6233,7 @@ function renderGuideSection(){
 - 마지막에 지원 직무와 연결`)}
       </div>
 
-      <!-- 보너스 -->
-      <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
         <div style="font-size:13px;font-weight:700;margin-bottom:8px;">💡 AI 활용 경험이 없을 때</div>
         <p style="font-size:12px;color:var(--ink-soft);margin:0 0 6px;">요즘 기업들 자소서에 AI 역량 묻는 곳 늘고 있어. 경험 없어도 괜찮아.</p>
         ${promptBox('g-p4', `나는 AI를 업무/학업에 써본 경험이 많지 않아.
@@ -6162,6 +6245,15 @@ function renderGuideSection(){
 - 어떤 AI 도구를
 - 어떻게 써서
 - 어떤 결과가 나오는지`)}
+      </div>
+
+      <div style="background:var(--paper);border:1.5px dashed var(--blueprint-2);border-radius:10px;padding:14px 16px;margin-bottom:20px;text-align:center;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">📝 써봤어? 결과 기록해두자</div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 10px;">기록이 쌓이면 나중에 자소서에 쓸 수 있어.</p>
+        <button type="button" onclick="if(currentUser){window.openSeedResultModal('')}else{openAuthModal('login')}"
+          style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+          📝 결과 기록하기
+        </button>
       </div>
 
       <div style="text-align:center;padding:16px 0 4px;">
@@ -6242,6 +6334,15 @@ function renderGuideSection(){
         <button type="button" data-action="goto" data-target="intro"
           style="padding:8px 18px;border-radius:8px;border:1px solid var(--blueprint);background:none;color:var(--blueprint);font-size:13px;font-weight:600;cursor:pointer;">
           🏠 마음의 방 → 씨앗 심으러 가기
+        </button>
+      </div>
+
+      <div style="background:var(--paper);border:1.5px dashed var(--blueprint-2);border-radius:10px;padding:14px 16px;margin-bottom:20px;text-align:center;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">📝 써봤어? 결과 기록해두자</div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 10px;">기록이 쌓이면 업무 개선 이력이 돼.</p>
+        <button type="button" onclick="if(currentUser){window.openSeedResultModal('')}else{openAuthModal('login')}"
+          style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+          📝 결과 기록하기
         </button>
       </div>
 
