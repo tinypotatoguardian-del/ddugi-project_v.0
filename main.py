@@ -2246,6 +2246,53 @@ def master_discord_forum_post(body: MasterForumPostIn, x_admin_token: str = Head
     return {"ok": True, "thread_id": thread_id}
 
 
+class DiscordThreadCommentIn(BaseModel):
+    thread_id: str
+    content: str
+
+@app.post("/api/master/discord/thread-comment")
+def master_discord_thread_comment(body: DiscordThreadCommentIn, x_admin_token: str = Header(default="")):
+    """마스터 전용: Discord 스레드에 댓글 추가"""
+    require_admin_token(x_admin_token, {"master"})
+    ok = _discord_add_comment(body.thread_id, body.content[:2000])
+    return {"ok": ok}
+
+
+@app.delete("/api/master/discord/thread/{thread_id}")
+def master_discord_delete_thread(thread_id: str, x_admin_token: str = Header(default="")):
+    """마스터 전용: Discord 스레드 삭제"""
+    require_admin_token(x_admin_token, {"master"})
+    import urllib.request as _ur
+    token = os.environ.get("DISCORD_BOT_TOKEN", "")
+    if not token:
+        raise HTTPException(status_code=500, detail="DISCORD_BOT_TOKEN 없음")
+    req = _ur.Request(f"https://discord.com/api/v10/channels/{thread_id}",
+        headers={"Authorization":f"Bot {token}","User-Agent":"DiscordBot"},method="DELETE")
+    try:
+        _ur.urlopen(req, timeout=10)
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/master/discord/threads/{channel_id}")
+def master_list_threads(channel_id: str, x_admin_token: str = Header(default="")):
+    """마스터 전용: 포럼 채널 활성 스레드 목록"""
+    require_admin_token(x_admin_token, {"master"})
+    import urllib.request as _ur
+    token = os.environ.get("DISCORD_BOT_TOKEN", "")
+    guild_id = "1555788463247466566"
+    req = _ur.Request(f"https://discord.com/api/v10/guilds/{guild_id}/threads/active",
+        headers={"Authorization":f"Bot {token}","User-Agent":"DiscordBot"})
+    try:
+        with _ur.urlopen(req, timeout=10) as r:
+            data = json.loads(r.read())
+        threads = [t for t in data.get("threads",[]) if t.get("parent_id")==channel_id]
+        return {"threads": [{"id":t["id"],"name":t["name"]} for t in threads]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── 씨앗 결과 기록 ─────────────────────────────────────────────────────────
 class SeedResultIn(BaseModel):
     doc_id: str = ""          # 씨앗 정의서 ID (없으면 빈 문자열)
