@@ -6208,18 +6208,24 @@ window.seedUpdate = async function(update_type, content) {
 
 function renderLevelCheckSection(){
   const CHECKS = [
-    {lv:1, text:'AI한테 질문해서 원하는 답을 받아본 적 있어'},
-    {lv:1, text:'AI 결과가 틀릴 수 있다는 걸 직접 확인해봤어'},
-    {lv:2, text:'업무/공부에 AI를 정기적으로 쓰고 있어'},
-    {lv:2, text:'같은 질문을 다르게 물어봐서 결과가 달라지는 걸 느꼈어'},
-    {lv:2, text:'보고서·이메일·발표자료 초안을 AI로 만들어봤어'},
-    {lv:2, text:'AI 결과물을 검토하고 수정해서 실제로 쓴 적 있어'},
-    {lv:3, text:'AI가 짜준 코드를 실제로 실행해봤어'},
-    {lv:3, text:'노코드 자동화(n8n, Make, Zapier 등)를 써봤어'},
-    {lv:4, text:'임베딩·벡터DB가 뭔지 알고, NotebookLM처럼 문서 기반 AI를 써봤어'},
-    {lv:4, text:'API로 AI를 내 서비스나 시스템에 직접 연결해봤어'},
-    {lv:5, text:'AI 기능을 실제로 배포하거나 팀/외부에 운영해봤어'},
-    {lv:5, text:'AI 도입 효과를 측정하고 업무 방식 자체를 바꿔봤어'},
+    // L1 — AI를 쓸 수 있는가?
+    {lv:1, text:'AI에게 요청을 써서 원하는 답을 받아봤어 (프롬프트 작성)'},
+    {lv:1, text:'AI가 틀리는 경우를 직접 확인해봤어 (Hallucination·AI Slop)'},
+    // L2 — AI를 업무에 반복 적용할 수 있는가?
+    {lv:2, text:'역할·목표·조건을 넣어서 프롬프트를 설계해봤어 (Role·Goal·Constraint·Few-shot)'},
+    {lv:2, text:'파일·문서·데이터를 AI에 넣어서 분석시켜봤어'},
+    {lv:2, text:'AI를 내 업무 흐름에 반복적으로 연결해서 썼어 (Workflow)'},
+    // L3 — AI로 업무 도구를 만들 수 있는가?
+    {lv:3, text:'AI가 짜준 HTML·코드를 실행하거나 직접 수정해봤어'},
+    {lv:3, text:'API 요청·응답이 뭔지 알고 직접 써봤어 (Request/Response)'},
+    {lv:3, text:'n8n·Make·Zapier 같은 자동화 도구로 흐름을 만들어봤어'},
+    // L4 — AI가 시스템 안에서 작동하게 만들 수 있는가?
+    {lv:4, text:'임베딩·벡터DB가 뭔지 알고 RAG 방식을 써봤어 (NotebookLM 등)'},
+    {lv:4, text:'AI Agent나 Tool Calling이 뭔지 알고 써봤어'},
+    {lv:4, text:'DB·인증·에러 처리를 포함한 서비스 구조를 설계해봤어'},
+    // L5 — AI로 업무 자체를 재설계할 수 있는가?
+    {lv:5, text:'AI가 필요한지 아닌지 직접 판단해서 결정해봤어 (AI 적합성 판단)'},
+    {lv:5, text:'AI 때문에 업무 방식 자체가 바뀌었거나 팀에 확산시켜봤어'},
   ];
 
   const LEVELS = [
@@ -6231,10 +6237,10 @@ function renderLevelCheckSection(){
   ];
 
   function calcLevel(checked) {
-    if([10,11].some(i=>checked.includes(i))) return 5;
-    if([8,9].some(i=>checked.includes(i))) return 4;
-    if([6,7].some(i=>checked.includes(i))) return 3;
-    if([2,3,4,5].some(i=>checked.includes(i))) return 2;
+    if([11,12].some(i=>checked.includes(i))) return 5;
+    if([8,9,10].some(i=>checked.includes(i))) return 4;
+    if([5,6,7].some(i=>checked.includes(i))) return 3;
+    if([2,3,4].some(i=>checked.includes(i))) return 2;
     if([0,1].some(i=>checked.includes(i))) return 1;
     return 0;
   }
@@ -6254,11 +6260,26 @@ function renderLevelCheckSection(){
     }).join('') + `</div>`;
 
   const LEVEL_DETAILS = {
-    1: {items:['프롬프트 작성 (질문·지시)','생성·요약·분석 활용','결과 검증 (틀릴 수 있다는 것)','AI 적용 여부 판단'], example:'회의록 초안을 AI한테 시켰는데 방향은 맞는데 수치가 틀렸어 → "수치는 내가 넣을게, 구조만 다듬어줘"로 역할 나눔'},
-    2: {items:['Prompt 설계 (역할·목표·제약·예시)','Context 설계','출력 형식 지정','반복 업무 Workflow 설계'], example:'주간 데이터 취합 → 보고서 작성이 매주 3시간 → Make로 자동 취합 → AI 초안 생성 흐름 만들어 1시간으로 단축'},
-    3: {items:['바이브코딩으로 업무 도구 만들기','AI한테 코드 짜달라고 시키고 실행','노코드(n8n·Make)로 자동화 구축'], example:'매주 CRM 데이터 정리가 1시간 → Claude한테 Python 코드 짜달라고 → 5분으로 단축. 팀에 공유'},
-    4: {items:['RAG (내 문서 기반 AI 만들기)','회사 문서·데이터를 AI한테 먹이기','n8n AI 에이전트로 멀티스텝 자동화'], example:'사내 규정 PDF 50개 → NotebookLM에 올리고 직원들에게 링크 공유 → "연차 어떻게 써요?" 문의 70% 감소'},
-    5: {items:['업무 전체를 다시 설계 (Process Redesign)','AI-Human 경계 정하기','효과 측정 설계','팀 전체로 확산'], example:'AI 도입하자는 지시 → 어디서 시작할지 몰랐음 → 5개 업무 후보 탐색 → AI 필요한 것 2개·불필요한 것 3개 구분'},
+    1: {
+      items:['프롬프트 작성 (질문·지시)','생성·요약·분석 활용','결과 검증','Hallucination·AI Slop 이해','AI 적용 여부 판단 (안 쓰는 판단 포함)'],
+      example:'"이 자소서 고쳐줘"라고 했더니 방향은 맞는데 사실이 틀렸어 → "사실은 내가 넣을게, 구조만 다듬어줘"로 역할 나눔'
+    },
+    2: {
+      items:['Prompt 설계 (Role·Goal·Constraint·Few-shot)','Context 설계','출력 형식 지정 (JSON 등)','파일·데이터 활용','반복 업무 Workflow 설계','Skill 작성·활용'],
+      example:'매주 데이터 취합 → 보고서 초안이 3시간 → AI Workflow로 묶어서 30분으로 단축'
+    },
+    3: {
+      items:['UI/UX·Component','HTML/CSS·JS·DOM','JSON·데이터 구조 (Schema·Validation)','API (Request/Response)','Python·Flask/FastAPI','업무 자동화 (조건·예외 처리)'],
+      example:'CRM 데이터 정리 Python 스크립트를 Claude한테 짜달라고 → 1시간 → 5분. 팀에 공유'
+    },
+    4: {
+      items:['DB·Schema·Metadata','RAG (Embedding·Vector DB·Retrieval)','Context Engineering','Agent·Tool Calling','MCP·외부 시스템 연계','인증·권한','서비스 구조 (Async·Error handling)'],
+      example:'사내 규정 PDF 50개 → NotebookLM(RAG)에 올리고 팀에 공유 → "연차 어떻게 써요?" 문의 70% 감소'
+    },
+    5: {
+      items:['Problem Definition (문제 정의)','Process Analysis (현재 업무 분석)','AI Suitability (AI 적합 지점)','Process Redesign (업무 재설계)','Human-AI Boundary (역할 경계)','Measurement (효과 측정)','Scalability (표준화·확산)'],
+      example:'"AI 써보자" 지시 → 어디서 시작할지 몰랐음 → 5개 업무 후보 탐색 → AI 필요한 것 2개·불필요한 것 3개 구분하고 팀 전체로 확산'
+    },
   };
 
   const levelMapHtml = LEVELS.map(l => {
@@ -6355,10 +6376,10 @@ window._lvUpdateResult = function(checked){
     {lv:5, emoji:'🗺️', name:'AX Architect', desc:'AI를 붙이는 게 아니라, 일하는 방식 자체를 재설계해', next:null},
   ];
   function calcLevel(c){
-    if([10,11].some(i=>c.includes(i))) return 5;
-    if([8,9].some(i=>c.includes(i))) return 4;
-    if([6,7].some(i=>c.includes(i))) return 3;
-    if([2,3,4,5].some(i=>c.includes(i))) return 2;
+    if([11,12].some(i=>c.includes(i))) return 5;
+    if([8,9,10].some(i=>c.includes(i))) return 4;
+    if([5,6,7].some(i=>c.includes(i))) return 3;
+    if([2,3,4].some(i=>c.includes(i))) return 2;
     if([0,1].some(i=>c.includes(i))) return 1;
     return 0;
   }
