@@ -998,8 +998,13 @@ async function loadRemote(){
       // 로컬에 있는 값을 서버가 덮어쓰지 않도록 merge (로컬 우선)
       state.fields = Object.assign({}, d.fields, state.fields);
     }
-    state.locked = !!d.locked;
-    state.completed = !!d.completed;
+    // 로컬에 이미 작성 중인 데이터가 있으면 locked 상태는 서버로부터 덮어쓰지 않음
+    // (저장된 씨앗을 로드했다가 유저가 편집 중인데 갑자기 inputs가 disabled되는 버그 방지)
+    const hadLocalData = Object.keys(state.fields||{}).length > 0;
+    if(!hadLocalData){
+      state.locked = !!d.locked;
+      state.completed = !!d.completed;
+    }
     gateReview = d.gateReview || null;
   }catch(e){ /* keep local */ }
 }
