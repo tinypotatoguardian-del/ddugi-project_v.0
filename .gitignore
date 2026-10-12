@@ -1,3 +1,4 @@
 # DB와 캐시만 제외
 data.db
 __pycache__/
+.env.local

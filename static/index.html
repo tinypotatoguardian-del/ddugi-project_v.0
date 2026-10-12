@@ -744,9 +744,8 @@ const SECTIONS = [
 /* ── 랜딩 ──────────────────────────────── */
 {id:'landing', num:'🥔', title:'처음 오셨나요?', special:'landing'},
 /* ── 학습 ─────────────────────────────── */
-{id:'curriculum', num:'🌱', title:'Foundation', special:'curriculum', disabled:true, disabledNote:'AI 이해하기에서 보기'},
 {id:'ai-tools',   num:'🧠', title:'AI 이해하기', special:'aitools'},
-{id:'prompt-kit', num:'📋', title:'프롬프트 기본', special:'promptkit', disabled:true, disabledNote:'활용 가이드에서 보기'},
+{id:'curriculum', num:'📚', title:'레벨별 학습', special:'curriculum'},
 {id:'guide',      num:'🎯', title:'활용 가이드', special:'guide'},
 {id:'level-check',num:'✅', title:'내 레벨 체크', special:'levelcheck'},
 /* ── 씨앗 정의서 ──────────────────────── */
@@ -4977,7 +4976,6 @@ function renderAIToolsSection(){
     { id:'companies',  label:'🏢 도구 지도',        desc:'회사·제품·모델' },
     { id:'compare',    label:'📊 뭘 써야 해?',      desc:'상황별 선택 가이드' },
     { id:'questions',  label:'❓ 이런 건 물어봐도 돼?', desc:'연령별 질문 카테고리' },
-    { id:'curriculum', label:'📚 레벨별 학습',      desc:'L1~L5 성장 경로' },
   ];
 
   function tabHtml(){
