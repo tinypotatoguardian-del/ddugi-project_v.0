@@ -7359,7 +7359,18 @@ document.addEventListener('change', function(e){
   if(t.matches('[data-radio]')){
     const id=t.getAttribute('data-radio'), opt=t.getAttribute('data-opt');
     setV(id, opt);
-    if(id==='s1_cat' || id==='g_level'){ renderSheet(); return; }
+    if(id==='s1_cat' || id==='g_level'){
+      // 라디오 변경으로 전체 re-render 시 checklist 상태 보존
+      const _snap = JSON.parse(JSON.stringify(state.fields));
+      renderSheet();
+      // re-render 후 checklist 값이 사라졌으면 복원
+      Object.keys(_snap).forEach(k=>{
+        if(Array.isArray(_snap[k]) && (!Array.isArray(state.fields[k]) || state.fields[k].length < _snap[k].length)){
+          state.fields[k] = _snap[k];
+        }
+      });
+      return;
+    }
     t.closest('.opts').querySelectorAll('.opt').forEach(o=>o.classList.remove('checked'));
     t.closest('.opt').classList.add('checked');
     return;
