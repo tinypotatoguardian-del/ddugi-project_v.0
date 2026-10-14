@@ -1901,7 +1901,7 @@ def create_guestbook(body: GuestbookIn):
     v = validate_text(body.message)
     if not v["ok"]: raise HTTPException(status_code=400, detail=v["msg"])
     now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
-    conn = get_conn()
+    conn = get_db()
     if USE_PG:
         db_execute(conn, "INSERT INTO guestbook (nickname, message, created_at) VALUES (%s,%s,%s)",
                    (body.nickname.strip() or "익명", body.message.strip(), now))
@@ -1912,7 +1912,7 @@ def create_guestbook(body: GuestbookIn):
 
 @app.get("/api/guestbook")
 def list_guestbook():
-    conn = get_conn()
+    conn = get_db()
     rows = db_fetchall(conn, "SELECT * FROM guestbook ORDER BY created_at DESC")
     return [dict(r) for r in rows]
 
