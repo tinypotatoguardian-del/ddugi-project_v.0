@@ -1900,7 +1900,7 @@ class GuestbookIn(BaseModel):
 def create_guestbook(body: GuestbookIn):
     if not (body.message or "").strip():
         raise HTTPException(status_code=400, detail="내용을 입력해주세요.")
-    now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
     conn = get_db()
     if USE_PG:
         db_execute(conn, "INSERT INTO guestbook (nickname, message, created_at) VALUES (%s,%s,%s)",
