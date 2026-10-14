@@ -1898,8 +1898,8 @@ class GuestbookIn(BaseModel):
 
 @app.post("/api/guestbook")
 def create_guestbook(body: GuestbookIn):
-    v = validate_text(body.message)
-    if not v["ok"]: raise HTTPException(status_code=400, detail=v["msg"])
+    if not (body.message or "").strip():
+        raise HTTPException(status_code=400, detail="내용을 입력해주세요.")
     now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
     conn = get_db()
     if USE_PG:
