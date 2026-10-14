@@ -1908,12 +1908,15 @@ def create_guestbook(body: GuestbookIn):
     else:
         db_execute(conn, "INSERT INTO guestbook (nickname, message, created_at) VALUES (?,?,?)",
                    (body.nickname.strip() or "익명", body.message.strip(), now))
+    conn.commit()
+    conn.close()
     return {"ok": True}
 
 @app.get("/api/guestbook")
 def list_guestbook():
     conn = get_db()
     rows = db_fetchall(conn, "SELECT * FROM guestbook ORDER BY created_at DESC")
+    conn.close()
     return [dict(r) for r in rows]
 
 
