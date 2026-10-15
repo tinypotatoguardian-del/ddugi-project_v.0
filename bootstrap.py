@@ -3,7 +3,7 @@ Enzonic 환경에서 패키지를 /home/container/packages에 설치 후 앱 실
 """
 import subprocess, sys, os
 
-PACKAGES_DIR = '/home/container/packages'
+PACKAGES_DIR = '/tmp/packages'
 os.makedirs(PACKAGES_DIR, exist_ok=True)
 
 print("[bootstrap] 패키지 설치 중...")
