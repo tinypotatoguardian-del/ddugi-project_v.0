@@ -2559,7 +2559,8 @@ if __name__ == "__main__":
     bot_thread.start()
     print("[main] Discord 봇 스레드 시작됨")
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("SERVER_PORT", os.environ.get("PORT", 8000)))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 # ── 정적 프론트엔드 서빙 — 반드시 모든 API 라우트 정의 후 마지막에 ──
 app.mount("/", StaticFiles(directory=os.path.join(APP_DIR, "static"), html=True), name="static")
