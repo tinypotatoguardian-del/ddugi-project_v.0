@@ -1,5 +1,5 @@
 fastapi>=0.110
-uvicorn[standard]>=0.29
+uvicorn>=0.29
 psycopg2-binary>=2.9
 python-jose[cryptography]>=3.3
 discord.py>=2.3
