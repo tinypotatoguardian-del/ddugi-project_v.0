@@ -5929,9 +5929,9 @@ function renderIntroSection(){
     (introEditing ? '' :
       '<div class="exportbar">'+
         (!introSaved
-          ? '<button type="button" onclick="setV(\'intro_saved\',true);persist();saveIntroToServer();window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💾 저장 완료</button>'
-          : '<button type="button" onclick="setV(\'intro_saved\',false);window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정하기</button>'+
-            '<span style="font-size:12px;color:var(--ok);margin-left:8px;">✅ 저장됨</span>'+
+          ? '<button type="button" onclick="setV(\'intro_saved\',true);persist();saveIntroToServer();window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--blueprint);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">💾 저장하기</button>'
+          : '<button type="button" onclick="setV(\'intro_saved\',false);window._renderSheet();" style="padding:8px 20px;border-radius:8px;border:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:13px;font-weight:600;cursor:pointer;">✎ 수정</button>'+
+            '<span style="font-size:12px;color:var(--ok);font-weight:600;margin-left:8px;">✅ 저장 완료</span>'+
             // 완성하기 버튼 (저장 후 + 로그인 상태)
             (currentUser && getV('intro_ai_result','').trim()
               ? (getV('mindroom_completed', false)
